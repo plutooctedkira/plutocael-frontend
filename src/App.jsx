@@ -77,6 +77,15 @@ function EditIcon() {
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
 export default function PlutocaelChat() {
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -90,6 +99,9 @@ export default function PlutocaelChat() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const [hoveredSessionId, setHoveredSessionId] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsData, setSettingsData] = useState(null);
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
@@ -200,6 +212,36 @@ export default function PlutocaelChat() {
     setEditingName(session.name);
   };
 
+  // 打开设置
+  const handleOpenSettings = async () => {
+    try {
+      const res = await fetch(API + "/settings");
+      const data = await res.json();
+      setSettingsData(data);
+      setShowSettings(true);
+    } catch (err) {
+      console.error("加载设置失败:", err);
+    }
+  };
+
+  // 保存设置
+  const handleSaveSettings = async () => {
+    if (!settingsData) return;
+    setSettingsSaving(true);
+    try {
+      await fetch(API + "/settings/" + settingsData.id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settingsData),
+      });
+      setShowSettings(false);
+    } catch (err) {
+      console.error("保存设置失败:", err);
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   // 保存重命名
   const handleSaveRename = async () => {
     if (!editingName.trim() || !editingSessionId) {
@@ -262,7 +304,7 @@ export default function PlutocaelChat() {
     setMessages(prev => [...prev, tempAiMsg]);
 
     try {
-      const res = await fetch(API + "/chat", {
+      const res = await fetch(API + "/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -270,15 +312,50 @@ export default function PlutocaelChat() {
           content: userContent,
         }),
       });
-      const data = await res.json();
 
-      if (data.error) {
+      if (!res.ok) {
+        const errData = await res.json();
         setMessages(prev =>
-          prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "出错了: " + data.error } : m)
+          prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "出错了: " + (errData.error || res.statusText) } : m)
         );
-      } else {
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === "text") {
+              fullText += event.text;
+              const updatedText = fullText;
+              setMessages(prev =>
+                prev.map(m => m.id === tempAiMsg.id ? { ...m, content: updatedText } : m)
+              );
+            } else if (event.type === "error") {
+              setMessages(prev =>
+                prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "出错了: " + event.text } : m)
+              );
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (!fullText) {
         setMessages(prev =>
-          prev.map(m => m.id === tempAiMsg.id ? { ...m, content: data.content } : m)
+          prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "（空回复）" } : m)
         );
       }
     } catch (err) {
@@ -525,6 +602,16 @@ export default function PlutocaelChat() {
               {activeSession ? activeSession.name : "plutocael"}
             </span>
           </div>
+          <button
+            onClick={handleOpenSettings}
+            style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center",
+            }}
+            title="设置"
+          >
+            <SettingsIcon />
+          </button>
         </div>
 
         <div style={{
@@ -623,6 +710,126 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && settingsData && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.3)", display: "flex",
+          alignItems: "center", justifyContent: "center", zIndex: 1000,
+        }} onClick={() => setShowSettings(false)}>
+          <div style={{
+            background: COLORS.sidebar, borderRadius: 16, padding: 24,
+            width: 480, maxHeight: "80vh", overflowY: "auto",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>设置</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: COLORS.textSecondary, display: "block", marginBottom: 4 }}>
+                System Prompt
+              </label>
+              <textarea
+                value={settingsData.system_prompt || ""}
+                onChange={(e) => setSettingsData({ ...settingsData, system_prompt: e.target.value })}
+                rows={8}
+                style={{
+                  width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8,
+                  padding: "8px 12px", fontSize: 13, fontFamily: "inherit",
+                  resize: "vertical", outline: "none", background: COLORS.bg,
+                  color: COLORS.text, boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.textSecondary, display: "block", marginBottom: 4 }}>
+                  温度 ({settingsData.temperature})
+                </label>
+                <input
+                  type="range" min="0" max="2" step="0.1"
+                  value={settingsData.temperature}
+                  onChange={(e) => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })}
+                  style={{ width: "100%" }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.textSecondary, display: "block", marginBottom: 4 }}>
+                  上下文轮数
+                </label>
+                <input
+                  type="number" min="1" max="50"
+                  value={settingsData.max_context_rounds}
+                  onChange={(e) => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) || 10 })}
+                  style={{
+                    width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8,
+                    padding: "6px 10px", fontSize: 13, outline: "none",
+                    background: COLORS.bg, color: COLORS.text, boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.textSecondary, display: "block", marginBottom: 4 }}>
+                  最大回复 tokens
+                </label>
+                <input
+                  type="number" min="100" max="8000"
+                  value={settingsData.max_reply_tokens}
+                  onChange={(e) => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) || 2000 })}
+                  style={{
+                    width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8,
+                    padding: "6px 10px", fontSize: 13, outline: "none",
+                    background: COLORS.bg, color: COLORS.text, boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 12, color: COLORS.textSecondary, display: "block", marginBottom: 4 }}>
+                  最大上下文 tokens
+                </label>
+                <input
+                  type="number" min="1000" max="100000"
+                  value={settingsData.max_context_tokens}
+                  onChange={(e) => setSettingsData({ ...settingsData, max_context_tokens: parseInt(e.target.value) || 8000 })}
+                  style={{
+                    width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8,
+                    padding: "6px 10px", fontSize: 13, outline: "none",
+                    background: COLORS.bg, color: COLORS.text, boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                onClick={() => setShowSettings(false)}
+                style={{
+                  padding: "8px 16px", border: `1px solid ${COLORS.inputBorder}`,
+                  borderRadius: 8, background: "transparent", cursor: "pointer",
+                  fontSize: 13, color: COLORS.textSecondary,
+                }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+                style={{
+                  padding: "8px 16px", border: "none", borderRadius: 8,
+                  background: COLORS.accent, color: "#fff", cursor: "pointer",
+                  fontSize: 13, opacity: settingsSaving ? 0.6 : 1,
+                }}
+              >
+                {settingsSaving ? "保存中..." : "保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
