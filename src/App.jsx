@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-const API = "/api";
+const API = "https://api.plutocael.icu/api";
 
 const COLORS = {
   bg: "#FAFAF8",
