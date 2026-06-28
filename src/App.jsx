@@ -59,6 +59,7 @@ function CloseIcon() { return <Icon size={12}><line x1="18" y1="6" x2="6" y2="18
 function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
 function SettingsIcon() { return <Icon size={18}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>; }
 function TrashIcon() { return <Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>; }
+function CopyIcon() { return <Icon size={14}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>; }
 function StarIcon({ filled }) { return <Icon size={14}>{filled ? <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" /> : <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />}</Icon>; }
 
 const DEFAULT_CATEGORIES = ["生活", "开发日志", "小说灵感", "工作计划"];
@@ -88,7 +89,8 @@ export default function PlutocaelChat() {
   const [newMemory, setNewMemory] = useState({ content: "", category: "生活", importance: 3 });
   const [editingMemory, setEditingMemory] = useState(null);
   const [expandedMemoryId, setExpandedMemoryId] = useState(null);
-
+  const [editingMsgId, setEditingMsgId] = useState(null);
+  const [editingMsgContent, setEditingMsgContent] = useState("");
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
@@ -459,17 +461,154 @@ export default function PlutocaelChat() {
                           {formatTime(msg.created_at)}
                         </div>
                       )}
-                      <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start" }}>
-                        <div style={{
-                          padding: "12px 16px",
-                          borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                          background: msg.role === "user" ? COLORS.userBubble : COLORS.aiBubble,
-                          border: msg.role === "assistant" ? `1px solid ${COLORS.divider}` : "none",
-                          color: msg.role === "user" ? COLORS.userBubbleText : COLORS.text,
-                          maxWidth: "80%", fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap",
-                        }}>
-                          {msg.content}
-                        </div>
+                      <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
+                        {editingMsgId === msg.id ? (
+                          <div style={{ width: "100%" }}>
+                            <textarea
+                              value={editingMsgContent || msg.content}
+                              onChange={e => setEditingMsgContent(e.target.value)}
+                              onFocus={e => { if (!editingMsgContent) setEditingMsgContent(msg.content); }}
+                              rows={3}
+                              style={{
+                                width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 8,
+                                padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none",
+                                background: COLORS.input, color: COLORS.text, fontFamily: "inherit",
+                                resize: "vertical", boxSizing: "border-box",
+                              }}
+                            />
+                            <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
+                              <button onClick={() => { setEditingMsgId(null); setEditingMsgContent(""); }} style={{
+                                padding: "6px 14px", borderRadius: 8, border: `1px solid ${COLORS.inputBorder}`,
+                                background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.textSecondary,
+                              }}>取消</button>
+                              <button onClick={async () => {
+                                if (!editingMsgContent.trim() || loading) return;
+                                const msgIndex = messages.findIndex(m => m.id === msg.id);
+                                const content = editingMsgContent.trim();
+                                setEditingMsgId(null);
+                                setEditingMsgContent("");
+                                const newUserMsg = { id: Date.now(), role: "user", content, created_at: new Date().toISOString() };
+                                const tempAiMsg = { id: Date.now() + 1, role: "assistant", content: "", created_at: new Date().toISOString() };
+                                setMessages(prev => [...prev.slice(0, msgIndex), newUserMsg, tempAiMsg]);
+                                setLoading(true);
+                                try {
+                                  const res = await fetch(API + "/chat/stream", {
+                                    method: "POST", headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ session_id: activeSessionId, content }),
+                                  });
+                                  const reader = res.body.getReader();
+                                  const decoder = new TextDecoder();
+                                  let buffer = "", fullText = "";
+                                  while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    buffer += decoder.decode(value, { stream: true });
+                                    const lines = buffer.split("\n");
+                                    buffer = lines.pop();
+                                    for (const line of lines) {
+                                      if (!line.startsWith("data: ")) continue;
+                                      try {
+                                        const event = JSON.parse(line.slice(6));
+                                        if (event.type === "text") {
+                                          fullText += event.text;
+                                          const t = fullText;
+                                          setMessages(prev => prev.map(m => m.id === tempAiMsg.id ? { ...m, content: t } : m));
+                                        }
+                                      } catch (e) {}
+                                    }
+                                  }
+                                  if (!fullText) setMessages(prev => prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "（空回复）" } : m));
+                                } catch (err) {
+                                  setMessages(prev => prev.map(m => m.id === tempAiMsg.id ? { ...m, content: "网络错误: " + err.message } : m));
+                                } finally { setLoading(false); }
+                              }} style={{
+                                padding: "6px 14px", borderRadius: 8, border: "none",
+                                background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13,
+                              }}>发送</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{
+                              padding: msg.role === "user" ? "12px 16px" : "4px 0",
+                              borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : 0,
+                              background: msg.role === "user" ? COLORS.userBubble : "transparent",
+                              border: "none",
+                              color: msg.role === "user" ? COLORS.userBubbleText : COLORS.text,
+                              fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap",
+                            }}>
+                              {msg.content}
+                            </div>
+                            <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                              <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{
+                                padding: "4px 6px", borderRadius: 6, border: "none",
+                                background: "transparent", cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder,
+                              }} title="复制">
+                                <CopyIcon />
+                              </button>
+                              {msg.role === "user" && (
+                                <button onClick={() => setEditingMsgId(msg.id)} style={{
+                                  padding: "4px 6px", borderRadius: 6, border: "none",
+                                  background: "transparent", cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder,
+                                }} title="编辑">
+                                  <EditIcon />
+                                </button>
+                              )}
+                              {msg.role === "assistant" && (
+                                <button onClick={async () => {
+                                  if (loading) return;
+                                  const msgIndex = messages.indexOf(msg);
+                                  let lastUserMsg = null;
+                                  for (let j = msgIndex - 1; j >= 0; j--) {
+                                    if (messages[j].role === "user") { lastUserMsg = messages[j]; break; }
+                                  }
+                                  if (!lastUserMsg) return;
+                                  setLoading(true);
+                                  const tempId = Date.now();
+                                  setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, id: tempId, content: "" } : m));
+                                  try {
+                                    const res = await fetch(API + "/chat/stream", {
+                                      method: "POST", headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ session_id: activeSessionId, content: lastUserMsg.content }),
+                                    });
+                                    const reader = res.body.getReader();
+                                    const decoder = new TextDecoder();
+                                    let buffer = "", fullText = "";
+                                    while (true) {
+                                      const { done, value } = await reader.read();
+                                      if (done) break;
+                                      buffer += decoder.decode(value, { stream: true });
+                                      const lines = buffer.split("\n");
+                                      buffer = lines.pop();
+                                      for (const line of lines) {
+                                        if (!line.startsWith("data: ")) continue;
+                                        try {
+                                          const event = JSON.parse(line.slice(6));
+                                          if (event.type === "text") {
+                                            fullText += event.text;
+                                            const t = fullText;
+                                            setMessages(prev => prev.map(m => m.id === tempId ? { ...m, content: t } : m));
+                                          }
+                                        } catch (e) {}
+                                      }
+                                    }
+                                    if (!fullText) setMessages(prev => prev.map(m => m.id === tempId ? { ...m, content: "（空回复）" } : m));
+                                  } catch (err) {
+                                    setMessages(prev => prev.map(m => m.id === tempId ? { ...m, content: "网络错误: " + err.message } : m));
+                                  } finally { setLoading(false); }
+                                }} style={{
+                                  padding: "4px 6px", borderRadius: 6, border: "none",
+                                  background: "transparent", cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder,
+                                }} title="重试">
+                                  <Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon>
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
