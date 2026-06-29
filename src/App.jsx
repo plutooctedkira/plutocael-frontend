@@ -72,7 +72,6 @@ export default function PlutocaelChat() {
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingMsgContent, setEditingMsgContent] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [keyboardPadding, setKeyboardPadding] = useState(0);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
@@ -89,17 +88,6 @@ export default function PlutocaelChat() {
     const onResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (!window.visualViewport) return;
-    const updatePadding = () => {
-      const h = window.innerHeight - window.visualViewport.height;
-      setKeyboardPadding(h > 60 ? h : 0);
-    };
-    updatePadding();
-    window.visualViewport.addEventListener("resize", updatePadding);
-    return () => window.visualViewport.removeEventListener("resize", updatePadding);
   }, []);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
@@ -160,7 +148,7 @@ export default function PlutocaelChat() {
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
   return (
-    <div style={{ display: "flex", flex: 1, width: "100%", background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", touchAction: "none" }}>
+    <div style={{ display: "flex", position: "fixed", inset: 0, background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", touchAction: "none" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
         <div style={{ padding: "20px 20px 12px" }}><div style={{ fontSize: 18, fontWeight: 600, color: COLORS.accent }}>Plutocael</div></div>
@@ -230,7 +218,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 24px 24px", paddingBottom: 24 + keyboardPadding, background: COLORS.bg, position: "sticky", bottom: 0, zIndex: 10 }}>
+          <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
             <div style={{ maxWidth: 768, margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
                 <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
