@@ -205,7 +205,7 @@ export default function PlutocaelChat() {
                 const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && new Date(msg.created_at).getTime() - new Date(messages[i-1].created_at).getTime() > 300000);
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
-                  <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
+                  <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "70%" }}>
                     {editingMsgId === msg.id ? (
                       <div style={{ width: "100%" }}>
                         <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
@@ -230,9 +230,9 @@ export default function PlutocaelChat() {
           </div>
           <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: "clamp(48px, auto, 52px)", maxHeight: 200, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
+              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: "clamp(96px, auto, 104px)", maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
                 <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
-                <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end" }}><SendIcon /></button>
+                <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 20, height: 20, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end" }}><SendIcon /></button>
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function PlutocaelChat() {
       </div>}
 
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
-        <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)", animation: "slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1)" }} onClick={e => e.stopPropagation()}>
           <div style={{ padding: "20px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 16, fontWeight: 600 }}>设置</div>
             <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
