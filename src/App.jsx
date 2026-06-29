@@ -141,7 +141,7 @@ export default function PlutocaelChat() {
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
   return (
-    <div style={{ display: "flex", height: "100dvh", background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none" }}>
+    <div style={{ display: "flex", height: "100dvh", background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", touchAction: "none" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
         <div style={{ padding: "20px 20px 12px" }}><div style={{ fontSize: 18, fontWeight: 600, color: COLORS.accent }}>Plutocael</div></div>
@@ -153,7 +153,7 @@ export default function PlutocaelChat() {
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
-        <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
           {currentPage === "chat" && (<>
             <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textSecondary, padding: "8px 8px 6px", letterSpacing: "0.05em", textTransform: "uppercase" }}>最近对话</div>
             {sessions.length === 0 ? <div style={{ padding: "12px 8px", fontSize: 13, color: COLORS.placeholder }}>还没有对话</div> : sessions.map(s => (
@@ -180,7 +180,7 @@ export default function PlutocaelChat() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
             <span style={{ fontSize: 15, fontWeight: 500 }}>{activeSession ? activeSession.name : "Plutocael"}</span>
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
             <div style={{ maxWidth: 720, width: "100%", margin: "0 auto", padding: "0 24px" }}>
               {messages.length === 0 && <div style={{ textAlign: "center", padding: "80px 0", color: COLORS.placeholder, fontSize: 15 }}>发消息给 Cael 开始对话</div>}
               {messages.map((msg, i) => {
@@ -226,10 +226,10 @@ export default function PlutocaelChat() {
             </div>
             <button onClick={() => { setEditingMemory(null); setNewMemory({ content: "", category: "生活", importance: 3 }); setShowAddMemory(true); }} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><PlusIcon /> 添加</button>
           </div>
-          <div style={{ padding: "12px 20px", display: "flex", gap: 8, overflowX: "auto", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
+          <div style={{ padding: "12px 20px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
             {["全部", ...DEFAULT_CATEGORIES].map(cat => (<button key={cat} onClick={() => setMemoryFilter(cat)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat ? COLORS.accent : "transparent", color: memoryFilter === cat ? "#fff" : COLORS.textSecondary }}>{cat}</button>))}
           </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
               {memories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有记忆，点击右上角添加</div> : memories.map(m => (
                 <div key={m.id} onClick={() => setExpandedMemoryId(expandedMemoryId === m.id ? null : m.id)} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}`, cursor: "pointer" }}>
