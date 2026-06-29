@@ -197,7 +197,7 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      <div style={{ padding: msg.role === "user" ? "12px 16px" : "4px 0", borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : 0, background: msg.role === "user" ? COLORS.userBubble : "transparent", color: msg.role === "user" ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                      <div style={{ padding: msg.role === "user" ? "12px 16px" : "4px 16px", borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : 0, background: msg.role === "user" ? COLORS.userBubble : "transparent", color: msg.role === "user" ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
                         <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
                         {msg.role === "user" && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
