@@ -71,6 +71,7 @@ export default function PlutocaelChat() {
   const [expandedMemoryId, setExpandedMemoryId] = useState(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingMsgContent, setEditingMsgContent] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
@@ -82,6 +83,12 @@ export default function PlutocaelChat() {
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     const resetScroll = () => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); document.body.scrollTop = 0; };
@@ -199,29 +206,38 @@ export default function PlutocaelChat() {
             <span style={{ fontSize: 15, fontWeight: 500 }}>{activeSession ? activeSession.name : "Plutocael"}</span>
           </div>
           <div style={{ flex: 1, overflow: "hidden auto", padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div style={{ maxWidth: 720, width: "100%", margin: "0 auto", padding: "0 24px" }}>
+            <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: isMobile ? "0 16px" : "0 24px" }}>
               {messages.length === 0 && <div style={{ textAlign: "center", padding: "80px 0", color: COLORS.placeholder, fontSize: 15 }}>发消息给 Cael 开始对话</div>}
               {messages.map((msg, i) => {
                 const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && new Date(msg.created_at).getTime() - new Date(messages[i-1].created_at).getTime() > 300000);
+                const isUser = msg.role === "user";
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
-                  <div style={{ marginBottom: 20, display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "70%" }}>
-                    {editingMsgId === msg.id ? (
-                      <div style={{ width: "100%" }}>
-                        <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
-                        <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
-                          <button onClick={() => { setEditingMsgId(null); setEditingMsgContent(""); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.textSecondary }}>取消</button>
-                          <button onClick={() => handleEditSend(msg)} style={{ padding: "6px 16px", borderRadius: 20, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>发送</button>
+                  <div style={{ marginBottom: 20, display: "flex", flexDirection: "row", justifyContent: isUser ? "flex-end" : "flex-start", margin: "0 8px" }}>
+                    {!isUser && !isMobile && (
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: COLORS.accentLight, flexShrink: 0, marginRight: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: COLORS.accent, fontWeight: 600, alignSelf: "flex-start" }}>C</div>
+                    )}
+                    <div style={{ display: "flex", flexDirection: "column", maxWidth: isMobile ? "85%" : "80%", alignItems: isUser ? "flex-end" : "flex-start" }}>
+                      {editingMsgId === msg.id ? (
+                        <div style={{ width: "100%" }}>
+                          <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                          <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
+                            <button onClick={() => { setEditingMsgId(null); setEditingMsgContent(""); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.textSecondary }}>取消</button>
+                            <button onClick={() => handleEditSend(msg)} style={{ padding: "6px 16px", borderRadius: 20, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>发送</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (<>
-                      <div style={{ padding: msg.role === "user" ? "12px 16px" : "4px 16px", borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : 0, background: msg.role === "user" ? COLORS.userBubble : "transparent", color: msg.role === "user" ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
-                      <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                        <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
-                        {msg.role === "user" && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
-                        {msg.role === "assistant" && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
-                      </div>
-                    </>)}
+                      ) : (<>
+                        <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                        <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                          <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
+                          {isUser && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
+                          {!isUser && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
+                        </div>
+                      </>)}
+                    </div>
+                    {isUser && !isMobile && (
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: COLORS.userBubble, flexShrink: 0, marginLeft: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: COLORS.userBubbleText, fontWeight: 600, alignSelf: "flex-start" }}>U</div>
+                    )}
                   </div>
                 </div>);
               })}
