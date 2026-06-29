@@ -63,6 +63,14 @@ body {
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
 
+.msg-ai { margin-left: 40px; margin-right: auto; }
+.msg-user { margin-left: auto; margin-right: 8px; }
+
+@media (max-width: 767px) {
+  .msg-ai { margin-left: 12px; }
+  .msg-user { margin-right: 4px; }
+}
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
