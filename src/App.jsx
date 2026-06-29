@@ -72,6 +72,7 @@ export default function PlutocaelChat() {
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingMsgContent, setEditingMsgContent] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [keyboardPadding, setKeyboardPadding] = useState(0);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
@@ -91,28 +92,14 @@ export default function PlutocaelChat() {
   }, []);
 
   useEffect(() => {
-    const resetScroll = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      document.body.scrollTop = 0;
-      setTimeout(() => {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-        document.body.scrollTop = 0;
-      }, 150);
+    if (!window.visualViewport) return;
+    const updatePadding = () => {
+      const h = window.innerHeight - window.visualViewport.height;
+      setKeyboardPadding(h > 60 ? h : 0);
     };
-    const onResize = () => { resetScroll(); };
-    const onScroll = () => { if (window.scrollY !== 0) resetScroll(); };
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", onResize);
-      window.visualViewport.addEventListener("scroll", onScroll);
-    }
-    window.addEventListener("scroll", onScroll, { passive: false });
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", onResize);
-        window.visualViewport.removeEventListener("scroll", onScroll);
-      }
-      window.removeEventListener("scroll", onScroll);
-    };
+    updatePadding();
+    window.visualViewport.addEventListener("resize", updatePadding);
+    return () => window.visualViewport.removeEventListener("resize", updatePadding);
   }, []);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
@@ -243,10 +230,10 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
+          <div style={{ padding: "12px 24px 24px", paddingBottom: 24 + keyboardPadding, background: COLORS.bg }}>
             <div style={{ maxWidth: 768, margin: "0 auto" }}>
               <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
-                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} onFocus={() => { setTimeout(() => { window.scrollTo(0,0); document.body.scrollTop=0; }, 80); }} onBlur={() => { const r = () => { window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }; r(); setTimeout(r, 120); setTimeout(r, 350); }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
+                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                 <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 12, marginRight: 12 }}><SendIcon /></button>
               </div>
             </div>
