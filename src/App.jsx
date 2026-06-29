@@ -91,7 +91,14 @@ export default function PlutocaelChat() {
   }, []);
 
   useEffect(() => {
-    const resetScroll = () => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); document.body.scrollTop = 0; };
+    const resetScroll = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.body.scrollTop = 0;
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        document.body.scrollTop = 0;
+      }, 150);
+    };
     const onResize = () => { resetScroll(); };
     const onScroll = () => { if (window.scrollY !== 0) resetScroll(); };
     if (window.visualViewport) {
