@@ -64,7 +64,7 @@ body {
 * { scrollbar-width: none; }
 
 .msg-ai { margin-left: 40px; margin-right: auto; }
-.msg-user { margin-left: auto; margin-right: 8px; }
+.msg-user { margin-left: auto; margin-right: 40px; }
 
 @media (max-width: 767px) {
   .msg-ai { margin-left: 12px; }
