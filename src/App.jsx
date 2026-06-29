@@ -212,9 +212,9 @@ export default function PlutocaelChat() {
           </div>
           <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <div style={{ display: "flex", alignItems: "flex-end", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 24, background: COLORS.input, padding: "4px 4px 4px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit" }} />
-                <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><SendIcon /></button>
+              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: "clamp(48px, auto, 52px)", maxHeight: 200, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
+                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
+                <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end" }}><SendIcon /></button>
               </div>
             </div>
           </div>
@@ -268,8 +268,8 @@ export default function PlutocaelChat() {
         </div>
       </div>}
 
-      {showSettings && settingsData && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
-        <div style={{ background: COLORS.cardBg, borderRadius: 20, width: 560, maxWidth: "90vw", maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
+      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
+        <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
           <div style={{ padding: "20px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 16, fontWeight: 600 }}>设置</div>
             <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
