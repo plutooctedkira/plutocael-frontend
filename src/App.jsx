@@ -154,9 +154,6 @@ export default function PlutocaelChat() {
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
         <div style={{ padding: "20px 20px 12px" }}><div style={{ fontSize: 18, fontWeight: 600, color: COLORS.accent }}>Plutocael</div></div>
         <div style={{ padding: "0 12px 8px" }}>
-          <button onClick={handleNewSession} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
-        </div>
-        <div style={{ padding: "0 12px 8px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
         </div>
@@ -177,8 +174,9 @@ export default function PlutocaelChat() {
               </div>))}
           </>)}
         </div>
-        <div style={{ padding: "12px", borderTop: `1px solid ${COLORS.divider}` }}>
-          <button onClick={() => { handleOpenSettings(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: COLORS.textSecondary }} onMouseEnter={e => e.currentTarget.style.background = COLORS.sidebarHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><SettingsIcon /> 设置</button>
+        <div style={{ padding: "12px", borderTop: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 12 }}>
+          <button onClick={() => { handleOpenSettings(); setSidebarOpen(false); }} style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><SettingsIcon /></button>
+          <button onClick={handleNewSession} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
         </div>
       </div>
 
