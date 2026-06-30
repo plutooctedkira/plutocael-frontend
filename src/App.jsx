@@ -72,6 +72,11 @@ export default function PlutocaelChat() {
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingMsgContent, setEditingMsgContent] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [gatewayStats, setGatewayStats] = useState(null);
+  const [gatewayPeriod, setGatewayPeriod] = useState("today");
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -134,6 +139,23 @@ export default function PlutocaelChat() {
   const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
   const handleOpenSettings = async () => { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); setSettingsTab("general"); setShowSettings(true); } catch (err) { console.error("加载设置失败:", err); } };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); setShowSettings(false); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    try {
+      const res = await fetch(API + "/search?q=" + encodeURIComponent(searchQuery));
+      const data = await res.json();
+      setSearchResults(data.results || []);
+    } catch (e) { setSearchResults([]); }
+  };
+
+  const loadGatewayStats = async () => {
+    try {
+      const res = await fetch(API + "/gateway/stats?period=" + gatewayPeriod);
+      const data = await res.json();
+      setGatewayStats(data);
+    } catch (e) {}
+  };
 
   const streamChat = async (sessionId, content, tempAiMsgId) => {
     try {
@@ -317,9 +339,27 @@ export default function PlutocaelChat() {
             <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
           </div>
           <div style={{ display: "flex", gap: 4, padding: "16px 24px 0", borderBottom: `1px solid ${COLORS.divider}` }}>
-            {[["general", "通用"], ["prompt", "Prompt"]].map(([key, label]) => <button key={key} onClick={() => setSettingsTab(key)} style={{ padding: "8px 16px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: settingsTab === key ? COLORS.text : COLORS.textSecondary, fontWeight: settingsTab === key ? 600 : 400, borderBottom: settingsTab === key ? `2px solid ${COLORS.accent}` : "2px solid transparent", marginBottom: -1 }}>{label}</button>)}
+            {[["general", "通用"], ["prompt", "Prompt"], ["usage", "用量"]].map(([key, label]) => <button key={key} onClick={() => { setSettingsTab(key); if (key === "usage") loadGatewayStats(); }} style={{ padding: "8px 16px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: settingsTab === key ? COLORS.text : COLORS.textSecondary, fontWeight: settingsTab === key ? 600 : 400, borderBottom: settingsTab === key ? `2px solid ${COLORS.accent}` : "2px solid transparent", marginBottom: -1 }}>{label}</button>)}
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+            {settingsTab === "usage" && <>
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); setTimeout(loadGatewayStats, 50); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
+              {gatewayStats ? (<>
+                <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>总用量</div>
+                  <div style={{ display:"flex", gap: 16, flexWrap:"wrap" }}>
+                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>Input tokens</div><div style={{ fontSize: 20, fontWeight: 700 }}>{(gatewayStats.summary?.total_input||0).toLocaleString()}</div></div>
+                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>Output tokens</div><div style={{ fontSize: 20, fontWeight: 700 }}>{(gatewayStats.summary?.total_output||0).toLocaleString()}</div></div>
+                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>花费</div><div style={{ fontSize: 20, fontWeight: 700, color: COLORS.accent }}>${(gatewayStats.summary?.total_cost||0).toFixed(4)}</div></div>
+                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>请求数</div><div style={{ fontSize: 20, fontWeight: 700 }}>{gatewayStats.summary?.request_count||0}</div></div>
+                  </div>
+                </div>
+                {gatewayStats.byModel?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16 }}>
+                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按模型</div>
+                  {gatewayStats.byModel.map((m,i) => <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<gatewayStats.byModel.length-1?`1px solid ${COLORS.divider}`:"none" }}><span style={{ fontSize:13 }}>{m.model}</span><span style={{ fontSize:13, fontWeight:500 }}>${(m.cost||0).toFixed(4)}</span></div>)}
+                </div>}
+              </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
+            </>}
             {settingsTab === "general" && <>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API 地址</label><input type="text" value={settingsData.api_base_url || ""} placeholder="留空则使用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API Key</label><input type="password" value={settingsData.api_key || ""} placeholder="留空则使用环境变量" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={ifs} /></div>
