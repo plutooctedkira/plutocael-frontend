@@ -57,19 +57,15 @@ html {
 }
 
 body {
-  margin: 0;
   padding: 0;
+  margin: 0;
+  padding-top: env(safe-area-inset-top);
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: none;
   touch-action: manipulation;
-  background-color: #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  html { background-color: #0f172a; }
-  body { background-color: #0f172a; }
+  background: #F8F5F2;
 }
 
 ::-webkit-scrollbar { display: none; }
