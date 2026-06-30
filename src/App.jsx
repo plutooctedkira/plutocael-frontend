@@ -90,17 +90,6 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  useEffect(() => {
-    if (!window.visualViewport) return;
-    const onResize = () => {
-      const el = document.activeElement;
-      if (el && (el.tagName === "TEXTAREA" || el.closest("textarea"))) {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-      }
-    };
-    window.visualViewport.addEventListener("resize", onResize);
-    return () => window.visualViewport.removeEventListener("resize", onResize);
-  }, []);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
