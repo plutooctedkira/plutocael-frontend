@@ -4,8 +4,8 @@
   "description": "The coffin of Jasmine and Cael",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9f9f8",
-  "theme_color": "#c4a882",
+  "background_color": "#FAFAF8",
+  "theme_color": "#FAFAF8",
   "icons": [
     {
       "src": "/favicon.svg",

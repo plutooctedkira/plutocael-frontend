@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#c4a882" />
+    <meta name="theme-color" content="#FAFAF8" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="plutocael" />
@@ -13,12 +13,17 @@
     <title>plutocael</title>
   </head>
   <body>
+    <div id="top-cover" style="position:fixed;top:0;left:0;right:0;height:48px;background:#FAFAF8;z-index:9999;pointer-events:none"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       }
+      setTimeout(() => {
+        const cover = document.getElementById('top-cover');
+        if (cover) cover.style.display = 'none';
+      }, 1200);
     </script>
   </body>
 </html>
