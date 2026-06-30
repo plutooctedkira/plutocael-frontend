@@ -78,6 +78,11 @@ export default function PlutocaelChat() {
   const [gatewayStats, setGatewayStats] = useState(null);
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
   const [mcpMemories, setMcpMemories] = useState([]);
+  const [mcpTools, setMcpTools] = useState([]);
+  const [mcpUrl, setMcpUrl] = useState("");
+  const [mcpSelectedTool, setMcpSelectedTool] = useState("");
+  const [mcpToolArgs, setMcpToolArgs] = useState("{}");
+  const [mcpToolResult, setMcpToolResult] = useState("");
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -161,10 +166,31 @@ export default function PlutocaelChat() {
   const loadMcpMemories = async () => {
     setCurrentPage("mcp");
     try {
-      const res = await fetch(API + "/mcp/memories");
+      const [statusRes, toolsRes, memRes] = await Promise.all([
+        fetch(API + "/mcp/status").then(r => r.json()),
+        fetch(API + "/mcp/tools").then(r => r.json()),
+        fetch(API + "/mcp/memories").then(r => r.json())
+      ]);
+      setMcpUrl(statusRes.url || "");
+      setMcpTools(toolsRes.tools || []);
+      setMcpMemories(memRes.data || []);
+    } catch (e) { setMcpMemories([]); setMcpTools([]); }
+  };
+
+  const handleMcpCall = async () => {
+    if (!mcpSelectedTool) return;
+    let args;
+    try { args = JSON.parse(mcpToolArgs); } catch (e) { setMcpToolResult("JSON 参数格式错误"); return; }
+    setMcpToolResult("执行中...");
+    try {
+      const res = await fetch(API + "/mcp/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tool: mcpSelectedTool, args })
+      });
       const data = await res.json();
-      setMcpMemories(data.data || []);
-    } catch (e) { setMcpMemories([]); }
+      setMcpToolResult(data.success ? data.output : data.error || "未知错误");
+    } catch (e) { setMcpToolResult("请求失败: " + e.message); }
   };
 
   const streamChat = async (sessionId, content, tempAiMsgId) => {
@@ -254,21 +280,35 @@ export default function PlutocaelChat() {
           <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.cardBg }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
-              <span style={{ fontSize: 15, fontWeight: 500 }}>MCP 记忆</span>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>MCP 管理</span>
             </div>
-            <button onClick={loadMcpMemories} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><Icon size={14}><polyline points="23 4 23 10 17 10" /></Icon> 刷新</button>
+            <button onClick={loadMcpMemories} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>刷新</button>
           </div>
-          <div style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px" }}>
+          <div style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              {mcpMemories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>{mcpMemories ? "没有从 MCP 获取到记忆" : "点击刷新载入 MCP 记忆"}</div> : mcpMemories.map((m, i) => (
-                <div key={i} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>{m.title || "无标题"}</div>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text }}>{m.content}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
-                    {m.layer && <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: COLORS.accentLight, color: COLORS.accent }}>层级: {m.layer}</span>}
-                    {m.importance != null && <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: COLORS.catLife.bg, color: COLORS.catLife.text }}>重要性: {m.importance}</span>}
-                  </div>
-                </div>))}
+              <div style={{ background: COLORS.bg, borderRadius: 12, padding: 12, marginBottom: 16, fontSize: 13 }}>
+                <span style={{ color: COLORS.textSecondary }}>服务器: </span>
+                <span style={{ fontWeight: 500 }}>{mcpUrl || '...'}</span>
+                <span style={{ marginLeft: 12, color: COLORS.textSecondary }}>工具数: </span>
+                <span style={{ fontWeight: 500 }}>{mcpTools.length}</span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>选择工具</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {mcpTools.map(t => <button key={t.name} onClick={() => { setMcpSelectedTool(t.name); setMcpToolArgs("{}"); setMcpToolResult(""); }} style={{ padding: "6px 14px", borderRadius: 20, border: mcpSelectedTool===t.name?"none":`1px solid ${COLORS.divider}`, background: mcpSelectedTool===t.name?COLORS.accent:"transparent", color: mcpSelectedTool===t.name?"#fff":COLORS.textSecondary, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>{t.name}</button>)}
+                </div>
+              </div>
+              {mcpSelectedTool && <>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>参数 (JSON)</div>
+                  <textarea value={mcpToolArgs} onChange={e => setMcpToolArgs(e.target.value)} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none", background: COLORS.bg, color: COLORS.text, fontFamily: "monospace", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+                <button onClick={handleMcpCall} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>调用</button>
+              </>}
+              {mcpToolResult && <div style={{ marginTop: 16, background: COLORS.cardBg, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.divider}`, maxHeight: 300, overflow: "auto" }}>
+                <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>返回结果</div>
+                <pre style={{ margin: 0, fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word", color: COLORS.text, fontFamily: "monospace" }}>{mcpToolResult}</pre>
+              </div>}
             </div>
           </div>
         </>) : currentPage === "chat" ? (<>
