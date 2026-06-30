@@ -77,6 +77,7 @@ export default function PlutocaelChat() {
   const [searchResults, setSearchResults] = useState([]);
   const [gatewayStats, setGatewayStats] = useState(null);
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
+  const [mcpMemories, setMcpMemories] = useState([]);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -157,6 +158,15 @@ export default function PlutocaelChat() {
     } catch (e) {}
   };
 
+  const loadMcpMemories = async () => {
+    setCurrentPage("mcp");
+    try {
+      const res = await fetch(API + "/mcp/memories");
+      const data = await res.json();
+      setMcpMemories(data.data || []);
+    } catch (e) { setMcpMemories([]); }
+  };
+
   const streamChat = async (sessionId, content, tempAiMsgId) => {
     try {
       const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content }) });
@@ -212,6 +222,7 @@ export default function PlutocaelChat() {
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
+          <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> MCP 记忆</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
         <div style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -239,7 +250,28 @@ export default function PlutocaelChat() {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
-        {currentPage === "chat" ? (<>
+        {currentPage === "mcp" ? (<>
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.cardBg }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>MCP 记忆</span>
+            </div>
+            <button onClick={loadMcpMemories} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><Icon size={14}><polyline points="23 4 23 10 17 10" /></Icon> 刷新</button>
+          </div>
+          <div style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px" }}>
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              {mcpMemories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>{mcpMemories ? "没有从 MCP 获取到记忆" : "点击刷新载入 MCP 记忆"}</div> : mcpMemories.map((m, i) => (
+                <div key={i} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>{m.title || "无标题"}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text }}>{m.content}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+                    {m.layer && <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: COLORS.accentLight, color: COLORS.accent }}>层级: {m.layer}</span>}
+                    {m.importance != null && <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: COLORS.catLife.bg, color: COLORS.catLife.text }}>重要性: {m.importance}</span>}
+                  </div>
+                </div>))}
+            </div>
+          </div>
+        </>) : currentPage === "chat" ? (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><MenuIcon /></button>
           </div>
