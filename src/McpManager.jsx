@@ -86,7 +86,7 @@ export default function McpManager() {
 
   return (
     <App>
-      <div className="p-4 max-w-lg mx-auto min-h-screen bg-[#FAFAF8]" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
+      <div className="p-4 max-w-lg mx-auto min-h-screen bg-[#FAFAF8] overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 120px)" }}>
         <Card size="small" className="mb-4 shadow-sm rounded-xl">
           <div className="flex flex-wrap gap-4 text-sm">
             <div><span className="text-gray-400">服务器: </span><span className="font-medium">{stats.url || "未连接"}</span></div>
