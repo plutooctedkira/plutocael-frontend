@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import McpManager from './McpManager';
 
 const API = "https://api.plutocael.icu/api";
 
@@ -276,42 +277,7 @@ export default function PlutocaelChat() {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
-        {currentPage === "mcp" ? (<>
-          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.cardBg }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
-              <span style={{ fontSize: 15, fontWeight: 500 }}>MCP 管理</span>
-            </div>
-            <button onClick={loadMcpMemories} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>刷新</button>
-          </div>
-          <div style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <div style={{ background: COLORS.bg, borderRadius: 12, padding: 12, marginBottom: 16, fontSize: 13 }}>
-                <span style={{ color: COLORS.textSecondary }}>服务器: </span>
-                <span style={{ fontWeight: 500 }}>{mcpUrl || '...'}</span>
-                <span style={{ marginLeft: 12, color: COLORS.textSecondary }}>工具数: </span>
-                <span style={{ fontWeight: 500 }}>{mcpTools.length}</span>
-              </div>
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>选择工具</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {mcpTools.map(t => <button key={t.name} onClick={() => { setMcpSelectedTool(t.name); setMcpToolArgs("{}"); setMcpToolResult(""); }} style={{ padding: "6px 14px", borderRadius: 20, border: mcpSelectedTool===t.name?"none":`1px solid ${COLORS.divider}`, background: mcpSelectedTool===t.name?COLORS.accent:"transparent", color: mcpSelectedTool===t.name?"#fff":COLORS.textSecondary, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>{t.name}</button>)}
-                </div>
-              </div>
-              {mcpSelectedTool && <>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>参数 (JSON)</div>
-                  <textarea value={mcpToolArgs} onChange={e => setMcpToolArgs(e.target.value)} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none", background: COLORS.bg, color: COLORS.text, fontFamily: "monospace", resize: "vertical", boxSizing: "border-box" }} />
-                </div>
-                <button onClick={handleMcpCall} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>调用</button>
-              </>}
-              {mcpToolResult && <div style={{ marginTop: 16, background: COLORS.cardBg, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.divider}`, maxHeight: 300, overflow: "auto" }}>
-                <div style={{ fontSize: 12, color: COLORS.textSecondary, marginBottom: 4 }}>返回结果</div>
-                <pre style={{ margin: 0, fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word", color: COLORS.text, fontFamily: "monospace" }}>{mcpToolResult}</pre>
-              </div>}
-            </div>
-          </div>
-        </>) : currentPage === "chat" ? (<>
+        {currentPage === "mcp" ? <McpManager /> : currentPage === "chat" ? (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><MenuIcon /></button>
           </div>
