@@ -74,6 +74,7 @@ export default function PlutocaelChat() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
+  const touchStartX = useRef(0);
 
   useEffect(() => { fetch(API + "/sessions").then(r => r.json()).then(data => { setSessions(data); if (data.length > 0 && !activeSessionId) setActiveSessionId(data[0].id); data.forEach(s => loadPreview(s.id)); }).catch(err => console.error("加载会话失败:", err)); }, []);
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
@@ -89,6 +90,25 @@ export default function PlutocaelChat() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // 从屏幕左边缘右滑打开侧边栏
+  useEffect(() => {
+    const onTouchStart = (e) => {
+      if (e.touches[0].clientX < 24) {
+        touchStartX.current = e.touches[0].clientX;
+        document.addEventListener("touchend", onTouchEnd, { once: true });
+      }
+    };
+    const onTouchEnd = (e) => {
+      const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+      if (deltaX > 60) setSidebarOpen(true);
+    };
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [setSidebarOpen]);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
