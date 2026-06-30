@@ -9,7 +9,7 @@ import mcpService from "./services/mcpService";
 export default function McpManager() {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ url: "", tools: 0, memories: 0 });
+  const [stats, setStats] = useState({ url: "", tools: 0, memories: 0, connected: false, checking: true });
 
   const [addOpen, setAddOpen] = useState(false);
   const [newServer, setNewServer] = useState({ name: "", url: "", command: "", args: "", env: "" });
@@ -25,11 +25,13 @@ export default function McpManager() {
   const load = async () => {
     setLoading(true);
     try {
-      const [serverList, toolsList, memories] = await Promise.all([
+      const [statusData, serverList, toolsList, memories] = await Promise.all([
+        mcpService.fetchStatus().catch(() => null),
         mcpService.fetchServerList().catch(() => []),
         mcpService.fetchTools().catch(() => []),
         mcpService.fetchMemories().catch(() => [])
       ]);
+      const connected = statusData && statusData.url && toolsList.length > 0;
 
       // 合并 mcp_config.json 和实时工具数据
       const merged = serverList.length > 0
@@ -49,9 +51,11 @@ export default function McpManager() {
 
       setServers(merged);
       setStats({
-        url: serverList[0]?.url || "https://mcp.plutocael.icu/mcp",
+        url: serverList[0]?.url || statusData?.url || "https://mcp.plutocael.icu/mcp",
         tools: toolsList.length,
-        memories: memories.length
+        memories: memories.length,
+        connected,
+        checking: false
       });
     } catch (e) {
       message.error("加载失败");
@@ -89,6 +93,7 @@ export default function McpManager() {
       <div className="p-4 max-w-lg mx-auto min-h-screen bg-[#FAFAF8] overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 120px)" }}>
         <Card size="small" className="mb-4 shadow-sm rounded-xl">
           <div className="flex flex-wrap gap-4 text-sm">
+            <div><Tag color={stats.checking ? "default" : stats.connected ? "green" : "red"} className="text-xs">{stats.checking ? "检测中..." : stats.connected ? "● 已连接" : "○ 未连接"}</Tag></div>
             <div><span className="text-gray-400">服务器: </span><span className="font-medium">{stats.url || "未连接"}</span></div>
             <div><span className="text-gray-400">工具数: </span><span className="font-medium">{stats.tools}</span></div>
             <div><span className="text-gray-400">记忆数: </span><span className="font-medium">{stats.memories}</span></div>
