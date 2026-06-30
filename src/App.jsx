@@ -96,7 +96,7 @@ export default function PlutocaelChat() {
   // 从屏幕左边缘右滑打开侧边栏（跟随手指实时拖拽）
   useEffect(() => {
     const onTouchStart = (e) => {
-      if (sidebarOpen || e.touches[0].clientX > 24) return;
+      if (sidebarOpen) return;
       isDragging.current = true;
       touchStartX.current = e.touches[0].clientX;
     };
