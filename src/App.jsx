@@ -111,6 +111,8 @@ export default function PlutocaelChat() {
   useEffect(() => {
     const onTouchStart = (e) => {
       if (sidebarOpen) return;
+      // 只在屏幕左边缘 24px 内起手才触发侧边栏拖拽，避免误触
+      if (e.touches[0].clientX > 24) return;
       isDragging.current = true;
       touchStartX.current = e.touches[0].clientX;
     };
@@ -200,9 +202,9 @@ export default function PlutocaelChat() {
     try {
       const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content }) });
       if (!res.ok) { const e = await res.json(); setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + (e.error || res.statusText) } : m)); return; }
-      const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = "", fullText = "";
+      const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = "", fullText = "", fullThinking = "";
       while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop();
-        for (const line of lines) { if (!line.startsWith("data: ")) continue; try { const ev = JSON.parse(line.slice(6)); if (ev.type === "text") { fullText += ev.text; const t = fullText; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: t } : m)); } else if (ev.type === "error") { setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + ev.text } : m)); } } catch (e) {} } }
+        for (const line of lines) { if (!line.startsWith("data: ")) continue; try { const ev = JSON.parse(line.slice(6)); if (ev.type === "text") { fullText += ev.text; const t = fullText; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: t } : m)); } else if (ev.type === "thinking") { fullThinking += ev.text; const th = fullThinking; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, reasoning_content: th } : m)); } else if (ev.type === "error") { setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + ev.text } : m)); } } catch (e) {} } }
       if (!fullText) setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "（空回复）" } : m));
     } catch (err) { setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "网络错误: " + err.message } : m)); }
   };
@@ -255,7 +257,7 @@ export default function PlutocaelChat() {
           <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> MCP 记忆</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
-        <div style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
           {currentPage === "chat" && (<>
             <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textSecondary, padding: "8px 8px 6px", letterSpacing: "0.05em", textTransform: "uppercase" }}>最近对话</div>
             {sessions.length === 0 ? <div style={{ padding: "12px 8px", fontSize: 13, color: COLORS.placeholder }}>还没有对话</div> : sessions.map(s => (
@@ -279,7 +281,7 @@ export default function PlutocaelChat() {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
         {currentPage === "mcp" ? <McpManager /> : currentPage === "chat" ? (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><MenuIcon /></button>
@@ -302,6 +304,10 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
+                      {!isUser && msg.reasoning_content && <details style={{ margin: "0 16px 8px", fontSize: 13, color: COLORS.textSecondary }}>
+                        <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>💭 思考过程</summary>
+                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.accentLight, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto" }}>{msg.reasoning_content}</div>
+                      </details>}
                       <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
                         <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
@@ -334,7 +340,7 @@ export default function PlutocaelChat() {
           <div style={{ padding: "12px 20px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
             {["全部", ...DEFAULT_CATEGORIES].map(cat => (<button key={cat} onClick={() => setMemoryFilter(cat)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat ? COLORS.accent : "transparent", color: memoryFilter === cat ? "#fff" : COLORS.textSecondary }}>{cat}</button>))}
           </div>
-          <div style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
               {memories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有记忆，点击右上角添加</div> : memories.map(m => (
                 <div key={m.id} onClick={() => setExpandedMemoryId(expandedMemoryId === m.id ? null : m.id)} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}`, cursor: "pointer" }}>
@@ -405,6 +411,13 @@ export default function PlutocaelChat() {
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API 地址</label><input type="text" value={settingsData.api_base_url || ""} placeholder="留空则使用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API Key</label><input type="password" value={settingsData.api_key || ""} placeholder="留空则使用环境变量" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>模型</label><input type="text" value={settingsData.model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={ifs} /></div>
+              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <label style={{ fontSize: 13, color: COLORS.text, display: "block" }}>Thinking 思考模式</label>
+                  <span style={{ fontSize: 12, color: COLORS.placeholder }}>开启后 Cael 会先思考再回答（思考过程可展开查看，开启时温度设置不生效）</span>
+                </div>
+                <input type="checkbox" checked={!!settingsData.enable_thinking} onChange={e => setSettingsData({ ...settingsData, enable_thinking: e.target.checked ? 1 : 0 })} style={{ width: 20, height: 20, accentColor: COLORS.accent, cursor: "pointer", flexShrink: 0, marginLeft: 12 }} />
+              </div>
               <div style={{ height: 1, background: COLORS.divider, margin: "16px 0" }} />
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>温度 ({settingsData.temperature})</label><input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} style={{ width: "100%" }} /></div>
               <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
