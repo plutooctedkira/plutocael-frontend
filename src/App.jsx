@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 
-const API = "https://api.plutocael.icu/api";
+// 开发时走 "/api"（由 vite.config.js 代理到本地后端 3000 端口），
+// 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
+const API = import.meta.env.VITE_API_BASE || "/api";
 
 const COLORS = {
   bg: "#FAFAF8",
@@ -402,7 +404,7 @@ export default function PlutocaelChat() {
             {settingsTab === "general" && <>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API 地址</label><input type="text" value={settingsData.api_base_url || ""} placeholder="留空则使用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API Key</label><input type="password" value={settingsData.api_key || ""} placeholder="留空则使用环境变量" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={ifs} /></div>
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>模型</label><input type="text" value={settingsData.model || ""} placeholder="如 claude-sonnet-4-20250514" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={ifs} /></div>
+              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>模型</label><input type="text" value={settingsData.model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={ifs} /></div>
               <div style={{ height: 1, background: COLORS.divider, margin: "16px 0" }} />
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>温度 ({settingsData.temperature})</label><input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} style={{ width: "100%" }} /></div>
               <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
