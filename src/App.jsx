@@ -5,36 +5,50 @@ import McpManager from './McpManager';
 // 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
 const API = import.meta.env.VITE_API_BASE || "/api";
 
-// Claude 官方 app 风格配色：象牙白底 + 陶土橘强调 + 暖灰层次
-const COLORS = {
-  bg: "#F5F4EE",
-  sidebar: "#F0EEE6",
-  sidebarBorder: "#E5E1D8",
-  sidebarHover: "#E8E5DC",
-  sidebarActive: "#D97757",
-  sidebarActiveText: "#FFFFFF",
-  input: "#FFFFFF",
-  inputBorder: "#DAD5C9",
-  userBubble: "#F0EEE6",
-  userBubbleText: "#1F1E1D",
-  text: "#1F1E1D",
-  textSecondary: "#6E6A63",
-  placeholder: "#A8A296",
-  accent: "#D97757",
-  accentHover: "#C4623F",
-  accentLight: "#F5E8E0",
-  buttonHover: "#E8E4DA",
-  danger: "#C0392B",
-  divider: "#E5E1D8",
-  cardBg: "#FFFFFF",
-  catLife: { bg: "#FFF3E6", text: "#D4804A" },
-  catDev: { bg: "#E8F0FE", text: "#4A7FD4" },
-  catFiction: { bg: "#F3E8FE", text: "#8A4AD4" },
-  catWork: { bg: "#E6F9EE", text: "#3AAF6B" },
-  catDefault: { bg: "#F0F0F0", text: "#6B6B6B" },
+// 多主题系统：claude（Claude官方米白）/ dark（夜间）/ rose（玫瑰）
+const THEMES = {
+  claude: {
+    label: "米白",
+    bg: "#F5F4EE", sidebar: "#F0EEE6", sidebarBorder: "#E5E1D8", sidebarHover: "#E8E5DC",
+    sidebarActive: "#D97757", sidebarActiveText: "#FFFFFF",
+    input: "#FFFFFF", inputBorder: "#DAD5C9",
+    userBubble: "#F0EEE6", userBubbleText: "#1F1E1D",
+    text: "#1F1E1D", textSecondary: "#6E6A63", placeholder: "#A8A296",
+    accent: "#D97757", accentHover: "#C4623F", accentLight: "#F5E8E0",
+    buttonHover: "#E8E4DA", danger: "#C0392B", divider: "#E5E1D8", cardBg: "#FFFFFF",
+    glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
+  },
+  dark: {
+    label: "夜间",
+    bg: "#262624", sidebar: "#1F1E1D", sidebarBorder: "#3A3936", sidebarHover: "#32312E",
+    sidebarActive: "#D97757", sidebarActiveText: "#FFFFFF",
+    input: "#30302E", inputBorder: "#4A4844",
+    userBubble: "#3A3936", userBubbleText: "#ECEAE5",
+    text: "#ECEAE5", textSecondary: "#A8A49C", placeholder: "#6E6A63",
+    accent: "#D97757", accentHover: "#E08B6D", accentLight: "#4A3A32",
+    buttonHover: "#3A3936", danger: "#E06C5B", divider: "#3A3936", cardBg: "#30302E",
+    glass: "rgba(48,48,46,0.7)", glassHover: "rgba(58,57,54,0.95)",
+  },
+  rose: {
+    label: "玫瑰",
+    bg: "#FDF0F4", sidebar: "#F9E8EE", sidebarBorder: "#F0D9E2", sidebarHover: "#F5DFE7",
+    sidebarActive: "#D4849A", sidebarActiveText: "#FFFFFF",
+    input: "#FFFFFF", inputBorder: "#E8CBD6",
+    userBubble: "#F5DFE7", userBubbleText: "#3D2A32",
+    text: "#3D2A32", textSecondary: "#8A6B77", placeholder: "#C0A3AE",
+    accent: "#D4849A", accentHover: "#C06B84", accentLight: "#FAE3EA",
+    buttonHover: "#F0D9E2", danger: "#C0392B", divider: "#F0D9E2", cardBg: "#FFFFFF",
+    glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
+  },
 };
-const CATEGORY_COLORS = { "生活": COLORS.catLife, "开发日志": COLORS.catDev, "小说灵感": COLORS.catFiction, "工作计划": COLORS.catWork };
-function getCatColor(cat) { return CATEGORY_COLORS[cat] || COLORS.catDefault; }
+const CAT_COLORS = {
+  "生活": { bg: "#FFF3E6", text: "#D4804A" },
+  "开发日志": { bg: "#E8F0FE", text: "#4A7FD4" },
+  "小说灵感": { bg: "#F3E8FE", text: "#8A4AD4" },
+  "工作计划": { bg: "#E6F9EE", text: "#3AAF6B" },
+};
+const CAT_DEFAULT = { bg: "#F0F0F0", text: "#6B6B6B" };
+function getCatColor(cat) { return CAT_COLORS[cat] || CAT_DEFAULT; }
 
 const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>);
 function SendIcon() { return <Icon size={18}><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></Icon>; }
@@ -53,6 +67,8 @@ function StarIcon({ filled }) { return <Icon size={14}>{filled ? <polygon points
 const DEFAULT_CATEGORIES = ["生活", "开发日志", "小说灵感", "工作计划"];
 
 export default function PlutocaelChat() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("pluto_theme") || "claude");
+  const COLORS = THEMES[theme] || THEMES.claude;
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -90,6 +106,19 @@ export default function PlutocaelChat() {
   const [mcpToolResult, setMcpToolResult] = useState("");
   const [boardMessages, setBoardMessages] = useState([]);
   const [newBoardMsg, setNewBoardMsg] = useState("");
+  const [pendingImage, setPendingImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // 主题切换：持久化 + 同步页面底色和状态栏颜色
+  useEffect(() => {
+    localStorage.setItem("pluto_theme", theme);
+    document.documentElement.style.background = COLORS.bg;
+    document.body.style.background = COLORS.bg;
+    const rootEl = document.getElementById("root");
+    if (rootEl) rootEl.style.background = COLORS.bg;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", COLORS.bg);
+  }, [theme]);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -206,9 +235,37 @@ export default function PlutocaelChat() {
     } catch (e) { setMcpToolResult("请求失败: " + e.message); }
   };
 
-  const streamChat = async (sessionId, content, tempAiMsgId) => {
+  // 选图：canvas 压到最长边1024再转jpeg base64，省流量省token
+  const handlePickImage = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1024;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) { const s = MAX / Math.max(width, height); width = Math.round(width * s); height = Math.round(height * s); }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      setPendingImage({ dataUrl, media_type: "image/jpeg", data: dataUrl.split(",")[1] });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+
+  // 消息展示辅助：图片消息解出 文字+图片url（本地乐观消息用imageUrl，库里的解JSON）
+  const getMsgView = (msg) => {
+    if (msg.msg_type !== "image") return { text: msg.content, img: null };
+    if (msg.imageUrl) return { text: msg.content, img: msg.imageUrl };
+    try { const d = JSON.parse(msg.content); return { text: d.text, img: `data:${d.media_type};base64,${d.data}` }; } catch (e) { return { text: msg.content, img: null }; }
+  };
+
+  const streamChat = async (sessionId, content, tempAiMsgId, image = null) => {
     try {
-      const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content }) });
+      const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content, image }) });
       if (!res.ok) { const e = await res.json(); setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + (e.error || res.statusText) } : m)); return; }
       const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = "", fullText = "", fullThinking = "", toolLog = "";
       while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop();
@@ -218,15 +275,16 @@ export default function PlutocaelChat() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !pendingImage) || loading) return;
     let sid = activeSessionId;
     if (!sid) { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); sid = s.id; } catch (err) { return; } }
-    const content = input; setInput("");
-    const uMsg = { id: Date.now(), role: "user", content, created_at: new Date().toISOString() };
+    const content = input; const image = pendingImage;
+    setInput(""); setPendingImage(null);
+    const uMsg = { id: Date.now(), role: "user", content, created_at: new Date().toISOString(), ...(image ? { msg_type: "image", imageUrl: image.dataUrl } : {}) };
     const aMsg = { id: Date.now() + 1, role: "assistant", content: "", created_at: new Date().toISOString() };
     setMessages(prev => [...prev, uMsg, aMsg]);
-    if (!previews[sid]) setPreviews(prev => ({ ...prev, [sid]: content.substring(0, 30) + (content.length > 30 ? "..." : "") }));
-    setLoading(true); await streamChat(sid, content, aMsg.id); setLoading(false);
+    if (!previews[sid]) { const pv = content || "[图片]"; setPreviews(prev => ({ ...prev, [sid]: pv.substring(0, 30) + (pv.length > 30 ? "..." : "") })); }
+    setLoading(true); await streamChat(sid, content, aMsg.id, image ? { media_type: image.media_type, data: image.data } : null); setLoading(false);
   };
 
   const handleRetry = async (msg) => {
@@ -287,7 +345,7 @@ export default function PlutocaelChat() {
         </div>
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
           <div style={{ padding: "4px 12px", display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 12 }}>
-            <button onClick={() => { handleOpenSettings(); setSidebarOpen(false); }} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><SettingsIcon /></button>
+            <button onClick={() => { handleOpenSettings(); setSidebarOpen(false); }} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><SettingsIcon /></button>
             <button onClick={handleNewSession} style={{ width: 45, height: 45, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.1)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
           </div>
         </div>
@@ -322,7 +380,7 @@ export default function PlutocaelChat() {
           </div>
         </>) : currentPage === "chat" ? (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><MenuIcon /></button>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px" }}>
@@ -330,6 +388,7 @@ export default function PlutocaelChat() {
               {messages.map((msg, i) => {
                 const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000);
                 const isUser = msg.role === "user";
+                const view = getMsgView(msg);
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
                   <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "80%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
@@ -348,11 +407,14 @@ export default function PlutocaelChat() {
                       </details>}
                       {!isUser && msg.tool_log && <details style={{ margin: "0 16px 8px", fontSize: 13, color: COLORS.textSecondary }}>
                         <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
-                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: "#F0EEE6", borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
+                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
                       </details>}
-                      <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                      <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                        {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 12, display: "block", marginBottom: view.text ? 8 : 0 }} />}
+                        {view.text}
+                      </div>
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                        <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
+                        <button onClick={() => navigator.clipboard.writeText(view.text || "")} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
                         {isUser && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
                         {!isUser && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
                         {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, alignSelf: "center", marginLeft: 4, opacity: 0.8 }}>{formatFullTime(msg.created_at)}</span>}
@@ -366,9 +428,15 @@ export default function PlutocaelChat() {
           </div>
           <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
             <div style={{ maxWidth: 768, margin: "0 auto" }}>
-              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 16px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
-                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
-                <button onClick={handleSend} disabled={!input.trim() || loading} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: input.trim() && !loading ? COLORS.accent : COLORS.accentLight, color: input.trim() && !loading ? "#fff" : COLORS.placeholder, cursor: input.trim() && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 12, marginRight: 12 }}><SendIcon /></button>
+              {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
+                <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
+                <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              </div>}
+              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: theme === "dark" ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickImage} />
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="发图片" style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 10 }}><Icon size={18}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></Icon></button>
+                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0 8px 8px", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
+                <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 12, marginRight: 12 }}><SendIcon /></button>
               </div>
             </div>
           </div>
@@ -451,6 +519,17 @@ export default function PlutocaelChat() {
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
             {settingsTab === "general" && <>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 8 }}>主题</label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {Object.entries(THEMES).map(([key, t]) => (
+                    <button key={key} onClick={() => setTheme(key)} style={{ width: 72, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
+                      <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API 地址</label><input type="text" value={settingsData.api_base_url || ""} placeholder="留空则使用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API Key</label><input type="password" value={settingsData.api_key || ""} placeholder="留空则使用环境变量" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={ifs} /></div>
               <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>模型</label><input type="text" value={settingsData.model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={ifs} /></div>
