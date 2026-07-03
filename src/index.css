@@ -1,7 +1,7 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fafaf8;
+  --bg: #F5F4EE;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
@@ -53,7 +53,7 @@
 html {
   height: 100vh;
   overflow: hidden;
-  background: #fafaf8;
+  background: #F5F4EE;
 }
 
 body {
@@ -64,7 +64,7 @@ body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: none;
   touch-action: manipulation;
-  background: #fafaf8;
+  background: #F5F4EE;
   position: relative;
 }
 
@@ -92,14 +92,14 @@ html, body, #root {
 @media (hover: hover) and (pointer: fine) {
   .msg-scroll, .panel-scroll {
     scrollbar-width: thin !important;
-    scrollbar-color: #D9D6D0 transparent;
+    scrollbar-color: #D5CFC2 transparent;
   }
   .msg-scroll::-webkit-scrollbar, .panel-scroll::-webkit-scrollbar {
     display: block;
     width: 6px;
   }
   .msg-scroll::-webkit-scrollbar-thumb, .panel-scroll::-webkit-scrollbar-thumb {
-    background: #D9D6D0;
+    background: #D5CFC2;
     border-radius: 3px;
   }
   .msg-scroll::-webkit-scrollbar-track, .panel-scroll::-webkit-scrollbar-track {
@@ -139,7 +139,7 @@ html, body, #root {
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
-  background: #fafaf8;
+  background: #F5F4EE;
 }
 
 h1,

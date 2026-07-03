@@ -5,26 +5,27 @@ import McpManager from './McpManager';
 // 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
 const API = import.meta.env.VITE_API_BASE || "/api";
 
+// Claude 官方 app 风格配色：象牙白底 + 陶土橘强调 + 暖灰层次
 const COLORS = {
-  bg: "#FAFAF8",
-  sidebar: "#F8F5F2",
-  sidebarBorder: "#E8E5E0",
-  sidebarHover: "#F0ECE7",
-  sidebarActive: "#D5C4B5",
+  bg: "#F5F4EE",
+  sidebar: "#F0EEE6",
+  sidebarBorder: "#E5E1D8",
+  sidebarHover: "#E8E5DC",
+  sidebarActive: "#D97757",
   sidebarActiveText: "#FFFFFF",
   input: "#FFFFFF",
-  inputBorder: "#D9D6D0",
-  userBubble: "#C4A08A",
-  userBubbleText: "#FFFFFF",
-  text: "#1A1A1A",
-  textSecondary: "#6B6B6B",
-  placeholder: "#A3A3A3",
-  accent: "#C4A08A",
-  accentHover: "#B08E7A",
-  accentLight: "#F0ECE7",
-  buttonHover: "#E8E3DB",
-  danger: "#DC4A4A",
-  divider: "#E8E5E0",
+  inputBorder: "#DAD5C9",
+  userBubble: "#F0EEE6",
+  userBubbleText: "#1F1E1D",
+  text: "#1F1E1D",
+  textSecondary: "#6E6A63",
+  placeholder: "#A8A296",
+  accent: "#D97757",
+  accentHover: "#C4623F",
+  accentLight: "#F5E8E0",
+  buttonHover: "#E8E4DA",
+  danger: "#C0392B",
+  divider: "#E5E1D8",
   cardBg: "#FFFFFF",
   catLife: { bg: "#FFF3E6", text: "#D4804A" },
   catDev: { bg: "#E8F0FE", text: "#4A7FD4" },
@@ -259,7 +260,7 @@ export default function PlutocaelChat() {
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: isDragging.current ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: isDragging.current ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
-        <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 18, fontWeight: 600, color: COLORS.accent }}>Plutocael</div></div>
+        <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
@@ -347,7 +348,7 @@ export default function PlutocaelChat() {
                       </details>}
                       {!isUser && msg.tool_log && <details style={{ margin: "0 16px 8px", fontSize: 13, color: COLORS.textSecondary }}>
                         <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
-                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: "#EEF4FA", borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
+                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: "#F0EEE6", borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
                       </details>}
                       <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.content}</div>
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
