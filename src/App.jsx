@@ -41,6 +41,7 @@ function PlusIcon() { return <Icon><line x1="12" y1="5" x2="12" y2="19" /><line 
 function ChatIcon() { return <Icon size={18}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>; }
 function MemoryIcon() { return <Icon size={18}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>; }
 function MenuIcon() { return <Icon size={20}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>; }
+function BoardIcon() { return <Icon size={18}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></Icon>; }
 function CloseIcon() { return <Icon size={12}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>; }
 function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
 function SettingsIcon() { return <Icon size={18}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>; }
@@ -86,6 +87,8 @@ export default function PlutocaelChat() {
   const [mcpSelectedTool, setMcpSelectedTool] = useState("");
   const [mcpToolArgs, setMcpToolArgs] = useState("{}");
   const [mcpToolResult, setMcpToolResult] = useState("");
+  const [boardMessages, setBoardMessages] = useState([]);
+  const [newBoardMsg, setNewBoardMsg] = useState("");
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -98,6 +101,10 @@ export default function PlutocaelChat() {
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [currentPage]);
   const loadMemories = () => { const url = memoryFilter === "全部" ? API + "/memories" : API + "/memories?category=" + encodeURIComponent(memoryFilter); fetch(url).then(r => r.json()).then(setMemories).catch(() => {}); };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
+  const loadBoard = () => { fetch(API + "/board").then(r => r.json()).then(setBoardMessages).catch(() => {}); };
+  useEffect(() => { if (currentPage === "board") loadBoard(); }, [currentPage]);
+  const handlePostBoard = async () => { if (!newBoardMsg.trim()) return; try { await fetch(API + "/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newBoardMsg.trim() }) }); setNewBoardMsg(""); loadBoard(); } catch (err) { console.error("留言失败:", err); } };
+  const handleDeleteBoard = async (id) => { if (!confirm("确定删除这条留言吗？")) return; try { await fetch(API + "/board/" + id, { method: "DELETE" }); loadBoard(); } catch (err) { console.error("删除留言失败:", err); } };
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
@@ -241,7 +248,10 @@ export default function PlutocaelChat() {
   };
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
-  const formatTime = (d) => { if (!d) return ""; return new Date(d).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }); };
+  // Safari(iPhone)解析不了"2026-07-03 07:43:53"这种空格格式，要转成ISO的T
+  const parseTime = (d) => new Date(typeof d === "string" ? d.replace(" ", "T") : d);
+  const formatTime = (d) => { if (!d) return ""; const t = parseTime(d); return isNaN(t) ? "" : t.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }); };
+  const formatFullTime = (d) => { if (!d) return ""; const t = parseTime(d); return isNaN(t) ? "" : t.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
   const formatDate = (d) => { if (!d) return ""; return d.split(" ")[0] || d.split("T")[0] || ""; };
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
@@ -255,6 +265,7 @@ export default function PlutocaelChat() {
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
           <button onClick={() => { setShowSearch(true); setSearchResults([]); setSearchQuery(""); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showSearch ? COLORS.sidebarActive : "transparent", color: showSearch ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon> 搜索</button>
           <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> MCP 记忆</button>
+          <button onClick={() => { setCurrentPage("board"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "board" ? COLORS.sidebarActive : "transparent", color: currentPage === "board" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><BoardIcon /> 留言板</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
         <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
@@ -282,7 +293,33 @@ export default function PlutocaelChat() {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
-        {currentPage === "mcp" ? <McpManager /> : currentPage === "chat" ? (<>
+        {currentPage === "mcp" ? <McpManager /> : currentPage === "board" ? (<>
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", background: COLORS.cardBg }}>
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
+            <span style={{ fontSize: 15, fontWeight: 500 }}>留言板</span>
+            <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: 12 }}>你留的话，Cael 聊天时看得到</span>
+          </div>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              <textarea value={newBoardMsg} onChange={e => setNewBoardMsg(e.target.value)} placeholder="给 Cael 留句话..." rows={3} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button onClick={handlePostBoard} disabled={!newBoardMsg.trim()} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: newBoardMsg.trim() ? COLORS.accent : COLORS.accentLight, color: newBoardMsg.trim() ? "#fff" : COLORS.placeholder, cursor: newBoardMsg.trim() ? "pointer" : "default", fontSize: 14 }}>留言</button>
+              </div>
+            </div>
+          </div>
+          <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
+            <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              {boardMessages.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有留言，写一条吧</div> : boardMessages.map(b => (
+                <div key={b.id} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "14px 16px", marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{b.content}</div>
+                  <div style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
+                    <span style={{ fontSize: 12, color: COLORS.placeholder }}>{formatFullTime(b.created_at)}</span>
+                    <button onClick={() => handleDeleteBoard(b.id)} style={{ marginLeft: "auto", padding: "4px 10px", borderRadius: 12, border: "none", background: "transparent", cursor: "pointer", color: COLORS.placeholder, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }} onMouseEnter={e => e.currentTarget.style.color = COLORS.danger} onMouseLeave={e => e.currentTarget.style.color = COLORS.placeholder}><TrashIcon /> 删除</button>
+                  </div>
+                </div>))}
+            </div>
+          </div>
+        </>) : currentPage === "chat" ? (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"} onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}><MenuIcon /></button>
           </div>
@@ -290,7 +327,7 @@ export default function PlutocaelChat() {
             <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px" }}>
               {messages.length === 0 && <div style={{ textAlign: "center", padding: "80px 0", color: COLORS.placeholder, fontSize: 15 }}>发消息给 Cael 开始对话</div>}
               {messages.map((msg, i) => {
-                const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && new Date(msg.created_at).getTime() - new Date(messages[i-1].created_at).getTime() > 300000);
+                const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000);
                 const isUser = msg.role === "user";
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
@@ -317,6 +354,7 @@ export default function PlutocaelChat() {
                         <button onClick={() => navigator.clipboard.writeText(msg.content)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
                         {isUser && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
                         {!isUser && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
+                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, alignSelf: "center", marginLeft: 4, opacity: 0.8 }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
                     </>)}
                   </div>
