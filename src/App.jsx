@@ -492,7 +492,7 @@ export default function PlutocaelChat() {
           <div style={{ flex: 1, overflow: "auto", maxHeight: "50vh" }}>
             {searchResults.length === 0 ? <div style={{ textAlign: "center", color: COLORS.placeholder, fontSize: 13, padding: "20px 0" }}>输入关键词搜索</div> : searchResults.map((r, i) => (
               <div key={i} style={{ background: r.type === "post" ? COLORS.cardBg : COLORS.bg, borderRadius: 12, padding: 12, marginBottom: 8, border: `1px solid ${COLORS.divider}` }}>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, marginBottom: 4 }}>{r.type === "post" ? "记忆" : "对话"}</div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, marginBottom: 4 }}>{r.type === "post" ? "记忆" : "对话"}{r.viaGraph && <span style={{ color: COLORS.accent, marginLeft: 6 }}>· 图谱关联</span>}</div>
                 <div style={{ fontSize: 13, lineHeight: 1.7, color: COLORS.text }}>{r.content}</div>
               </div>
             ))}
