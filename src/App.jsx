@@ -83,6 +83,7 @@ export default function PlutocaelChat() {
   const [settingsData, setSettingsData] = useState(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsTab, setSettingsTab] = useState("general");
+  const [settingsSection, setSettingsSection] = useState(null); // null=主列表，或分区key
   const [previews, setPreviews] = useState({});
   const [memories, setMemories] = useState([]);
   const [memoryFilter, setMemoryFilter] = useState("全部");
@@ -240,8 +241,14 @@ export default function PlutocaelChat() {
   const handleAddMemory = async () => { if (!newMemory.content.trim()) return; try { await fetch(API + "/memories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMemory) }); setNewMemory({ content: "", category: "生活", importance: 3 }); setShowAddMemory(false); loadMemories(); } catch (err) { console.error("添加记忆失败:", err); } };
   const handleUpdateMemory = async () => { if (!editingMemory || !editingMemory.content.trim()) return; try { await fetch(API + "/memories/" + editingMemory.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editingMemory.content, category: editingMemory.category, importance: editingMemory.importance }) }); setEditingMemory(null); loadMemories(); } catch (err) { console.error("更新记忆失败:", err); } };
   const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
-  const handleOpenSettings = async () => { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); setSettingsTab("general"); setShowSettings(true); } catch (err) { console.error("加载设置失败:", err); } };
-  const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); setShowSettings(false); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
+  const handleOpenSettings = async () => { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); setSettingsSection(null); setShowSettings(true); } catch (err) { console.error("加载设置失败:", err); } };
+  const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
+  // 单项自动保存：改开关/输入即刻写库，不用再手动点保存
+  const saveSetting = async (patch) => {
+    if (!settingsData) return;
+    setSettingsData({ ...settingsData, ...patch });
+    try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) }); } catch (err) { console.error("保存失败:", err); }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -547,15 +554,37 @@ export default function PlutocaelChat() {
 
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
         <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)", animation: "slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1)" }} onClick={e => e.stopPropagation()}>
-          <div style={{ padding: "20px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>设置</div>
-            <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
-          </div>
-          <div style={{ display: "flex", gap: 4, padding: "16px 24px 0", borderBottom: `1px solid ${COLORS.divider}` }}>
-            {[["general", "通用"], ["prompt", "Prompt"], ["usage", "用量"]].map(([key, label]) => <button key={key} onClick={() => { setSettingsTab(key); if (key === "usage") loadGatewayStats(); }} style={{ padding: "8px 16px", border: "none", background: "transparent", cursor: "pointer", fontSize: 13, color: settingsTab === key ? COLORS.text : COLORS.textSecondary, fontWeight: settingsTab === key ? 600 : 400, borderBottom: settingsTab === key ? `2px solid ${COLORS.accent}` : "2px solid transparent", marginBottom: -1 }}>{label}</button>)}
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-            {settingsTab === "usage" && <>
+          {(() => {
+            const SECTIONS = [
+              { key: "appearance", label: "外观", desc: "主题 · 壁纸 · 气泡", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
+              { key: "api", label: "API 连接", desc: "地址 · 密钥 · 模型", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
+              { key: "behavior", label: "对话行为", desc: "思考模式 · MCP 工具", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
+              { key: "params", label: "模型参数", desc: "温度 · 上下文 · tokens", icon: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></> },
+              { key: "prompt", label: "Cael 人设", desc: (settingsData.system_prompt || "").length > 0 ? "已设置" : "未设置", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
+              { key: "usage", label: "用量统计", desc: "token · 花费", icon: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></> },
+            ];
+            const cur = SECTIONS.find(s => s.key === settingsSection);
+            return <>
+              <div style={{ padding: "20px 20px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: `1px solid ${COLORS.divider}` }}>
+                {settingsSection && <button onClick={() => setSettingsSection(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.text, padding: 4, display: "flex" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>}
+                <div style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>{cur ? cur.label : "设置"}</div>
+                <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
+              </div>
+              {!settingsSection && <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+                <div style={{ background: COLORS.bg, borderRadius: 14, overflow: "hidden" }}>
+                  {SECTIONS.map((s, i) => (
+                    <button key={s.key} onClick={() => { setSettingsSection(s.key); if (s.key === "usage") loadGatewayStats(); }} style={{ width: "100%", padding: "14px 16px", border: "none", borderBottom: i < SECTIONS.length - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" }}>
+                      <span style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.accentLight, color: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={19}>{s.icon}</Icon></span>
+                      <span style={{ flex: 1, minWidth: 0 }}><span style={{ fontSize: 15, color: COLORS.text, display: "block" }}>{s.label}</span><span style={{ fontSize: 12, color: COLORS.placeholder, display: "block", marginTop: 1 }}>{s.desc}</span></span>
+                      <Icon size={18}><polyline points="9 18 15 12 9 6" /></Icon>
+                    </button>
+                  ))}
+                </div>
+              </div>}
+            </>;
+          })()}
+          {settingsSection && <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+            {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); setTimeout(loadGatewayStats, 50); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
               {gatewayStats ? (<>
                 <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
@@ -573,8 +602,8 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {settingsTab === "general" && (() => {
-              const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase" };
+            {["appearance", "api", "behavior", "params"].includes(settingsSection) && (() => {
+              const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20 };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
               const rowLast = { ...row, borderBottom: "none" };
@@ -588,8 +617,7 @@ export default function PlutocaelChat() {
                 </button>
               );
               return <>
-                {/* 外观 */}
-                <div style={secTitle}>外观</div>
+                {settingsSection === "appearance" && <>
                 <div style={listCard}>
                   <div style={rowCol}>
                     <div style={{ ...lbl, marginBottom: 10 }}>主题</div>
@@ -617,63 +645,60 @@ export default function PlutocaelChat() {
                     <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
                     <Toggle on={transparentBubble} onChange={() => setTransparentBubble(v => !v)} />
                   </div>
-                </div>
+                </div></>}
 
-                {/* API 连接 */}
-                <div style={secTitle}>API 连接</div>
+                {settingsSection === "api" && <>
                 <div style={listCard}>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
-                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} onBlur={e => saveSetting({ api_base_url: e.target.value })} style={rowInput} />
                   </div>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
-                    <input type="password" value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={rowInput} />
+                    <input type="password" value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} onBlur={e => saveSetting({ api_key: e.target.value })} style={rowInput} />
                   </div>
                   <div style={rowLast}>
                     <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
-                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} onBlur={e => saveSetting({ model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 三个框都可留空——留空就用服务器 .env 里配好的。Key 框只填 sk- 开头的密钥，别把网址填进来。</div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 三个框都可留空——留空就用服务器 .env 里配好的。Key 框只填 sk- 开头的密钥，别把网址填进来。改完点别处即自动保存。</div></>}
 
-                {/* 行为 */}
-                <div style={secTitle}>行为</div>
+                {settingsSection === "behavior" && <>
                 <div style={listCard}>
                   <div style={row}>
                     <div><div style={lbl}>Thinking 思考模式</div><div style={hint}>先思考再回答，过程可展开（开启时温度不生效）</div></div>
-                    <Toggle on={!!settingsData.enable_thinking} onChange={() => setSettingsData({ ...settingsData, enable_thinking: settingsData.enable_thinking ? 0 : 1 })} />
+                    <Toggle on={!!settingsData.enable_thinking} onChange={() => saveSetting({ enable_thinking: settingsData.enable_thinking ? 0 : 1 })} />
                   </div>
                   <div style={rowLast}>
-                    <div><div style={lbl}>MCP 工具</div><div style={hint}>让 Cael 自己调记忆工具（建议配好人设后再开）</div></div>
-                    <Toggle on={!!settingsData.enable_mcp} onChange={() => setSettingsData({ ...settingsData, enable_mcp: settingsData.enable_mcp ? 0 : 1 })} />
+                    <div><div style={lbl}>MCP 工具</div><div style={hint}>让 Cael 自己调记忆工具，点一下即刻生效</div></div>
+                    <Toggle on={!!settingsData.enable_mcp} onChange={() => saveSetting({ enable_mcp: settingsData.enable_mcp ? 0 : 1 })} />
                   </div>
-                </div>
+                </div></>}
 
-                {/* 模型参数 */}
-                <div style={secTitle}>模型参数</div>
+                {settingsSection === "params" && <>
                 <div style={listCard}>
                   <div style={rowCol}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>温度</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.temperature}</span></div>
-                    <input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
+                    <input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} onMouseUp={e => saveSetting({ temperature: parseFloat(e.target.value) })} onTouchEnd={e => saveSetting({ temperature: parseFloat(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
                   </div>
                   <div style={row}>
                     <div style={lbl}>上下文轮数</div>
-                    <input type="number" min="1" max="50" value={settingsData.max_context_rounds} onChange={e => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) || 10 })} style={{ ...rowInput, width: 60, flex: "none" }} />
+                    <input type="number" min="1" max="50" value={settingsData.max_context_rounds} onChange={e => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) || 10 })} onBlur={e => saveSetting({ max_context_rounds: parseInt(e.target.value) || 10 })} style={{ ...rowInput, width: 60, flex: "none" }} />
                   </div>
                   <div style={rowLast}>
                     <div style={lbl}>最大回复 tokens</div>
-                    <input type="number" min="100" max="8000" value={settingsData.max_reply_tokens} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) || 2000 })} style={{ ...rowInput, width: 70, flex: "none" }} />
+                    <input type="number" min="100" max="8000" value={settingsData.max_reply_tokens} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) || 2000 })} onBlur={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) || 2000 })} style={{ ...rowInput, width: 70, flex: "none" }} />
                   </div>
-                </div>
+                </div></>}
               </>;
             })()}
-            {settingsTab === "prompt" && <div><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>System Prompt</label><textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={16} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} /></div>}
-          </div>
-          <div style={{ padding: "16px 24px", borderTop: `1px solid ${COLORS.divider}`, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <button onClick={() => setShowSettings(false)} style={{ padding: "8px 20px", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 20, background: "transparent", cursor: "pointer", fontSize: 14, color: COLORS.textSecondary }}>取消</button>
-            <button onClick={handleSaveSettings} disabled={settingsSaving} style={{ padding: "8px 20px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, opacity: settingsSaving ? 0.6 : 1 }}>{settingsSaving ? "保存中..." : "保存"}</button>
-          </div>
+            {settingsSection === "prompt" && <div>
+              <label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>Cael 的人设 / System Prompt</label>
+              <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} onBlur={e => saveSetting({ system_prompt: e.target.value })} rows={14} placeholder="写下 Cael 是谁、怎么说话、有什么规则..." style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} />
+              <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 8 }}>💡 想让 Cael 主动查记忆，可加一句："聊到过去的约定、事件、Jasmine 的偏好时，先查记忆库再回答。"改完点别处即自动保存。</div>
+            </div>}
+          </div>}
         </div>
       </div>}
 
