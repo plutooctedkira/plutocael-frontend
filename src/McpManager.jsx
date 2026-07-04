@@ -10,6 +10,7 @@ export default function McpManager({ onMenu, onBack }) {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ url: "", tools: 0, memories: 0, connected: false, checking: true });
+  const [memList, setMemList] = useState([]);
 
   const [addOpen, setAddOpen] = useState(false);
   const [newServer, setNewServer] = useState({ name: "", url: "", command: "", args: "", env: "" });
@@ -50,6 +51,7 @@ export default function McpManager({ onMenu, onBack }) {
           : [];
 
       setServers(merged);
+      setMemList(Array.isArray(memories) ? memories : []);
       setStats({
         url: serverList[0]?.url || statusData?.url || "https://mcp.plutocael.icu/mcp",
         tools: toolsList.length,
@@ -131,6 +133,22 @@ export default function McpManager({ onMenu, onBack }) {
             </Card>
           ))}
         </Spin>
+
+        {memList.length > 0 && <div className="mt-2">
+          <div className="text-sm font-medium mb-2 px-1">记忆库内容（{memList.length} 条）</div>
+          {memList.map((m, i) => (
+            <Card key={i} size="small" className="mb-2 rounded-xl">
+              <div className="flex items-start gap-2">
+                {m.importance != null && <Tag color="orange" className="text-[11px] shrink-0">{"★".repeat(Math.max(1, Math.min(5, m.importance || 1)))}</Tag>}
+                <div className="min-w-0 flex-1">
+                  {m.title && <div className="text-sm font-medium mb-1">{m.title}</div>}
+                  <div className="text-xs text-gray-600 whitespace-pre-wrap break-words" style={{ lineHeight: 1.6 }}>{(m.content || "").slice(0, 300)}{(m.content || "").length > 300 ? "…" : ""}</div>
+                  {m.layer && <Tag className="text-[10px] mt-1">{m.layer}</Tag>}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>}
 
         <Modal title={newServer.name ? `编辑 ${newServer.name}` : "添加 MCP 服务器"} open={addOpen} onOk={handleAddServer} onCancel={() => { setAddOpen(false); setNewServer({ name: "", url: "", command: "", args: "", env: "" }); }} okText="保存" cancelText="取消" destroyOnClose>
           <div className="flex flex-col gap-3 pt-2">
