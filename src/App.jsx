@@ -662,7 +662,24 @@ export default function PlutocaelChat() {
                     <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} onBlur={e => saveSetting({ model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 三个框都可留空——留空就用服务器 .env 里配好的。Key 框只填 sk- 开头的密钥，别把网址填进来。改完点别处即自动保存。</div></>}
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 主力渠道，聊天用。三框可留空=用服务器默认。Key 框只填 sk- 开头的密钥。</div>
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
+                <div style={listCard}>
+                  <div style={row}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
+                    <input type="text" value={settingsData.cheap_api_base_url || ""} placeholder="留空=同主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_base_url: e.target.value })} onBlur={e => saveSetting({ cheap_api_base_url: e.target.value })} style={rowInput} />
+                  </div>
+                  <div style={row}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
+                    <input type="password" value={settingsData.cheap_api_key || ""} placeholder="sk- 开头，留空=用主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_key: e.target.value })} onBlur={e => saveSetting({ cheap_api_key: e.target.value })} style={rowInput} />
+                  </div>
+                  <div style={rowLast}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
+                    <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} onBlur={e => saveSetting({ cheap_model: e.target.value })} style={rowInput} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 摘要压缩、对话记忆总结这些后台活儿用它，省主力额度。三框都留空就跟主力共用。</div></>}
 
                 {settingsSection === "behavior" && <>
                 <div style={listCard}>
