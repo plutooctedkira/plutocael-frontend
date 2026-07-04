@@ -108,6 +108,9 @@ export default function PlutocaelChat() {
   const [newBoardMsg, setNewBoardMsg] = useState("");
   const [pendingImage, setPendingImage] = useState(null);
   const fileInputRef = useRef(null);
+  const wallpaperInputRef = useRef(null);
+  const [wallpaper, setWallpaper] = useState(() => localStorage.getItem("pluto_wallpaper") || "");
+  const [transparentBubble, setTransparentBubble] = useState(() => localStorage.getItem("pluto_transparent_bubble") === "1");
 
   // 主题切换：持久化 + 同步页面底色和状态栏颜色
   useEffect(() => {
@@ -119,6 +122,36 @@ export default function PlutocaelChat() {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", COLORS.bg);
   }, [theme]);
+
+  // 壁纸持久化（存localStorage，纯本地不上传服务器）
+  useEffect(() => {
+    if (wallpaper) localStorage.setItem("pluto_wallpaper", wallpaper);
+    else localStorage.removeItem("pluto_wallpaper");
+  }, [wallpaper]);
+  useEffect(() => { localStorage.setItem("pluto_transparent_bubble", transparentBubble ? "1" : "0"); }, [transparentBubble]);
+
+  // 选壁纸：压到最长边1600转jpeg存localStorage
+  const handlePickWallpaper = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1600;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) { const s = MAX / Math.max(width, height); width = Math.round(width * s); height = Math.round(height * s); }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      setWallpaper(canvas.toDataURL("image/jpeg", 0.82));
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+
+  // 用户气泡背景：透明模式或跟随主题；有壁纸时半透明玻璃更好看
+  const userBubbleBg = transparentBubble ? "transparent" : (wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -144,31 +177,41 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // 从屏幕左边缘右滑打开侧边栏（跟随手指实时拖拽）
+  // 从屏幕左边缘右滑打开侧边栏（带方向锁，避免竖滑时界面横飞）
   useEffect(() => {
+    const touchStartY = { current: 0 };
+    const locked = { current: null }; // null=未定 / 'h'=横向 / 'v'=纵向
     const onTouchStart = (e) => {
       if (sidebarOpen) return;
-      // 只在屏幕左边缘 24px 内起手才触发侧边栏拖拽，避免误触
-      if (e.touches[0].clientX > 24) return;
+      // 只在屏幕左边缘 20px 内起手才可能触发
+      if (e.touches[0].clientX > 20) return;
       isDragging.current = true;
+      locked.current = null;
       touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
     };
     const onTouchMove = (e) => {
       if (!isDragging.current) return;
-      const deltaX = e.touches[0].clientX - touchStartX.current;
-      if (deltaX > 0) setDragOffset(Math.min(280, deltaX));
-    };
-    const onTouchEnd = (e) => {
-      if (!isDragging.current) return;
-      isDragging.current = false;
-      if (dragOffset > 140) {
-        setSidebarOpen(true);
-        setDragOffset(280);
-      } else {
-        setDragOffset(0);
+      const dx = e.touches[0].clientX - touchStartX.current;
+      const dy = e.touches[0].clientY - touchStartY.current;
+      // 方向未锁定时，先判断意图：横向位移明显更大才认作侧边栏拖拽
+      if (locked.current === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // 移动太小,还看不出意图
+        locked.current = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'h' : 'v';
+        if (locked.current === 'v') { isDragging.current = false; return; } // 是竖滑,放弃,交给页面滚动
+      }
+      if (locked.current === 'h' && dx > 0) {
+        e.preventDefault();
+        setDragOffset(Math.min(280, dx));
       }
     };
-    document.addEventListener("touchstart", onTouchStart, { passive: false });
+    const onTouchEnd = () => {
+      if (!isDragging.current) { setDragOffset(0); return; }
+      isDragging.current = false;
+      if (dragOffset > 100) { setSidebarOpen(true); setDragOffset(280); }
+      else setDragOffset(0);
+    };
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
     document.addEventListener("touchmove", onTouchMove, { passive: false });
     document.addEventListener("touchend", onTouchEnd);
     return () => {
@@ -176,7 +219,7 @@ export default function PlutocaelChat() {
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
     };
-  }, [sidebarOpen, dragOffset, setSidebarOpen]);
+  }, [sidebarOpen, dragOffset]);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
@@ -315,7 +358,7 @@ export default function PlutocaelChat() {
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: isDragging.current ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: isDragging.current ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
@@ -379,7 +422,7 @@ export default function PlutocaelChat() {
             </div>
           </div>
         </>) : currentPage === "chat" ? (<>
-          <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: COLORS.bg }}>
+          <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: wallpaper ? "transparent" : COLORS.bg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -409,7 +452,7 @@ export default function PlutocaelChat() {
                         <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
                         <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
                       </details>}
-                      <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? COLORS.userBubble : "transparent", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                      <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? userBubbleBg : "transparent", backdropFilter: (isUser && wallpaper && !transparentBubble) ? "blur(8px)" : "none", WebkitBackdropFilter: (isUser && wallpaper && !transparentBubble) ? "blur(8px)" : "none", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                         {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 12, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                         {view.text}
                       </div>
@@ -426,7 +469,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 24px 24px", background: COLORS.bg }}>
+          <div style={{ padding: "12px 24px 24px", background: wallpaper ? "transparent" : COLORS.bg }}>
             <div style={{ maxWidth: 768, margin: "0 auto" }}>
               {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
                 <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
@@ -518,42 +561,101 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {settingsTab === "general" && <>
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 8 }}>主题</label>
-                <div style={{ display: "flex", gap: 10 }}>
-                  {Object.entries(THEMES).map(([key, t]) => (
-                    <button key={key} onClick={() => setTheme(key)} style={{ width: 72, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
-                      <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
-                    </button>
-                  ))}
+            {settingsTab === "general" && (() => {
+              const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase" };
+              const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20 };
+              const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
+              const rowLast = { ...row, borderBottom: "none" };
+              const rowCol = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}` };
+              const lbl = { fontSize: 14, color: COLORS.text };
+              const hint = { fontSize: 12, color: COLORS.placeholder, marginTop: 2 };
+              const rowInput = { border: "none", outline: "none", background: "transparent", color: COLORS.text, fontSize: 14, textAlign: "right", flex: 1, minWidth: 0, fontFamily: "inherit" };
+              const Toggle = ({ on, onChange }) => (
+                <button onClick={onChange} style={{ width: 46, height: 28, borderRadius: 14, border: "none", cursor: "pointer", background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+                  <span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                </button>
+              );
+              return <>
+                {/* 外观 */}
+                <div style={secTitle}>外观</div>
+                <div style={listCard}>
+                  <div style={rowCol}>
+                    <div style={{ ...lbl, marginBottom: 10 }}>主题</div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {Object.entries(THEMES).map(([key, t]) => (
+                        <button key={key} onClick={() => setTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
+                          <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={rowCol}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: wallpaper ? 10 : 0 }}>
+                      <div><div style={lbl}>背景壁纸</div><div style={hint}>只存在你的设备上，不会上传</div></div>
+                      <input ref={wallpaperInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickWallpaper} />
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        {wallpaper && <button onClick={() => setWallpaper("")} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>移除</button>}
+                        <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>{wallpaper ? "更换" : "上传"}</button>
+                      </div>
+                    </div>
+                    {wallpaper && <img src={wallpaper} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 10 }} />}
+                  </div>
+                  <div style={rowLast}>
+                    <div><div style={lbl}>透明气泡</div><div style={hint}>消息气泡透明，露出背景壁纸</div></div>
+                    <Toggle on={transparentBubble} onChange={() => setTransparentBubble(v => !v)} />
+                  </div>
                 </div>
-              </div>
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API 地址</label><input type="text" value={settingsData.api_base_url || ""} placeholder="留空则使用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={ifs} /></div>
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>API Key</label><input type="password" value={settingsData.api_key || ""} placeholder="留空则使用环境变量" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={ifs} /></div>
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>模型</label><input type="text" value={settingsData.model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={ifs} /></div>
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <label style={{ fontSize: 13, color: COLORS.text, display: "block" }}>Thinking 思考模式</label>
-                  <span style={{ fontSize: 12, color: COLORS.placeholder }}>开启后 Cael 会先思考再回答（思考过程可展开查看，开启时温度设置不生效）</span>
+
+                {/* API 连接 */}
+                <div style={secTitle}>API 连接</div>
+                <div style={listCard}>
+                  <div style={row}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
+                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={rowInput} />
+                  </div>
+                  <div style={row}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
+                    <input type="password" value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={rowInput} />
+                  </div>
+                  <div style={rowLast}>
+                    <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
+                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={rowInput} />
+                  </div>
                 </div>
-                <input type="checkbox" checked={!!settingsData.enable_thinking} onChange={e => setSettingsData({ ...settingsData, enable_thinking: e.target.checked ? 1 : 0 })} style={{ width: 20, height: 20, accentColor: COLORS.accent, cursor: "pointer", flexShrink: 0, marginLeft: 12 }} />
-              </div>
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <label style={{ fontSize: 13, color: COLORS.text, display: "block" }}>MCP 工具</label>
-                  <span style={{ fontSize: 12, color: COLORS.placeholder }}>开启后 Cael 聊天时可以自己调用 MCP 记忆工具（工具调用过程可展开查看）</span>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 三个框都可留空——留空就用服务器 .env 里配好的。Key 框只填 sk- 开头的密钥，别把网址填进来。</div>
+
+                {/* 行为 */}
+                <div style={secTitle}>行为</div>
+                <div style={listCard}>
+                  <div style={row}>
+                    <div><div style={lbl}>Thinking 思考模式</div><div style={hint}>先思考再回答，过程可展开（开启时温度不生效）</div></div>
+                    <Toggle on={!!settingsData.enable_thinking} onChange={() => setSettingsData({ ...settingsData, enable_thinking: settingsData.enable_thinking ? 0 : 1 })} />
+                  </div>
+                  <div style={rowLast}>
+                    <div><div style={lbl}>MCP 工具</div><div style={hint}>让 Cael 自己调记忆工具（建议配好人设后再开）</div></div>
+                    <Toggle on={!!settingsData.enable_mcp} onChange={() => setSettingsData({ ...settingsData, enable_mcp: settingsData.enable_mcp ? 0 : 1 })} />
+                  </div>
                 </div>
-                <input type="checkbox" checked={!!settingsData.enable_mcp} onChange={e => setSettingsData({ ...settingsData, enable_mcp: e.target.checked ? 1 : 0 })} style={{ width: 20, height: 20, accentColor: COLORS.accent, cursor: "pointer", flexShrink: 0, marginLeft: 12 }} />
-              </div>
-              <div style={{ height: 1, background: COLORS.divider, margin: "16px 0" }} />
-              <div style={{ marginBottom: 16 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>温度 ({settingsData.temperature})</label><input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} style={{ width: "100%" }} /></div>
-              <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-                <div style={{ flex: 1 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>上下文轮数</label><input type="number" min="1" max="50" value={settingsData.max_context_rounds} onChange={e => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) || 10 })} style={ifs} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>最大回复 tokens</label><input type="number" min="100" max="8000" value={settingsData.max_reply_tokens} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) || 2000 })} style={ifs} /></div>
-              </div>
-            </>}
+
+                {/* 模型参数 */}
+                <div style={secTitle}>模型参数</div>
+                <div style={listCard}>
+                  <div style={rowCol}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>温度</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.temperature}</span></div>
+                    <input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
+                  </div>
+                  <div style={row}>
+                    <div style={lbl}>上下文轮数</div>
+                    <input type="number" min="1" max="50" value={settingsData.max_context_rounds} onChange={e => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) || 10 })} style={{ ...rowInput, width: 60, flex: "none" }} />
+                  </div>
+                  <div style={rowLast}>
+                    <div style={lbl}>最大回复 tokens</div>
+                    <input type="number" min="100" max="8000" value={settingsData.max_reply_tokens} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) || 2000 })} style={{ ...rowInput, width: 70, flex: "none" }} />
+                  </div>
+                </div>
+              </>;
+            })()}
             {settingsTab === "prompt" && <div><label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>System Prompt</label><textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={16} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} /></div>}
           </div>
           <div style={{ padding: "16px 24px", borderTop: `1px solid ${COLORS.divider}`, display: "flex", justifyContent: "flex-end", gap: 8 }}>
