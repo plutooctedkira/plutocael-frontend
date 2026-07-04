@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, Tag, Switch, Button, Modal, Input, Space, App, Select, Spin } from "antd";
-import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined } from "@ant-design/icons";
+import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, ArrowLeftOutlined, MenuOutlined } from "@ant-design/icons";
 import mcpService from "./services/mcpService";
 
 /**
  * MCP 管理页面 —— 通过 mcpService 调用后端 API，支持 loading 状态
  */
-export default function McpManager() {
+export default function McpManager({ onMenu, onBack }) {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ url: "", tools: 0, memories: 0, connected: false, checking: true });
@@ -90,7 +90,12 @@ export default function McpManager() {
 
   return (
     <App>
-      <div className="p-4 max-w-lg mx-auto min-h-screen bg-[#FAFAF8] overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 120px)" }}>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8" }}>
+        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => onBack && onBack()} size="small" title="返回聊天" />
+        <span className="text-[15px] font-medium flex-1">MCP 记忆</span>
+        <Button type="text" icon={<MenuOutlined />} onClick={() => onMenu && onMenu()} size="small" title="菜单" />
+      </div>
+      <div className="p-4 max-w-lg mx-auto overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 170px)" }}>
         <Card size="small" className="mb-4 shadow-sm rounded-xl">
           <div className="flex flex-wrap gap-4 text-sm">
             <div><Tag color={stats.checking ? "default" : stats.connected ? "green" : "red"} className="text-xs">{stats.checking ? "检测中..." : stats.connected ? "● 已连接" : "○ 未连接"}</Tag></div>

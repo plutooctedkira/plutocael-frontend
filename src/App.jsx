@@ -414,7 +414,7 @@ export default function PlutocaelChat() {
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
-        {currentPage === "mcp" ? <McpManager /> : currentPage === "board" ? (<>
+        {currentPage === "mcp" ? <McpManager onMenu={() => setSidebarOpen(true)} onBack={() => setCurrentPage("chat")} /> : currentPage === "board" ? (<>
           <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", background: COLORS.cardBg }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
             <span style={{ fontSize: 15, fontWeight: 500 }}>留言板</span>
