@@ -150,8 +150,20 @@ export default function PlutocaelChat() {
     img.src = url;
   };
 
-  // 用户气泡背景：透明模式或跟随主题；有壁纸时半透明玻璃更好看
-  const userBubbleBg = transparentBubble ? "transparent" : (wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble);
+  // 气泡样式：透明模式=磨砂玻璃（半透明+细边框+模糊，透出壁纸又有轮廓）
+  const frostBg = theme === "dark" ? "rgba(70,70,68,0.32)" : "rgba(255,255,255,0.22)";
+  const frostBorder = theme === "dark" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
+  const bubbleStyle = (isUser) => {
+    if (transparentBubble) {
+      return { background: frostBg, border: `1px solid ${frostBorder}`, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" };
+    }
+    if (isUser) {
+      const bg = wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble;
+      const blur = wallpaper ? "blur(8px)" : "none";
+      return { background: bg, border: "none", backdropFilter: blur, WebkitBackdropFilter: blur };
+    }
+    return { background: "transparent", border: "none" };
+  };
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -452,7 +464,7 @@ export default function PlutocaelChat() {
                         <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
                         <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
                       </details>}
-                      <div style={{ padding: isUser ? "12px 16px" : "4px 16px", borderRadius: isUser ? "20px 20px 4px 20px" : 0, background: isUser ? userBubbleBg : "transparent", backdropFilter: (isUser && wallpaper && !transparentBubble) ? "blur(8px)" : "none", WebkitBackdropFilter: (isUser && wallpaper && !transparentBubble) ? "blur(8px)" : "none", color: isUser ? COLORS.userBubbleText : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                      <div style={{ padding: isUser ? "12px 16px" : (transparentBubble ? "10px 14px" : "4px 16px"), borderRadius: isUser ? "20px 20px 4px 20px" : (transparentBubble ? "4px 18px 18px 18px" : 0), color: isUser ? (transparentBubble ? COLORS.text : COLORS.userBubbleText) : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", ...bubbleStyle(isUser) }}>
                         {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 12, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                         {view.text}
                       </div>
@@ -602,7 +614,7 @@ export default function PlutocaelChat() {
                     {wallpaper && <img src={wallpaper} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 10 }} />}
                   </div>
                   <div style={rowLast}>
-                    <div><div style={lbl}>透明气泡</div><div style={hint}>消息气泡透明，露出背景壁纸</div></div>
+                    <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
                     <Toggle on={transparentBubble} onChange={() => setTransparentBubble(v => !v)} />
                   </div>
                 </div>
