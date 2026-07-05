@@ -65,7 +65,15 @@ function TrashIcon() { return <Icon size={14}><polyline points="3 6 5 6 21 6" />
 function CopyIcon() { return <Icon size={14}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>; }
 function StarIcon({ filled }) { return <Icon size={14}>{filled ? <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" /> : <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />}</Icon>; }
 
-const DEFAULT_CATEGORIES = ["生活", "开发日志", "小说灵感", "工作计划"];
+// MCP 记忆的层级(记忆衰退机制按 core→episodic 从慢到快)
+const LAYERS = [
+  { key: "core", label: "核心", color: { bg: "#F5E8E0", text: "#C4623F" }, halfLife: "永久" },
+  { key: "semantic", label: "语义", color: { bg: "#E8F0FE", text: "#4A7FD4" }, halfLife: "~90天" },
+  { key: "procedural", label: "程序", color: { bg: "#E6F9EE", text: "#3AAF6B" }, halfLife: "~30天" },
+  { key: "episodic", label: "情节", color: { bg: "#F3E8FE", text: "#8A4AD4" }, halfLife: "~7天" },
+];
+const LAYER_MAP = Object.fromEntries(LAYERS.map(l => [l.key, l]));
+const DEFAULT_CATEGORIES = LAYERS.map(l => l.key);
 
 const DEFAULT_CUSTOM = { dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
 // hex + 透明度百分比 → rgba
@@ -114,7 +122,7 @@ export default function PlutocaelChat() {
   const [memories, setMemories] = useState([]);
   const [memoryFilter, setMemoryFilter] = useState("全部");
   const [showAddMemory, setShowAddMemory] = useState(false);
-  const [newMemory, setNewMemory] = useState({ content: "", category: "生活", importance: 3 });
+  const [newMemory, setNewMemory] = useState({ title: "", content: "", layer: "episodic", importance: 3 });
   const [editingMemory, setEditingMemory] = useState(null);
   const [expandedMemoryId, setExpandedMemoryId] = useState(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
@@ -209,21 +217,17 @@ export default function PlutocaelChat() {
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
   useEffect(() => { if (!activeSessionId) return; fetch(API + "/messages/session/" + activeSessionId).then(r => r.json()).then(setMessages).catch(err => console.error("加载消息失败:", err)); }, [activeSessionId]);
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [currentPage]);
+  // 记忆库 = MCP 真实记忆库（Cael 和前端读写同一个）
   const loadMemories = async () => {
-    // 本地记忆表 + MCP 真实记忆库合并显示。"记忆库"分类只看MCP，具体分类只看本地
-    const wantLocal = memoryFilter !== "记忆库";
-    const wantMcp = memoryFilter === "全部" || memoryFilter === "记忆库";
-    const localUrl = memoryFilter === "全部" ? API + "/memories" : API + "/memories?category=" + encodeURIComponent(memoryFilter);
-    const [local, mcpRes] = await Promise.all([
-      wantLocal ? fetch(localUrl).then(r => r.json()).catch(() => []) : Promise.resolve([]),
-      wantMcp ? fetch(API + "/mcp/memories?limit=100").then(r => r.json()).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
-    ]);
-    const mcpMems = (mcpRes.data || []).map((m, i) => ({
-      id: "mcp_" + i, mcp: true,
-      content: (m.title ? "【" + m.title + "】\n" : "") + (m.content || ""),
-      category: "记忆库", importance: m.importance || 3, created_at: null, layer: m.layer
-    }));
-    setMemories([...mcpMems, ...(Array.isArray(local) ? local : [])]);
+    try {
+      const r = await fetch(API + "/mcp/memories?limit=100").then(x => x.json());
+      let mems = (r.data || []).map(m => ({
+        id: m.id, title: m.title, content: m.content,
+        importance: m.importance || 3, layer: m.layer || "episodic", created_at: m.created_at
+      }));
+      if (memoryFilter !== "全部") mems = mems.filter(m => m.layer === memoryFilter);
+      setMemories(mems);
+    } catch (e) { setMemories([]); }
   };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
   const loadBoard = () => { fetch(API + "/board").then(r => r.json()).then(setBoardMessages).catch(() => {}); };
@@ -282,9 +286,9 @@ export default function PlutocaelChat() {
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
   const handleStartRename = (e, s) => { e.stopPropagation(); setEditingSessionId(s.id); setEditingName(s.name); };
   const handleSaveRename = async () => { if (!editingName.trim() || !editingSessionId) { setEditingSessionId(null); return; } try { await fetch(API + "/sessions/" + editingSessionId, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: editingName.trim() }) }); setSessions(prev => prev.map(s => s.id === editingSessionId ? { ...s, name: editingName.trim() } : s)); } catch (err) { console.error("重命名失败:", err); } setEditingSessionId(null); };
-  const handleAddMemory = async () => { if (!newMemory.content.trim()) return; try { await fetch(API + "/memories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMemory) }); setNewMemory({ content: "", category: "生活", importance: 3 }); setShowAddMemory(false); loadMemories(); } catch (err) { console.error("添加记忆失败:", err); } };
-  const handleUpdateMemory = async () => { if (!editingMemory || !editingMemory.content.trim()) return; try { await fetch(API + "/memories/" + editingMemory.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editingMemory.content, category: editingMemory.category, importance: editingMemory.importance }) }); setEditingMemory(null); loadMemories(); } catch (err) { console.error("更新记忆失败:", err); } };
-  const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
+  const handleAddMemory = async () => { if (!newMemory.content.trim()) return; try { await fetch(API + "/mcp/memories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newMemory.title || "", content: newMemory.content, importance: newMemory.importance, layer: newMemory.layer || "episodic" }) }); setNewMemory({ title: "", content: "", layer: "episodic", importance: 3 }); setShowAddMemory(false); loadMemories(); } catch (err) { console.error("添加记忆失败:", err); } };
+  const handleUpdateMemory = async () => { if (!editingMemory || !editingMemory.content.trim()) return; try { await fetch(API + "/mcp/memories/" + editingMemory.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: editingMemory.title, content: editingMemory.content, importance: editingMemory.importance, layer: editingMemory.layer }) }); setEditingMemory(null); loadMemories(); } catch (err) { console.error("更新记忆失败:", err); } };
+  const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/mcp/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
   const handleOpenSettings = async () => { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); setSettingsSection(null); setShowSettings(true); } catch (err) { console.error("加载设置失败:", err); } };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
   // 单项自动保存：改开关/输入即刻写库，不用再手动点保存
@@ -563,26 +567,42 @@ export default function PlutocaelChat() {
               <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
               <span style={{ fontSize: 15, fontWeight: 500 }}>记忆库</span>
             </div>
-            <button onClick={() => { setEditingMemory(null); setNewMemory({ content: "", category: "生活", importance: 3 }); setShowAddMemory(true); }} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><PlusIcon /> 添加</button>
+            <button onClick={() => { setEditingMemory(null); setNewMemory({ title: "", content: "", layer: "episodic", importance: 3 }); setShowAddMemory(true); }} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><PlusIcon /> 添加</button>
           </div>
           <div style={{ padding: "12px 20px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
-            {["全部", "记忆库", ...DEFAULT_CATEGORIES].map(cat => (<button key={cat} onClick={() => setMemoryFilter(cat)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat ? COLORS.accent : "transparent", color: memoryFilter === cat ? "#fff" : COLORS.textSecondary }}>{cat}</button>))}
+            {[{ key: "全部", label: "全部" }, ...LAYERS].map(cat => (<button key={cat.key} onClick={() => setMemoryFilter(cat.key)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat.key ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat.key ? COLORS.accent : "transparent", color: memoryFilter === cat.key ? "#fff" : COLORS.textSecondary }}>{cat.label}</button>))}
           </div>
           <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
+              <div style={{ background: COLORS.cardBg, borderRadius: 16, padding: 16, marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>🧠 记忆衰退曲线</div>
+                <div style={{ fontSize: 11, color: COLORS.placeholder, marginBottom: 12 }}>层级越高衰退越慢，条越长=保留越久；右侧是各层记忆数</div>
+                {LAYERS.map(L => {
+                  const count = memories.filter(m => m.layer === L.key).length;
+                  const widths = { core: 100, semantic: 68, procedural: 42, episodic: 22 };
+                  return <div key={L.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
+                    <span style={{ width: 32, fontSize: 12, color: L.color.text, fontWeight: 600, flexShrink: 0 }}>{L.label}</span>
+                    <div style={{ flex: 1, height: 8, background: COLORS.bg, borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: widths[L.key] + "%", height: "100%", background: L.color.text, opacity: 0.75, transition: "width 0.4s" }} />
+                    </div>
+                    <span style={{ width: 46, fontSize: 11, color: COLORS.placeholder, textAlign: "right", flexShrink: 0 }}>{L.halfLife}</span>
+                    <span style={{ width: 22, fontSize: 12, color: COLORS.text, textAlign: "right", flexShrink: 0 }}>{count}</span>
+                  </div>;
+                })}
+              </div>
               {memories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有记忆，点击右上角添加</div> : memories.map(m => (
                 <div key={m.id} onClick={() => setExpandedMemoryId(expandedMemoryId === m.id ? null : m.id)} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}`, cursor: "pointer" }}>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, overflow: expandedMemoryId === m.id ? "visible" : "hidden", display: expandedMemoryId === m.id ? "block" : "-webkit-box", WebkitLineClamp: expandedMemoryId === m.id ? "none" : 3, WebkitBoxOrient: "vertical" }}>{m.content}</div>
+                  {m.title && <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 5 }}>{m.title}</div>}
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, overflow: expandedMemoryId === m.id ? "visible" : "hidden", display: expandedMemoryId === m.id ? "block" : "-webkit-box", WebkitLineClamp: expandedMemoryId === m.id ? "none" : 3, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{m.content}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                    <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: getCatColor(m.category).bg, color: getCatColor(m.category).text }}>{m.category}</span>
+                    <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: (LAYER_MAP[m.layer] || LAYERS[3]).color.bg, color: (LAYER_MAP[m.layer] || LAYERS[3]).color.text }}>{(LAYER_MAP[m.layer] || LAYERS[3]).label}</span>
                     <div style={{ display: "flex", gap: 1, color: COLORS.accent }}>{[1,2,3,4,5].map(n => <StarIcon key={n} filled={n <= m.importance} />)}</div>
                     <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: "auto" }}>{formatDate(m.created_at)}</span>
                   </div>
-                  {expandedMemoryId === m.id && !m.mcp && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
+                  {expandedMemoryId === m.id && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
                     <button onClick={e => { e.stopPropagation(); setEditingMemory({ ...m }); setShowAddMemory(true); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.text, display: "flex", alignItems: "center", gap: 4 }}><EditIcon /> 编辑</button>
                     <button onClick={e => { e.stopPropagation(); handleDeleteMemory(m.id); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.danger}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.danger, display: "flex", alignItems: "center", gap: 4 }}><TrashIcon /> 删除</button>
                   </div>}
-                  {expandedMemoryId === m.id && m.mcp && <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}`, fontSize: 12, color: COLORS.placeholder }}>来自 MCP 记忆库{m.layer ? ` · ${m.layer}` : ""}（在 MCP 页面或记忆库网页编辑）</div>}
                 </div>))}
             </div>
           </div>
@@ -595,10 +615,11 @@ export default function PlutocaelChat() {
             <div style={{ fontSize: 16, fontWeight: 600 }}>{editingMemory ? "编辑记忆" : "添加记忆"}</div>
             <button onClick={() => { setShowAddMemory(false); setEditingMemory(null); }} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
           </div>
+          <input value={editingMemory ? (editingMemory.title || "") : newMemory.title} onChange={e => editingMemory ? setEditingMemory({ ...editingMemory, title: e.target.value }) : setNewMemory({ ...newMemory, title: e.target.value })} placeholder="标题（可留空，会自动取正文开头）" style={{ ...ifs, marginBottom: 10 }} />
           <textarea value={editingMemory ? editingMemory.content : newMemory.content} onChange={e => editingMemory ? setEditingMemory({ ...editingMemory, content: e.target.value }) : setNewMemory({ ...newMemory, content: e.target.value })} placeholder="写下你想记住的事..." rows={5} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7, marginBottom: 16 }} />
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>分类</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{DEFAULT_CATEGORIES.map(cat => { const sel = editingMemory ? editingMemory.category === cat : newMemory.category === cat; return <button key={cat} onClick={() => editingMemory ? setEditingMemory({ ...editingMemory, category: cat }) : setNewMemory({ ...newMemory, category: cat })} style={{ padding: "6px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, background: sel ? getCatColor(cat).bg : COLORS.bg, color: sel ? getCatColor(cat).text : COLORS.textSecondary, border: sel ? `1px solid ${getCatColor(cat).text}33` : `1px solid ${COLORS.divider}`, fontWeight: sel ? 600 : 400 }}>{cat}</button>; })}</div>
+            <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>层级（衰退快慢：核心永久 → 情节最易淡忘）</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{LAYERS.map(L => { const cur = editingMemory ? editingMemory.layer : newMemory.layer; const sel = cur === L.key; return <button key={L.key} onClick={() => editingMemory ? setEditingMemory({ ...editingMemory, layer: L.key }) : setNewMemory({ ...newMemory, layer: L.key })} style={{ padding: "6px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, background: sel ? L.color.bg : COLORS.bg, color: sel ? L.color.text : COLORS.textSecondary, border: sel ? `1px solid ${L.color.text}33` : `1px solid ${COLORS.divider}`, fontWeight: sel ? 600 : 400 }}>{L.label}</button>; })}</div>
           </div>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>重要性</div>

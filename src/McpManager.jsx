@@ -133,8 +133,6 @@ export default function McpManager({ onMenu, onBack }) {
           ))}
         </Spin>
 
-        {memList.length > 0 && <div className="text-center text-gray-400 text-xs py-3">已连接 {memList.length} 条记忆 · 在「记忆库」页查看内容</div>}
-
         <Modal title={newServer.name ? `编辑 ${newServer.name}` : "添加 MCP 服务器"} open={addOpen} onOk={handleAddServer} onCancel={() => { setAddOpen(false); setNewServer({ name: "", url: "", command: "", args: "", env: "" }); }} okText="保存" cancelText="取消" destroyOnClose>
           <div className="flex flex-col gap-3 pt-2">
             <div><label className="text-sm text-gray-500 block mb-1">名称</label><Input value={newServer.name} onChange={e => setNewServer({ ...newServer, name: e.target.value })} placeholder="服务器名称" /></div>
