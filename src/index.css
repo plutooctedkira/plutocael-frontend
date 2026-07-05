@@ -59,13 +59,18 @@ html {
 body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
   overflow: hidden;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
   -webkit-overflow-scrolling: none;
   touch-action: manipulation;
   background: #F5F4EE;
-  position: relative;
+  /* iOS 防整页横向回弹/晃动：固定铺满，横向彻底锁死 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 ::-webkit-scrollbar { display: none; }

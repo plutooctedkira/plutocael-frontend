@@ -168,9 +168,6 @@ export default function PlutocaelChat() {
   };
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const isDragging = useRef(false);
-  const touchStartX = useRef(0);
 
   useEffect(() => { fetch(API + "/sessions").then(r => r.json()).then(data => { setSessions(data); if (data.length > 0 && !activeSessionId) setActiveSessionId(data[0].id); data.forEach(s => loadPreview(s.id)); }).catch(err => console.error("加载会话失败:", err)); }, []);
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
@@ -206,49 +203,35 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // 从屏幕左边缘右滑打开侧边栏（带方向锁，避免竖滑时界面横飞）
+  // 从屏幕左边缘右滑打开侧边栏（阈值判定，不跟手拖拽，避免界面左右晃动）
   useEffect(() => {
-    const touchStartY = { current: 0 };
-    const locked = { current: null }; // null=未定 / 'h'=横向 / 'v'=纵向
+    let startX = 0, startY = 0, tracking = false, decided = false;
     const onTouchStart = (e) => {
       if (sidebarOpen) return;
-      // 只在屏幕左边缘 20px 内起手才可能触发
-      if (e.touches[0].clientX > 20) return;
-      isDragging.current = true;
-      locked.current = null;
-      touchStartX.current = e.touches[0].clientX;
-      touchStartY.current = e.touches[0].clientY;
+      if (e.touches[0].clientX > 16) return; // 只在屏幕最左边缘起手
+      tracking = true; decided = false;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
     };
     const onTouchMove = (e) => {
-      if (!isDragging.current) return;
-      const dx = e.touches[0].clientX - touchStartX.current;
-      const dy = e.touches[0].clientY - touchStartY.current;
-      // 方向未锁定时，先判断意图：横向位移明显更大才认作侧边栏拖拽
-      if (locked.current === null) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // 移动太小,还看不出意图
-        locked.current = Math.abs(dx) > Math.abs(dy) * 1.3 ? 'h' : 'v';
-        if (locked.current === 'v') { isDragging.current = false; return; } // 是竖滑,放弃,交给页面滚动
-      }
-      if (locked.current === 'h' && dx > 0) {
-        e.preventDefault();
-        setDragOffset(Math.min(280, dx));
-      }
+      if (!tracking || decided) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      // 竖向为主 → 放弃，交给页面滚动，绝不横向干预
+      if (Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
+      // 明确的向右横滑且够长 → 直接开侧边栏（CSS过渡平滑滑入，不跟手）
+      if (dx > 60) { decided = true; tracking = false; setSidebarOpen(true); }
     };
-    const onTouchEnd = () => {
-      if (!isDragging.current) { setDragOffset(0); return; }
-      isDragging.current = false;
-      if (dragOffset > 100) { setSidebarOpen(true); setDragOffset(280); }
-      else setDragOffset(0);
-    };
+    const onTouchEnd = () => { tracking = false; decided = false; };
     document.addEventListener("touchstart", onTouchStart, { passive: true });
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("touchend", onTouchEnd);
     return () => {
       document.removeEventListener("touchstart", onTouchStart);
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
     };
-  }, [sidebarOpen, dragOffset]);
+  }, [sidebarOpen]);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
@@ -406,7 +389,7 @@ export default function PlutocaelChat() {
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
-      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: isDragging.current ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: isDragging.current ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
+      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
