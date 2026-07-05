@@ -67,9 +67,34 @@ function StarIcon({ filled }) { return <Icon size={14}>{filled ? <polygon points
 
 const DEFAULT_CATEGORIES = ["生活", "开发日志", "小说灵感", "工作计划"];
 
+const DEFAULT_CUSTOM = { dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
+// hex + 透明度百分比 → rgba
+function hexToRgba(hex, alphaPct) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  const a = Math.max(0, Math.min(100, alphaPct == null ? 100 : alphaPct)) / 100;
+  if (!m) return `rgba(0,0,0,${a})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+function buildCustomColors(c) {
+  const base = c.dark ? THEMES.dark : THEMES.claude;
+  return {
+    ...base,
+    bg: hexToRgba(c.bg, c.bgA),
+    sidebar: hexToRgba(c.sidebar, c.sidebarA),
+    userBubble: hexToRgba(c.userBubble, c.userBubbleA),
+    accent: c.accent, accentHover: c.accent, sidebarActive: c.accent,
+    accentLight: hexToRgba(c.accent, 16),
+    _glass: !!c.glass,
+    _solidBg: c.dark ? "#262624" : "#F5F4EE", // 玻璃/壁纸打底色
+  };
+}
+
 export default function PlutocaelChat() {
   const [theme, setTheme] = useState(() => localStorage.getItem("pluto_theme") || "claude");
-  const COLORS = THEMES[theme] || THEMES.claude;
+  const [customTheme, setCustomTheme] = useState(() => { try { return { ...DEFAULT_CUSTOM, ...(JSON.parse(localStorage.getItem("pluto_custom_theme")) || {}) }; } catch (e) { return DEFAULT_CUSTOM; } });
+  const COLORS = theme === "custom" ? buildCustomColors(customTheme) : (THEMES[theme] || THEMES.claude);
+  const glassMode = theme === "custom" && customTheme.glass;
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -117,13 +142,16 @@ export default function PlutocaelChat() {
   // 主题切换：持久化 + 同步页面底色和状态栏颜色
   useEffect(() => {
     localStorage.setItem("pluto_theme", theme);
-    document.documentElement.style.background = COLORS.bg;
-    document.body.style.background = COLORS.bg;
+    // 自定义半透明时，文档底色用不透明打底，让上层半透明色能正确叠加
+    const docBg = theme === "custom" ? COLORS._solidBg : COLORS.bg;
+    document.documentElement.style.background = docBg;
+    document.body.style.background = docBg;
     const rootEl = document.getElementById("root");
-    if (rootEl) rootEl.style.background = COLORS.bg;
+    if (rootEl) rootEl.style.background = docBg;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", COLORS.bg);
-  }, [theme]);
+    if (meta) meta.setAttribute("content", theme === "custom" ? COLORS._solidBg : COLORS.bg);
+  }, [theme, customTheme]);
+  const saveCustom = (patch) => setCustomTheme(prev => { const next = { ...prev, ...patch }; localStorage.setItem("pluto_custom_theme", JSON.stringify(next)); return next; });
 
   // 壁纸持久化（存localStorage，纯本地不上传服务器）
   useEffect(() => {
@@ -161,8 +189,9 @@ export default function PlutocaelChat() {
     }
     if (isUser) {
       const bg = wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble;
-      const blur = wallpaper ? "blur(8px)" : "none";
-      return { background: bg, border: "none", backdropFilter: blur, WebkitBackdropFilter: blur };
+      // 自定义玻璃模式 或 有壁纸 → 加毛玻璃模糊
+      const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
+      return { background: bg, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur };
     }
     return { background: "transparent", border: "none" };
   };
@@ -389,7 +418,7 @@ export default function PlutocaelChat() {
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
-      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none" }}>
+      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none", backdropFilter: glassMode ? "blur(16px)" : "none", WebkitBackdropFilter: glassMode ? "blur(16px)" : "none" }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
@@ -632,15 +661,45 @@ export default function PlutocaelChat() {
                 <div style={listCard}>
                   <div style={rowCol}>
                     <div style={{ ...lbl, marginBottom: 10 }}>主题</div>
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                       {Object.entries(THEMES).map(([key, t]) => (
                         <button key={key} onClick={() => setTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                           <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
                           <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
                         </button>
                       ))}
+                      <button onClick={() => setTheme("custom")} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === "custom" ? `2px solid ${customTheme.accent}` : `1px solid ${COLORS.divider}`, background: customTheme.dark ? "#262624" : "#F5F4EE", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                        <span style={{ width: 22, height: 22, borderRadius: "50%", background: "conic-gradient(#D97757,#4A7FD4,#3AAF6B,#8A4AD4,#D97757)", display: "block" }} />
+                        <span style={{ fontSize: 11, color: customTheme.dark ? "#ECEAE5" : "#1F1E1D" }}>自定义</span>
+                      </button>
                     </div>
                   </div>
+                  {theme === "custom" && (() => {
+                    const ctrlRow = { display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${COLORS.divider}` };
+                    const colorSwatch = (val, onCh) => <input type="color" value={val} onChange={e => onCh(e.target.value)} style={{ width: 34, height: 34, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />;
+                    const alphaSlider = (val, onCh) => <><input type="range" min="0" max="100" value={val} onChange={e => onCh(parseInt(e.target.value))} style={{ flex: 1, accentColor: customTheme.accent }} /><span style={{ fontSize: 12, color: COLORS.textSecondary, width: 38, textAlign: "right" }}>{val}%</span></>;
+                    const section = (label, colorKey, alphaKey) => <div style={ctrlRow}>
+                      {colorSwatch(customTheme[colorKey], v => saveCustom({ [colorKey]: v }))}
+                      <span style={{ fontSize: 13, color: COLORS.text, width: 64, flexShrink: 0 }}>{label}</span>
+                      {alphaSlider(customTheme[alphaKey], v => saveCustom({ [alphaKey]: v }))}
+                    </div>;
+                    return <div style={{ ...rowCol, borderBottom: `1px solid ${COLORS.divider}` }}>
+                      <div style={{ display: "flex", gap: 16, marginBottom: 4 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.dark} onChange={e => saveCustom({ dark: e.target.checked })} style={{ accentColor: customTheme.accent }} />暗色底</label>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.glass} onChange={e => saveCustom({ glass: e.target.checked })} style={{ accentColor: customTheme.accent }} />玻璃模糊</label>
+                      </div>
+                      {section("主界面", "bg", "bgA")}
+                      {section("侧边栏", "sidebar", "sidebarA")}
+                      {section("用户气泡", "userBubble", "userBubbleA")}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0 2px" }}>
+                        {colorSwatch(customTheme.accent, v => saveCustom({ accent: v }))}
+                        <span style={{ fontSize: 13, color: COLORS.text }}>强调色</span>
+                        <span style={{ flex: 1 }} />
+                        <button onClick={() => saveCustom({ ...DEFAULT_CUSTOM })} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12 }}>重置</button>
+                      </div>
+                      <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 6 }}>💡 透明度调低 + 开玻璃模糊 = 通透磨砂质感；配合壁纸更好看。</div>
+                    </div>;
+                  })()}
                   <div style={rowCol}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: wallpaper ? 10 : 0 }}>
                       <div><div style={lbl}>背景壁纸</div><div style={hint}>只存在你的设备上，不会上传</div></div>
