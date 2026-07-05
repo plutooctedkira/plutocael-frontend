@@ -75,6 +75,24 @@ const LAYERS = [
 const LAYER_MAP = Object.fromEntries(LAYERS.map(l => [l.key, l]));
 const DEFAULT_CATEGORIES = LAYERS.map(l => l.key);
 
+// 记忆衰退计算（与 MCP 服务器 decay.py 一致）
+// core层永久不衰退；其余：半衰期=30+(重要性-1)×7.5天，强度=0.5^(未访问天数/半衰期)
+function computeDecay(m) {
+  const importance = m.importance || 3;
+  if (m.layer === "core") return { strength: 1, isCore: true, halflife: null, days: 0 };
+  const halflife = 30 + (importance - 1) * 7.5;
+  const last = m.last_accessed ? new Date(String(m.last_accessed).replace(" ", "T")) : null;
+  const days = (last && !isNaN(last.getTime())) ? Math.max(0, (Date.now() - last.getTime()) / 86400000) : 0;
+  const strength = Math.max(0, Math.min(1, Math.pow(0.5, days / halflife)));
+  return { strength, isCore: false, halflife, days };
+}
+// 强度 → 颜色（新鲜绿 → 淡黄 → 褪色红）
+function decayColor(s) {
+  if (s >= 0.66) return "#3AAF6B";
+  if (s >= 0.33) return "#E0A030";
+  return "#C0655A";
+}
+
 const DEFAULT_CUSTOM = { dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
 // hex + 透明度百分比 → rgba
 function hexToRgba(hex, alphaPct) {
@@ -223,7 +241,8 @@ export default function PlutocaelChat() {
       const r = await fetch(API + "/mcp/memories?limit=100").then(x => x.json());
       let mems = (r.data || []).map(m => ({
         id: m.id, title: m.title, content: m.content,
-        importance: m.importance || 3, layer: m.layer || "episodic", created_at: m.created_at
+        importance: m.importance || 3, layer: m.layer || "episodic",
+        author: m.author, created_at: m.created_at, last_accessed: m.last_accessed
       }));
       if (memoryFilter !== "全部") mems = mems.filter(m => m.layer === memoryFilter);
       setMemories(mems);
@@ -599,6 +618,23 @@ export default function PlutocaelChat() {
                     <div style={{ display: "flex", gap: 1, color: COLORS.accent }}>{[1,2,3,4,5].map(n => <StarIcon key={n} filled={n <= m.importance} />)}</div>
                     <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: "auto" }}>{formatDate(m.created_at)}</span>
                   </div>
+                  {(() => {
+                    const d = computeDecay(m);
+                    const pct = Math.round(d.strength * 100);
+                    return <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }} title="记忆鲜活度：越久没被访问越淡，core永久保持">记忆强度</span>
+                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: COLORS.divider, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: d.isCore ? COLORS.accent : decayColor(d.strength), transition: "width 0.3s" }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: d.isCore ? COLORS.accent : decayColor(d.strength), flexShrink: 0, width: 44, textAlign: "right", fontWeight: 500 }}>{d.isCore ? "永久" : pct + "%"}</span>
+                    </div>;
+                  })()}
+                  {expandedMemoryId === m.id && (() => {
+                    const d = computeDecay(m);
+                    return <div style={{ marginTop: 8, fontSize: 12, color: COLORS.placeholder, lineHeight: 1.6 }}>
+                      {d.isCore ? "🔒 核心记忆，永久保留，不会衰退" : `⏳ 半衰期 ${Math.round(d.halflife)} 天 · 已 ${Math.round(d.days)} 天未访问 · 被 Cael 提起会回升`}
+                    </div>;
+                  })()}
                   {expandedMemoryId === m.id && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
                     <button onClick={e => { e.stopPropagation(); setEditingMemory({ ...m }); setShowAddMemory(true); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.text, display: "flex", alignItems: "center", gap: 4 }}><EditIcon /> 编辑</button>
                     <button onClick={e => { e.stopPropagation(); handleDeleteMemory(m.id); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.danger}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.danger, display: "flex", alignItems: "center", gap: 4 }}><TrashIcon /> 删除</button>
