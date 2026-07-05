@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, Tag, Switch, Button, Modal, Input, Space, App, Select, Spin } from "antd";
-import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, ArrowLeftOutlined, MenuOutlined } from "@ant-design/icons";
+import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, MenuOutlined } from "@ant-design/icons";
 import mcpService from "./services/mcpService";
 
 /**
@@ -92,12 +92,11 @@ export default function McpManager({ onMenu, onBack }) {
 
   return (
     <App>
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8" }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => onBack && onBack()} size="small" title="返回聊天" />
-        <span className="text-[15px] font-medium flex-1">MCP 链接</span>
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8", flexShrink: 0 }}>
         <Button type="text" icon={<MenuOutlined />} onClick={() => onMenu && onMenu()} size="small" title="菜单" />
+        <span className="text-[15px] font-medium flex-1">MCP 链接</span>
       </div>
-      <div className="p-4 max-w-lg mx-auto overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 170px)" }}>
+      <div className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
         <Card size="small" className="mb-4 shadow-sm rounded-xl">
           <div className="flex flex-wrap gap-4 text-sm">
             <div><Tag color={stats.checking ? "default" : stats.connected ? "green" : "red"} className="text-xs">{stats.checking ? "检测中..." : stats.connected ? "● 已连接" : "○ 未连接"}</Tag></div>

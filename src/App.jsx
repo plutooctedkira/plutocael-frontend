@@ -202,6 +202,8 @@ export default function PlutocaelChat() {
   };
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
+  const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
+  const dragging = useRef(false);
 
   useEffect(() => { fetch(API + "/sessions").then(r => r.json()).then(data => { setSessions(data); if (data.length > 0 && !activeSessionId) setActiveSessionId(data[0].id); data.forEach(s => loadPreview(s.id)); }).catch(err => console.error("加载会话失败:", err)); }, []);
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
@@ -237,7 +239,44 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // 侧边栏统一用左上角 ☰ 菜单按钮打开。已移除边缘滑动手势——它是界面左右晃动的根源。
+  // 从左边缘右滑打开侧边栏：覆盖平移，侧边栏跟手指盖过内容
+  useEffect(() => {
+    let startX = 0, startY = 0, tracking = false, dir = null; // dir: null/'h'/'v'
+    const onStart = (e) => {
+      if (sidebarOpen) return;
+      if (e.touches[0].clientX > 24) return; // 只在最左边缘起手
+      tracking = true; dir = null;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    };
+    const onMove = (e) => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (dir === null) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        dir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+        if (dir === 'v') { tracking = false; return; } // 竖滑交给页面滚动
+        dragging.current = true;
+      }
+      if (dir === 'h' && dx > 0) {
+        e.preventDefault();
+        setDragOffset(Math.min(280, dx));
+      }
+    };
+    const onEnd = () => {
+      if (!tracking) return;
+      tracking = false; dragging.current = false;
+      setDragOffset(prev => { if (prev > 90) setSidebarOpen(true); return 0; });
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
+    return () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchmove", onMove);
+      document.removeEventListener("touchend", onEnd);
+    };
+  }, [sidebarOpen]);
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
@@ -394,8 +433,8 @@ export default function PlutocaelChat() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
-      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
+      {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
+      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
@@ -460,8 +499,8 @@ export default function PlutocaelChat() {
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
-          <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px" }}>
+          <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overflowX: "hidden", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box", overflowX: "hidden" }}>
               {messages.length === 0 && <div style={{ textAlign: "center", padding: "80px 0", color: COLORS.placeholder, fontSize: 15 }}>发消息给 Cael 开始对话</div>}
               {messages.map((msg, i) => {
                 const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000);

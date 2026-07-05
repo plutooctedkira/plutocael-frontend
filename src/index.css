@@ -84,12 +84,21 @@ html, body, #root {
 
 .msg-scroll {
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   -webkit-overflow-scrolling: touch;
   /* flex子元素默认min-height:auto会被内容撑开导致永远不触发滚动，必须显式归零 */
   min-height: 0;
 }
 
 .panel-scroll {
+  min-height: 0;
+}
+
+/* antd App 容器填满父级，让 MCP 页能正确 flex 撑高+滚动 */
+.ant-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 
