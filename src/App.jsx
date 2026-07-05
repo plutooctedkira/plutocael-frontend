@@ -46,6 +46,7 @@ const CAT_COLORS = {
   "开发日志": { bg: "#E8F0FE", text: "#4A7FD4" },
   "小说灵感": { bg: "#F3E8FE", text: "#8A4AD4" },
   "工作计划": { bg: "#E6F9EE", text: "#3AAF6B" },
+  "记忆库": { bg: "#F5E8E0", text: "#C4623F" },
 };
 const CAT_DEFAULT = { bg: "#F0F0F0", text: "#6B6B6B" };
 function getCatColor(cat) { return CAT_COLORS[cat] || CAT_DEFAULT; }
@@ -175,7 +176,22 @@ export default function PlutocaelChat() {
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
   useEffect(() => { if (!activeSessionId) return; fetch(API + "/messages/session/" + activeSessionId).then(r => r.json()).then(setMessages).catch(err => console.error("加载消息失败:", err)); }, [activeSessionId]);
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [currentPage]);
-  const loadMemories = () => { const url = memoryFilter === "全部" ? API + "/memories" : API + "/memories?category=" + encodeURIComponent(memoryFilter); fetch(url).then(r => r.json()).then(setMemories).catch(() => {}); };
+  const loadMemories = async () => {
+    // 本地记忆表 + MCP 真实记忆库合并显示。"记忆库"分类只看MCP，具体分类只看本地
+    const wantLocal = memoryFilter !== "记忆库";
+    const wantMcp = memoryFilter === "全部" || memoryFilter === "记忆库";
+    const localUrl = memoryFilter === "全部" ? API + "/memories" : API + "/memories?category=" + encodeURIComponent(memoryFilter);
+    const [local, mcpRes] = await Promise.all([
+      wantLocal ? fetch(localUrl).then(r => r.json()).catch(() => []) : Promise.resolve([]),
+      wantMcp ? fetch(API + "/mcp/memories?limit=100").then(r => r.json()).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+    ]);
+    const mcpMems = (mcpRes.data || []).map((m, i) => ({
+      id: "mcp_" + i, mcp: true,
+      content: (m.title ? "【" + m.title + "】\n" : "") + (m.content || ""),
+      category: "记忆库", importance: m.importance || 3, created_at: null, layer: m.layer
+    }));
+    setMemories([...mcpMems, ...(Array.isArray(local) ? local : [])]);
+  };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
   const loadBoard = () => { fetch(API + "/board").then(r => r.json()).then(setBoardMessages).catch(() => {}); };
   useEffect(() => { if (currentPage === "board") loadBoard(); }, [currentPage]);
@@ -302,20 +318,31 @@ export default function PlutocaelChat() {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
     if (!file) return;
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const MAX = 1024;
-      let { width, height } = img;
-      if (width > MAX || height > MAX) { const s = MAX / Math.max(width, height); width = Math.round(width * s); height = Math.round(height * s); }
-      const canvas = document.createElement("canvas");
-      canvas.width = width; canvas.height = height;
-      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      setPendingImage({ dataUrl, media_type: "image/jpeg", data: dataUrl.split(",")[1] });
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
+    // 图片走视觉；其它(.json/.txt/.md/代码等)当文本读进来塞进输入框给 Cael
+    if (file.type && file.type.startsWith("image/")) {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) { const s = MAX / Math.max(width, height); width = Math.round(width * s); height = Math.round(height * s); }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        setPendingImage({ dataUrl, media_type: "image/jpeg", data: dataUrl.split(",")[1] });
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    } else {
+      if (file.size > 300 * 1024) { alert("文本文件太大（上限约300KB）"); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = String(reader.result || "").slice(0, 100000);
+        setInput(prev => (prev ? prev + "\n\n" : "") + `【文件：${file.name}】\n\`\`\`\n${content}\n\`\`\``);
+      };
+      reader.readAsText(file);
+    }
   };
 
   // 消息展示辅助：图片消息解出 文字+图片url（本地乐观消息用imageUrl，库里的解JSON）
@@ -495,7 +522,7 @@ export default function PlutocaelChat() {
                 <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
               </div>}
               <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: theme === "dark" ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickImage} />
+                <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
                 <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="发图片" style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 10 }}><Icon size={18}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></Icon></button>
                 <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} placeholder="发消息给 Cael..." rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0 8px 8px", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                 <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 12, marginRight: 12 }}><SendIcon /></button>
@@ -511,7 +538,7 @@ export default function PlutocaelChat() {
             <button onClick={() => { setEditingMemory(null); setNewMemory({ content: "", category: "生活", importance: 3 }); setShowAddMemory(true); }} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><PlusIcon /> 添加</button>
           </div>
           <div style={{ padding: "12px 20px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
-            {["全部", ...DEFAULT_CATEGORIES].map(cat => (<button key={cat} onClick={() => setMemoryFilter(cat)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat ? COLORS.accent : "transparent", color: memoryFilter === cat ? "#fff" : COLORS.textSecondary }}>{cat}</button>))}
+            {["全部", "记忆库", ...DEFAULT_CATEGORIES].map(cat => (<button key={cat} onClick={() => setMemoryFilter(cat)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat ? COLORS.accent : "transparent", color: memoryFilter === cat ? "#fff" : COLORS.textSecondary }}>{cat}</button>))}
           </div>
           <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -523,10 +550,11 @@ export default function PlutocaelChat() {
                     <div style={{ display: "flex", gap: 1, color: COLORS.accent }}>{[1,2,3,4,5].map(n => <StarIcon key={n} filled={n <= m.importance} />)}</div>
                     <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: "auto" }}>{formatDate(m.created_at)}</span>
                   </div>
-                  {expandedMemoryId === m.id && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
+                  {expandedMemoryId === m.id && !m.mcp && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
                     <button onClick={e => { e.stopPropagation(); setEditingMemory({ ...m }); setShowAddMemory(true); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.text, display: "flex", alignItems: "center", gap: 4 }}><EditIcon /> 编辑</button>
                     <button onClick={e => { e.stopPropagation(); handleDeleteMemory(m.id); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.danger}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.danger, display: "flex", alignItems: "center", gap: 4 }}><TrashIcon /> 删除</button>
                   </div>}
+                  {expandedMemoryId === m.id && m.mcp && <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}`, fontSize: 12, color: COLORS.placeholder }}>来自 MCP 记忆库{m.layer ? ` · ${m.layer}` : ""}（在 MCP 页面或记忆库网页编辑）</div>}
                 </div>))}
             </div>
           </div>
