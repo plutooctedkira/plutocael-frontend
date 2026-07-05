@@ -94,7 +94,7 @@ export default function McpManager({ onMenu, onBack }) {
     <App>
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8" }}>
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => onBack && onBack()} size="small" title="返回聊天" />
-        <span className="text-[15px] font-medium flex-1">MCP 记忆</span>
+        <span className="text-[15px] font-medium flex-1">MCP 链接</span>
         <Button type="text" icon={<MenuOutlined />} onClick={() => onMenu && onMenu()} size="small" title="菜单" />
       </div>
       <div className="p-4 max-w-lg mx-auto overflow-y-auto" style={{ overscrollBehaviorY: "contain", touchAction: "pan-y", height: "calc(100vh - 170px)" }}>
@@ -134,21 +134,7 @@ export default function McpManager({ onMenu, onBack }) {
           ))}
         </Spin>
 
-        {memList.length > 0 && <div className="mt-2">
-          <div className="text-sm font-medium mb-2 px-1">记忆库内容（{memList.length} 条）</div>
-          {memList.map((m, i) => (
-            <Card key={i} size="small" className="mb-2 rounded-xl">
-              <div className="flex items-start gap-2">
-                {m.importance != null && <Tag color="orange" className="text-[11px] shrink-0">{"★".repeat(Math.max(1, Math.min(5, m.importance || 1)))}</Tag>}
-                <div className="min-w-0 flex-1">
-                  {m.title && <div className="text-sm font-medium mb-1">{m.title}</div>}
-                  <div className="text-xs text-gray-600 whitespace-pre-wrap break-words" style={{ lineHeight: 1.6 }}>{(m.content || "").slice(0, 300)}{(m.content || "").length > 300 ? "…" : ""}</div>
-                  {m.layer && <Tag className="text-[10px] mt-1">{m.layer}</Tag>}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>}
+        {memList.length > 0 && <div className="text-center text-gray-400 text-xs py-3">已连接 {memList.length} 条记忆 · 在「记忆库」页查看内容</div>}
 
         <Modal title={newServer.name ? `编辑 ${newServer.name}` : "添加 MCP 服务器"} open={addOpen} onOk={handleAddServer} onCancel={() => { setAddOpen(false); setNewServer({ name: "", url: "", command: "", args: "", env: "" }); }} okText="保存" cancelText="取消" destroyOnClose>
           <div className="flex flex-col gap-3 pt-2">

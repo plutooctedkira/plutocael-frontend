@@ -183,6 +183,11 @@ export default function PlutocaelChat() {
   // 气泡样式：透明模式=磨砂玻璃（半透明+细边框+模糊，透出壁纸又有轮廓）
   const frostBg = theme === "dark" ? "rgba(70,70,68,0.32)" : "rgba(255,255,255,0.22)";
   const frostBorder = theme === "dark" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
+  // 玻璃模式下，把侧边栏/顶栏/输入栏等实心区域变成半透明磨砂玻璃
+  const glassSurface = customTheme.dark ? "rgba(40,40,38,0.5)" : "rgba(255,255,255,0.42)";
+  const glassify = (solidBg) => glassMode
+    ? { background: glassSurface, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
+    : { background: solidBg };
   const bubbleStyle = (isUser) => {
     if (transparentBubble) {
       return { background: frostBg, border: `1px solid ${frostBorder}`, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" };
@@ -232,35 +237,7 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // 从屏幕左边缘右滑打开侧边栏（阈值判定，不跟手拖拽，避免界面左右晃动）
-  useEffect(() => {
-    let startX = 0, startY = 0, tracking = false, decided = false;
-    const onTouchStart = (e) => {
-      if (sidebarOpen) return;
-      if (e.touches[0].clientX > 16) return; // 只在屏幕最左边缘起手
-      tracking = true; decided = false;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    };
-    const onTouchMove = (e) => {
-      if (!tracking || decided) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      // 竖向为主 → 放弃，交给页面滚动，绝不横向干预
-      if (Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
-      // 明确的向右横滑且够长 → 直接开侧边栏（CSS过渡平滑滑入，不跟手）
-      if (dx > 60) { decided = true; tracking = false; setSidebarOpen(true); }
-    };
-    const onTouchEnd = () => { tracking = false; decided = false; };
-    document.addEventListener("touchstart", onTouchStart, { passive: true });
-    document.addEventListener("touchmove", onTouchMove, { passive: true });
-    document.addEventListener("touchend", onTouchEnd);
-    return () => {
-      document.removeEventListener("touchstart", onTouchStart);
-      document.removeEventListener("touchmove", onTouchMove);
-      document.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [sidebarOpen]);
+  // 侧边栏统一用左上角 ☰ 菜单按钮打开。已移除边缘滑动手势——它是界面左右晃动的根源。
 
   const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
@@ -418,13 +395,13 @@ export default function PlutocaelChat() {
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.25)", zIndex: 999 }} />}
-      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, background: COLORS.sidebar, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none", backdropFilter: glassMode ? "blur(16px)" : "none", WebkitBackdropFilter: glassMode ? "blur(16px)" : "none" }}>
+      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: sidebarOpen ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
           <button onClick={() => { setShowSearch(true); setSearchResults([]); setSearchQuery(""); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showSearch ? COLORS.sidebarActive : "transparent", color: showSearch ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon> 搜索</button>
-          <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> MCP 记忆</button>
+          <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
           <button onClick={() => { setCurrentPage("board"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "board" ? COLORS.sidebarActive : "transparent", color: currentPage === "board" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><BoardIcon /> 留言板</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
@@ -454,7 +431,7 @@ export default function PlutocaelChat() {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
         {currentPage === "mcp" ? <McpManager onMenu={() => setSidebarOpen(true)} onBack={() => setCurrentPage("chat")} /> : currentPage === "board" ? (<>
-          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", background: COLORS.cardBg }}>
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", ...glassify(COLORS.cardBg) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
             <span style={{ fontSize: 15, fontWeight: 500 }}>留言板</span>
             <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: 12 }}>你留的话，Cael 聊天时看得到</span>
@@ -480,7 +457,7 @@ export default function PlutocaelChat() {
             </div>
           </div>
         </>) : currentPage === "chat" ? (<>
-          <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", background: wallpaper ? "transparent" : COLORS.bg }}>
+          <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -510,7 +487,7 @@ export default function PlutocaelChat() {
                         <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
                         <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{msg.tool_log}</div>
                       </details>}
-                      <div style={{ padding: isUser ? "12px 16px" : (transparentBubble ? "10px 14px" : "4px 16px"), borderRadius: isUser ? "20px 20px 4px 20px" : (transparentBubble ? "4px 18px 18px 18px" : 0), color: isUser ? (transparentBubble ? COLORS.text : COLORS.userBubbleText) : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", ...bubbleStyle(isUser) }}>
+                      <div style={{ padding: isUser ? "12px 16px" : (transparentBubble ? "10px 14px" : "4px 16px"), borderRadius: isUser ? "20px 20px 4px 20px" : (transparentBubble ? "4px 18px 18px 18px" : 0), color: isUser ? (transparentBubble ? COLORS.text : COLORS.userBubbleText) : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bubbleStyle(isUser) }}>
                         {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 12, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                         {view.text}
                       </div>
@@ -527,7 +504,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 24px 24px", background: wallpaper ? "transparent" : COLORS.bg }}>
+          <div style={{ padding: "12px 24px 24px", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <div style={{ maxWidth: 768, margin: "0 auto" }}>
               {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
                 <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
@@ -542,7 +519,7 @@ export default function PlutocaelChat() {
             </div>
           </div>
         </>) : (<>
-          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.cardBg }}>
+          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", ...glassify(COLORS.cardBg) }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
               <span style={{ fontSize: 15, fontWeight: 500 }}>记忆库</span>
