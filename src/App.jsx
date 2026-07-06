@@ -235,17 +235,12 @@ export default function PlutocaelChat() {
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
   useEffect(() => { if (!activeSessionId) return; fetch(API + "/messages/session/" + activeSessionId).then(r => r.json()).then(setMessages).catch(err => console.error("加载消息失败:", err)); }, [activeSessionId]);
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [currentPage]);
-  // 记忆库 = MCP 真实记忆库（Cael 和前端读写同一个）
+  // 记忆库 = 本地 memories 表（后端直接存取）
   const loadMemories = async () => {
     try {
-      const r = await fetch(API + "/mcp/memories?limit=100").then(x => x.json());
-      let mems = (r.data || []).map(m => ({
-        id: m.id, title: m.title, content: m.content,
-        importance: m.importance || 3, layer: m.layer || "episodic",
-        author: m.author, created_at: m.created_at, last_accessed: m.last_accessed
-      }));
-      if (memoryFilter !== "全部") mems = mems.filter(m => m.layer === memoryFilter);
-      setMemories(mems);
+      const url = memoryFilter !== "全部" ? API + "/memories?category=" + encodeURIComponent(memoryFilter) : API + "/memories";
+      const mems = await fetch(url).then(x => x.json());
+      setMemories(mems.map(m => ({ ...m, layer: m.category || "episodic" })));
     } catch (e) { setMemories([]); }
   };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
@@ -462,8 +457,7 @@ export default function PlutocaelChat() {
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
-          <button onClick={() => { setShowSearch(true); setSearchResults([]); setSearchQuery(""); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showSearch ? COLORS.sidebarActive : "transparent", color: showSearch ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon> 搜索</button>
-          <button onClick={() => { loadMcpMemories(); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
+          <button onClick={() => { setCurrentPage("mcp"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
           <button onClick={() => { setCurrentPage("board"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "board" ? COLORS.sidebarActive : "transparent", color: currentPage === "board" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><BoardIcon /> 留言板</button>
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
