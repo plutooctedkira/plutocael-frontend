@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, Tag, Switch, Button, Modal, Input, Space, App, Select, Spin } from "antd";
-import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, MenuOutlined } from "@ant-design/icons";
+import { ApiOutlined, EditOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, MenuOutlined, DeleteOutlined } from "@ant-design/icons";
 import mcpService from "./services/mcpService";
 
 /**
@@ -79,6 +79,15 @@ export default function McpManager({ onMenu, onBack }) {
     message.success("已添加");
   };
 
+  const handleToggle = (mcp) => {
+    setServers(prev => prev.map(s => s.id === mcp.id ? { ...s, status: s.status === "running" ? "stopped" : "running" } : s));
+  };
+
+  const handleDelete = (id) => {
+    setServers(prev => prev.filter(s => s.id !== id));
+    message.success("已删除");
+  };
+
   const handleCallTool = async () => {
     if (!selectedTool) return;
     let args;
@@ -119,10 +128,11 @@ export default function McpManager({ onMenu, onBack }) {
           {servers.map(mcp => (
             <Card key={mcp.id} size="small"
               title={<Space><ApiOutlined style={{ color: "#1677ff" }} /><span className="text-sm font-medium">{mcp.name}</span><Tag color="blue">已连接</Tag></Space>}
-              extra={<Switch checked={mcp.status !== "stopped"} size="small" />}
+              extra={<Switch checked={mcp.status !== "stopped"} onChange={() => handleToggle(mcp)} size="small" />}
               actions={[
                 <Button key="call" type="text" size="small" icon={<PlayCircleOutlined />} onClick={() => { setCallOpen(true); setSelectedTool(""); setToolArgs("{}"); setToolResult(""); }}>调用</Button>,
-                <Button key="edit" type="text" size="small" icon={<EditOutlined />} onClick={() => { setNewServer({ name: mcp.name, command: mcp.command || "", args: mcp.args || "", env: mcp.env || "" }); setAddOpen(true); }}>编辑</Button>
+                <Button key="edit" type="text" size="small" icon={<EditOutlined />} onClick={() => { setNewServer({ name: mcp.name, command: mcp.command || "", args: mcp.args || "", env: mcp.env || "" }); setAddOpen(true); }}>编辑</Button>,
+                <Button key="del" type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => { if (confirm(`确定删除 ${mcp.name}？`)) handleDelete(mcp.id); }}>删除</Button>
               ]}
               className="mb-3 shadow-sm rounded-xl"
             >
