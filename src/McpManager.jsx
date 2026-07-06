@@ -110,7 +110,6 @@ export default function McpManager({ onMenu, onBack }) {
           <Button type="primary" icon={<ReloadOutlined />} onClick={load} loading={loading} size="small">刷新</Button>
           <Button icon={<PlusOutlined />} onClick={() => setAddOpen(true)} size="small">添加</Button>
           <Button icon={<PlayCircleOutlined />} onClick={() => setCallOpen(true)} size="small">调用工具</Button>
-          <Button icon={<ApiOutlined />} onClick={() => window.open("https://mcp.plutocael.icu/memories/", "_blank")} size="small">记忆库网页</Button>
         </div>
 
         <Spin spinning={loading}>

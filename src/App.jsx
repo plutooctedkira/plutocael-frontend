@@ -235,12 +235,17 @@ export default function PlutocaelChat() {
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
   useEffect(() => { if (!activeSessionId) return; fetch(API + "/messages/session/" + activeSessionId).then(r => r.json()).then(setMessages).catch(err => console.error("加载消息失败:", err)); }, [activeSessionId]);
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [currentPage]);
-  // 记忆库 = 本地 memories 表（后端直接存取）
+  // 记忆库 = MCP 真实记忆库（数据在远程服务器，本地不丢失）
   const loadMemories = async () => {
     try {
-      const url = memoryFilter !== "全部" ? API + "/memories?category=" + encodeURIComponent(memoryFilter) : API + "/memories";
-      const mems = await fetch(url).then(x => x.json());
-      setMemories(mems.map(m => ({ ...m, layer: m.category || "episodic" })));
+      const r = await fetch(API + "/mcp/memories?limit=100").then(x => x.json());
+      let mems = (r.data || []).map(m => ({
+        id: m.id, title: m.title, content: m.content,
+        importance: m.importance || 3, layer: m.layer || "episodic",
+        author: m.author, created_at: m.created_at, last_accessed: m.last_accessed
+      }));
+      if (memoryFilter !== "全部") mems = mems.filter(m => m.layer === memoryFilter);
+      setMemories(mems);
     } catch (e) { setMemories([]); }
   };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
