@@ -403,15 +403,22 @@ export default function PlutocaelChat() {
     try { const d = JSON.parse(msg.content); return { text: d.text, img: `data:${d.media_type};base64,${d.data}` }; } catch (e) { return { text: msg.content, img: null }; }
   };
 
+  const chatAbortRef = useRef(null);
+
   const streamChat = async (sessionId, content, tempAiMsgId, image = null) => {
     try {
-      const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content, image }) });
+      // 中断上一次未完成的流
+      if (chatAbortRef.current) { chatAbortRef.current.abort(); chatAbortRef.current = null; }
+      const ctrl = new AbortController(); chatAbortRef.current = ctrl;
+      const res = await fetch(API + "/chat/stream", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, content, image }), signal: ctrl.signal });
       if (!res.ok) { const e = await res.json(); setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + (e.error || res.statusText) } : m)); return; }
       const reader = res.body.getReader(); const decoder = new TextDecoder(); let buffer = "", fullText = "", fullThinking = "", toolLog = "";
       while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop();
         for (const line of lines) { if (!line.startsWith("data: ")) continue; try { const ev = JSON.parse(line.slice(6)); if (ev.type === "text") { fullText += ev.text; const t = fullText; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: t } : m)); } else if (ev.type === "thinking") { fullThinking += ev.text; const th = fullThinking; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, reasoning_content: th } : m)); } else if (ev.type === "tool_use") { toolLog += (toolLog ? "\n" : "") + `→ 调用 ${ev.name} ${JSON.stringify(ev.input)}`; const tl = toolLog; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, tool_log: tl } : m)); } else if (ev.type === "tool_result") { toolLog += `\n✓ 返回: ${ev.output}`; const tl = toolLog; setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, tool_log: tl } : m)); } else if (ev.type === "error") { setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "出错了: " + ev.text } : m)); } } catch (e) {} } }
-      if (!fullText) setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "（空回复）" } : m));
-    } catch (err) { setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "网络错误: " + err.message } : m)); }
+      // 流程结束但没有文本回复——如果有 thinking 或工具调用，不覆盖为"空回复"，让三点动画继续显示
+      if (!fullText && !fullThinking && !toolLog) setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "（空回复）" } : m));
+    } catch (err) { if (err.name !== "AbortError") setMessages(prev => prev.map(m => m.id === tempAiMsgId ? { ...m, content: "网络错误: " + err.message } : m)); }
+    chatAbortRef.current = null;
   };
 
   const handleSend = async () => {
