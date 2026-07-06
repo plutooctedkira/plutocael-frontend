@@ -106,15 +106,6 @@ export default function McpManager({ onMenu, onBack }) {
         <span className="text-[15px] font-medium flex-1">MCP 链接</span>
       </div>
       <div className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
-        <Card size="small" className="mb-4 shadow-sm rounded-xl">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div><Tag color={stats.checking ? "default" : stats.connected ? "green" : "red"} className="text-xs">{stats.checking ? "检测中..." : stats.connected ? "● 已连接" : "○ 未连接"}</Tag></div>
-            <div><span className="text-gray-400">服务器: </span><span className="font-medium">{stats.url || "未连接"}</span></div>
-            <div><span className="text-gray-400">工具数: </span><span className="font-medium">{stats.tools}</span></div>
-            <div><span className="text-gray-400">记忆数: </span><span className="font-medium">{stats.memories}</span></div>
-          </div>
-        </Card>
-
         <div className="flex gap-2 mb-4 flex-wrap">
           <Button type="primary" icon={<ReloadOutlined />} onClick={load} loading={loading} size="small">刷新</Button>
           <Button icon={<PlusOutlined />} onClick={() => setAddOpen(true)} size="small">添加</Button>
