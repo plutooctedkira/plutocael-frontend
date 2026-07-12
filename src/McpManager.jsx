@@ -93,11 +93,11 @@ export default function McpManager({ onMenu }) {
     <App>
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8", flexShrink: 0 }}>
         <Button type="text" icon={<MenuOutlined />} onClick={() => onMenu && onMenu()} size="small" title="菜单" />
-        <span className="text-[15px] font-medium flex-1">MCP 链接</span>
+        <span className="flex-1" />
       </div>
       <div className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
 
-        <Card size="small" className="mb-4 shadow-sm rounded-xl">
+        <Card size="small" className="mb-4 rounded-xl" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
           <div className="flex flex-wrap gap-4 text-sm items-center">
             <Tag color={enabledCount > 0 ? "green" : "default"} className="text-xs">{enabledCount > 0 ? `● ${enabledCount} 个已启用` : "○ 无启用服务器"}</Tag>
             <div><span className="text-gray-400">服务器: </span><span className="font-medium">{servers.length}</span></div>
@@ -119,7 +119,7 @@ export default function McpManager({ onMenu }) {
             const t = testResults[s.id];
             const serverTools = tools.filter(x => x.serverId === s.id);
             return (
-              <Card key={s.id} size="small" className="mb-3 shadow-sm rounded-xl"
+              <Card key={s.id} size="small" className="mb-3 rounded-xl" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}
                 title={<span className="flex items-center gap-2"><ApiOutlined style={{ color: s.enabled ? "#3AAF6B" : "#aaa" }} /><span className="text-sm font-medium">{s.name}</span>{s.enabled ? <Tag color="green" className="text-[11px]">启用</Tag> : <Tag className="text-[11px]">停用</Tag>}</span>}
                 extra={<Switch checked={!!s.enabled} onChange={() => toggleServer(s)} size="small" />}
               >
@@ -163,7 +163,7 @@ export default function McpManager({ onMenu }) {
               <Input.TextArea value={toolArgs} onChange={e => setToolArgs(e.target.value)} rows={3} placeholder='{"limit": 10}' className="font-mono text-xs" />
             </div>
             <Button type="primary" icon={<PlayCircleOutlined />} onClick={handleCallTool} block>执行</Button>
-            {toolResult && <Card size="small" className="mt-2 bg-gray-50"><pre className="text-xs whitespace-pre-wrap break-all m-0 font-mono text-gray-700">{toolResult}</pre></Card>}
+            {toolResult && <Card size="small" className="mt-2 bg-gray-50" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}><pre className="text-xs whitespace-pre-wrap break-all m-0 font-mono text-gray-700">{toolResult}</pre></Card>}
           </div>
         </Modal>
       </div>
