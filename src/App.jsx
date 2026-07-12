@@ -468,7 +468,6 @@ export default function PlutocaelChat() {
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, fontFamily: "Georgia, 'Songti SC', serif", letterSpacing: "-0.02em" }}>Plutocael <span style={{ color: COLORS.accent }}>✳</span></div></div>
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
-          <button onClick={() => { setCurrentPage("memory"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "memory" ? COLORS.sidebarActive : "transparent", color: currentPage === "memory" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><MemoryIcon /> 记忆库</button>
           <button onClick={() => { setCurrentPage("mcp"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
           <button onClick={() => { setCurrentPage("board"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "board" ? COLORS.sidebarActive : "transparent", color: currentPage === "board" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><BoardIcon /> 留言板</button>
         </div>
@@ -524,7 +523,7 @@ export default function PlutocaelChat() {
                 </div>))}
             </div>
           </div>
-        </>) : currentPage === "chat" ? (<>
+        </>) : (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
@@ -595,90 +594,9 @@ export default function PlutocaelChat() {
               </div>
             </div>
           </div>
-        </>) : (<>
-          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", ...glassify(COLORS.cardBg) }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
-              <span style={{ fontSize: 15, fontWeight: 500 }}>记忆库</span>
-            </div>
-            <button onClick={() => { setEditingMemory(null); setNewMemory({ title: "", content: "", layer: "episodic", importance: 3 }); setShowAddMemory(true); }} style={{ padding: "6px 16px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><PlusIcon /> 添加</button>
-          </div>
-          <div style={{ padding: "12px 20px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
-            {[{ key: "全部", label: "全部" }, ...LAYERS].map(cat => (<button key={cat.key} onClick={() => setMemoryFilter(cat.key)} style={{ padding: "6px 16px", borderRadius: 20, border: memoryFilter === cat.key ? "none" : `1px solid ${COLORS.divider}`, cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", background: memoryFilter === cat.key ? COLORS.accent : "transparent", color: memoryFilter === cat.key ? "#fff" : COLORS.textSecondary }}>{cat.label}</button>))}
-          </div>
-          <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <div style={{ background: COLORS.cardBg, borderRadius: 16, padding: 16, marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>🧠 记忆衰退曲线</div>
-                <div style={{ fontSize: 11, color: COLORS.placeholder, marginBottom: 12 }}>层级越高衰退越慢，条越长=保留越久；右侧是各层记忆数</div>
-                {LAYERS.map(L => {
-                  const count = memories.filter(m => m.layer === L.key).length;
-                  const widths = { core: 100, semantic: 68, procedural: 42, episodic: 22 };
-                  return <div key={L.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9 }}>
-                    <span style={{ width: 32, fontSize: 12, color: L.color.text, fontWeight: 600, flexShrink: 0 }}>{L.label}</span>
-                    <div style={{ flex: 1, height: 8, background: COLORS.bg, borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{ width: widths[L.key] + "%", height: "100%", background: L.color.text, opacity: 0.75, transition: "width 0.4s" }} />
-                    </div>
-                    <span style={{ width: 46, fontSize: 11, color: COLORS.placeholder, textAlign: "right", flexShrink: 0 }}>{L.halfLife}</span>
-                    <span style={{ width: 22, fontSize: 12, color: COLORS.text, textAlign: "right", flexShrink: 0 }}>{count}</span>
-                  </div>;
-                })}
-              </div>
-              {memories.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有记忆，点击右上角添加</div> : memories.map(m => (
-                <div key={m.id} onClick={() => setExpandedMemoryId(expandedMemoryId === m.id ? null : m.id)} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "16px", marginBottom: 12, border: `1px solid ${COLORS.divider}`, cursor: "pointer" }}>
-                  {m.title && <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, marginBottom: 5 }}>{m.title}</div>}
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, overflow: expandedMemoryId === m.id ? "visible" : "hidden", display: expandedMemoryId === m.id ? "block" : "-webkit-box", WebkitLineClamp: expandedMemoryId === m.id ? "none" : 3, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{m.content}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                    <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 12, background: (LAYER_MAP[m.layer] || LAYERS[3]).color.bg, color: (LAYER_MAP[m.layer] || LAYERS[3]).color.text }}>{(LAYER_MAP[m.layer] || LAYERS[3]).label}</span>
-                    <div style={{ display: "flex", gap: 1, color: COLORS.accent }}>{[1,2,3,4,5].map(n => <StarIcon key={n} filled={n <= m.importance} />)}</div>
-                    <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: "auto" }}>{formatDate(m.created_at)}</span>
-                  </div>
-                  {(() => {
-                    const d = computeDecay(m);
-                    const pct = Math.round(d.strength * 100);
-                    return <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }} title="记忆鲜活度：越久没被访问越淡，core永久保持">记忆强度</span>
-                      <div style={{ flex: 1, height: 6, borderRadius: 3, background: COLORS.divider, overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: d.isCore ? COLORS.accent : decayColor(d.strength), transition: "width 0.3s" }} />
-                      </div>
-                      <span style={{ fontSize: 11, color: d.isCore ? COLORS.accent : decayColor(d.strength), flexShrink: 0, width: 44, textAlign: "right", fontWeight: 500 }}>{d.isCore ? "永久" : pct + "%"}</span>
-                    </div>;
-                  })()}
-                  {expandedMemoryId === m.id && (() => {
-                    const d = computeDecay(m);
-                    return <div style={{ marginTop: 8, fontSize: 12, color: COLORS.placeholder, lineHeight: 1.6 }}>
-                      {d.isCore ? "🔒 核心记忆，永久保留，不会衰退" : `⏳ 半衰期 ${Math.round(d.halflife)} 天 · 已 ${Math.round(d.days)} 天未访问 · 被 Cael 提起会回升`}
-                    </div>;
-                  })()}
-                  {expandedMemoryId === m.id && <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${COLORS.divider}` }}>
-                    <button onClick={e => { e.stopPropagation(); setEditingMemory({ ...m }); setShowAddMemory(true); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.text, display: "flex", alignItems: "center", gap: 4 }}><EditIcon /> 编辑</button>
-                    <button onClick={e => { e.stopPropagation(); handleDeleteMemory(m.id); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.danger}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.danger, display: "flex", alignItems: "center", gap: 4 }}><TrashIcon /> 删除</button>
-                  </div>}
-                </div>))}
-            </div>
-          </div>
         </>)}
       </div>
 
-      {showAddMemory && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => { setShowAddMemory(false); setEditingMemory(null); }}>
-        <div style={{ background: COLORS.cardBg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "70vh", display: "flex", flexDirection: "column", padding: "20px 24px 32px" }} onClick={e => e.stopPropagation()}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>{editingMemory ? "编辑记忆" : "添加记忆"}</div>
-            <button onClick={() => { setShowAddMemory(false); setEditingMemory(null); }} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
-          </div>
-          <input value={editingMemory ? (editingMemory.title || "") : newMemory.title} onChange={e => editingMemory ? setEditingMemory({ ...editingMemory, title: e.target.value }) : setNewMemory({ ...newMemory, title: e.target.value })} placeholder="标题（可留空，会自动取正文开头）" style={{ ...ifs, marginBottom: 10 }} />
-          <textarea value={editingMemory ? editingMemory.content : newMemory.content} onChange={e => editingMemory ? setEditingMemory({ ...editingMemory, content: e.target.value }) : setNewMemory({ ...newMemory, content: e.target.value })} placeholder="写下你想记住的事..." rows={5} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7, marginBottom: 16 }} />
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>层级（衰退快慢：核心永久 → 情节最易淡忘）</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{LAYERS.map(L => { const cur = editingMemory ? editingMemory.layer : newMemory.layer; const sel = cur === L.key; return <button key={L.key} onClick={() => editingMemory ? setEditingMemory({ ...editingMemory, layer: L.key }) : setNewMemory({ ...newMemory, layer: L.key })} style={{ padding: "6px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, background: sel ? L.color.bg : COLORS.bg, color: sel ? L.color.text : COLORS.textSecondary, border: sel ? `1px solid ${L.color.text}33` : `1px solid ${COLORS.divider}`, fontWeight: sel ? 600 : 400 }}>{L.label}</button>; })}</div>
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>重要性</div>
-            <div style={{ display: "flex", gap: 4 }}>{[1,2,3,4,5].map(n => <button key={n} onClick={() => editingMemory ? setEditingMemory({ ...editingMemory, importance: n }) : setNewMemory({ ...newMemory, importance: n })} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2, color: n <= (editingMemory ? editingMemory.importance : newMemory.importance) ? COLORS.accent : COLORS.placeholder }}><StarIcon filled={n <= (editingMemory ? editingMemory.importance : newMemory.importance)} /></button>)}</div>
-          </div>
-          <button onClick={editingMemory ? handleUpdateMemory : handleAddMemory} style={{ width: "100%", padding: "12px", border: "none", borderRadius: 20, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}>{editingMemory ? "保存修改" : "保存"}</button>
-        </div>
-      </div>}
 
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
         <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)", animation: "slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1)" }} onClick={e => e.stopPropagation()}>
