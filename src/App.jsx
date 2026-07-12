@@ -57,7 +57,6 @@ function PlusIcon() { return <Icon><line x1="12" y1="5" x2="12" y2="19" /><line 
 function ChatIcon() { return <Icon size={18}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>; }
 function MemoryIcon() { return <Icon size={18}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>; }
 function MenuIcon() { return <Icon size={20}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>; }
-function BoardIcon() { return <Icon size={18}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></Icon>; }
 function CloseIcon() { return <Icon size={12}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>; }
 function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
 function SettingsIcon() { return <Icon size={18}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>; }
@@ -157,11 +156,8 @@ export default function PlutocaelChat() {
   const [mcpSelectedTool, setMcpSelectedTool] = useState("");
   const [mcpToolArgs, setMcpToolArgs] = useState("{}");
   const [mcpToolResult, setMcpToolResult] = useState("");
-  const [boardMessages, setBoardMessages] = useState([]);
-  const [newBoardMsg, setNewBoardMsg] = useState("");
   const [pendingImage, setPendingImage] = useState(null);
   const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
-  const [boardPosting, setBoardPosting] = useState(false);
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem("pluto_wallpaper") || "");
@@ -251,10 +247,6 @@ export default function PlutocaelChat() {
     } catch (e) { setMemories([]); }
   };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
-  const loadBoard = () => { fetch(API + "/board").then(r => r.json()).then(setBoardMessages).catch(() => {}); };
-  useEffect(() => { if (currentPage === "board") loadBoard(); }, [currentPage]);
-  const handlePostBoard = async () => { if (!newBoardMsg.trim() || boardPosting) return; setBoardPosting(true); try { await fetch(API + "/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newBoardMsg.trim() }) }); setNewBoardMsg(""); loadBoard(); } catch (err) { console.error("留言失败:", err); } finally { setBoardPosting(false); } };
-  const handleDeleteBoard = async (id) => { if (!confirm("确定删除这条留言吗？")) return; try { await fetch(API + "/board/" + id, { method: "DELETE" }); loadBoard(); } catch (err) { console.error("删除留言失败:", err); } };
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
@@ -310,7 +302,14 @@ export default function PlutocaelChat() {
   const handleAddMemory = async () => { if (!newMemory.content.trim()) return; try { await fetch(API + "/memories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newMemory.content, category: newMemory.layer || "episodic", importance: newMemory.importance }) }); setNewMemory({ title: "", content: "", layer: "episodic", importance: 3 }); setShowAddMemory(false); loadMemories(); } catch (err) { console.error("添加记忆失败:", err); } };
   const handleUpdateMemory = async () => { if (!editingMemory || !editingMemory.content.trim()) return; try { await fetch(API + "/memories/" + editingMemory.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editingMemory.content, category: editingMemory.layer, importance: editingMemory.importance }) }); setEditingMemory(null); loadMemories(); } catch (err) { console.error("更新记忆失败:", err); } };
   const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
-  const handleOpenSettings = async () => { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); setSettingsSection(null); setShowSettings(true); } catch (err) { console.error("加载设置失败:", err); } };
+  // 从侧边栏打开某个设置分区（全页显示）
+  const openSettingsPage = async (key) => {
+    setSidebarOpen(false);
+    setSettingsSection(key);
+    setShowSettings(true);
+    if (key === "usage") loadGatewayStats();
+    if (!settingsData) { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); } catch (err) { console.error("加载设置失败:", err); } }
+  };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
   // 单项自动保存：改开关/输入即刻写库，不用再手动点保存
   const saveSetting = async (patch) => {
@@ -469,9 +468,18 @@ export default function PlutocaelChat() {
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 24, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
         <div style={{ padding: "0 12px 16px" }}>
-          <button onClick={() => { setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
-          <button onClick={() => { setCurrentPage("mcp"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
-          <button onClick={() => { setCurrentPage("board"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: currentPage === "board" ? COLORS.sidebarActive : "transparent", color: currentPage === "board" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><BoardIcon /> 留言板</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("mcp"); setSidebarOpen(false); }} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></Icon> MCP 链接</button>
+          <div style={{ height: 1, background: COLORS.divider, margin: "10px 6px" }} />
+          {[
+            { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
+            { key: "api", label: "API 连接", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
+            { key: "behavior", label: "对话行为", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
+            { key: "params", label: "模型参数", icon: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></> },
+            { key: "usage", label: "用量统计", icon: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></> },
+          ].map(s => (
+            <button key={s.key} onClick={() => openSettingsPage(s.key)} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showSettings && settingsSection === s.key ? COLORS.sidebarActive : "transparent", color: showSettings && settingsSection === s.key ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}>{s.icon}</Icon> {s.label}</button>
+          ))}
         </div>
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
         <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
@@ -492,40 +500,13 @@ export default function PlutocaelChat() {
         </div>
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
           <div style={{ padding: "4px 12px", display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 12 }}>
-            <button onClick={() => { handleOpenSettings(); setSidebarOpen(false); }} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><SettingsIcon /></button>
             <button onClick={handleNewSession} style={{ width: 45, height: 45, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.1)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
           </div>
         </div>
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
-        {currentPage === "mcp" ? <McpManager onMenu={() => setSidebarOpen(true)} onBack={() => setCurrentPage("chat")} /> : currentPage === "board" ? (<>
-          <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", ...glassify(COLORS.cardBg) }}>
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: COLORS.textSecondary, display: "flex", alignItems: "center", marginRight: 12 }}><MenuIcon /></button>
-            <span style={{ fontSize: 15, fontWeight: 500 }}>留言板</span>
-            <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: 12 }}>你留的话，Cael 聊天时看得到</span>
-          </div>
-          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${COLORS.divider}`, background: COLORS.cardBg }}>
-            <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              <textarea value={newBoardMsg} onChange={e => setNewBoardMsg(e.target.value)} placeholder="给 Cael 留句话..." rows={3} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} />
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                <button onClick={handlePostBoard} disabled={!newBoardMsg.trim() || boardPosting} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: newBoardMsg.trim() && !boardPosting ? COLORS.accent : COLORS.accentLight, color: newBoardMsg.trim() && !boardPosting ? "#fff" : COLORS.placeholder, cursor: newBoardMsg.trim() && !boardPosting ? "pointer" : "default", fontSize: 14 }}>{boardPosting ? "留言中..." : "留言"}</button>
-              </div>
-            </div>
-          </div>
-          <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "16px 20px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
-            <div style={{ maxWidth: 720, margin: "0 auto" }}>
-              {boardMessages.length === 0 ? <div style={{ textAlign: "center", padding: "60px 0", color: COLORS.placeholder, fontSize: 14 }}>还没有留言，写一条吧</div> : boardMessages.map(b => (
-                <div key={b.id} style={{ background: COLORS.cardBg, borderRadius: 16, padding: "14px 16px", marginBottom: 12, border: `1px solid ${COLORS.divider}` }}>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{b.content}</div>
-                  <div style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
-                    <span style={{ fontSize: 12, color: COLORS.placeholder }}>{formatFullTime(b.created_at)}</span>
-                    <button onClick={() => handleDeleteBoard(b.id)} style={{ marginLeft: "auto", padding: "4px 10px", borderRadius: 12, border: "none", background: "transparent", cursor: "pointer", color: COLORS.placeholder, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }} onMouseEnter={e => e.currentTarget.style.color = COLORS.danger} onMouseLeave={e => e.currentTarget.style.color = COLORS.placeholder}><TrashIcon /> 删除</button>
-                  </div>
-                </div>))}
-            </div>
-          </div>
-        </>) : (<>
+        {currentPage === "mcp" ? <McpManager onMenu={() => setSidebarOpen(true)} onBack={() => setCurrentPage("chat")} /> : (<>
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
@@ -600,38 +581,14 @@ export default function PlutocaelChat() {
       </div>
 
 
-      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSettings(false)}>
-        <div style={{ background: COLORS.cardBg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 600, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 -4px 12px rgba(0,0,0,0.08), 0 -16px 48px rgba(0,0,0,0.12)", animation: "slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1)" }} onClick={e => e.stopPropagation()}>
-          {(() => {
-            const SECTIONS = [
-              { key: "appearance", label: "外观", desc: "主题 · 壁纸 · 气泡", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
-              { key: "api", label: "API 连接", desc: "地址 · 密钥 · 模型", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
-              { key: "behavior", label: "对话行为", desc: "思考模式 · MCP 工具", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
-              { key: "params", label: "模型参数", desc: "温度 · 上下文 · tokens", icon: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></> },
-              { key: "prompt", label: "Cael 人设", desc: (settingsData.system_prompt || "").length > 0 ? "已设置" : "未设置", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
-              { key: "usage", label: "用量统计", desc: "token · 花费", icon: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></> },
-            ];
-            const cur = SECTIONS.find(s => s.key === settingsSection);
-            return <>
-              <div style={{ padding: "20px 20px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: `1px solid ${COLORS.divider}` }}>
-                {settingsSection && <button onClick={() => setSettingsSection(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.text, padding: 4, display: "flex" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>}
-                <div style={{ fontSize: 17, fontWeight: 600, flex: 1 }}>{cur ? cur.label : "设置"}</div>
-                <button onClick={() => setShowSettings(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
-              </div>
-              {!settingsSection && <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
-                <div style={{ background: COLORS.bg, borderRadius: 14, overflow: "hidden" }}>
-                  {SECTIONS.map((s, i) => (
-                    <button key={s.key} onClick={() => { setSettingsSection(s.key); if (s.key === "usage") loadGatewayStats(); }} style={{ width: "100%", padding: "14px 16px", border: "none", borderBottom: i < SECTIONS.length - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left" }}>
-                      <span style={{ width: 34, height: 34, borderRadius: 9, background: COLORS.accentLight, color: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={19}>{s.icon}</Icon></span>
-                      <span style={{ flex: 1, minWidth: 0 }}><span style={{ fontSize: 15, color: COLORS.text, display: "block" }}>{s.label}</span><span style={{ fontSize: 12, color: COLORS.placeholder, display: "block", marginTop: 1 }}>{s.desc}</span></span>
-                      <Icon size={18}><polyline points="9 18 15 12 9 6" /></Icon>
-                    </button>
-                  ))}
-                </div>
-              </div>}
-            </>;
-          })()}
-          {settingsSection && <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${COLORS.divider}`, flexShrink: 0 }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex" }}><MenuIcon /></button>
+            <div style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{({ appearance: "外观", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</div>
+            <button onClick={() => setShowSettings(false)} title="回到聊天" style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4 }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
+          </div>
+          {settingsSection && <div className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); setTimeout(loadGatewayStats, 50); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
               {gatewayStats ? (<>
@@ -788,11 +745,6 @@ export default function PlutocaelChat() {
                 </div></>}
               </>;
             })()}
-            {settingsSection === "prompt" && <div>
-              <label style={{ fontSize: 13, color: COLORS.textSecondary, display: "block", marginBottom: 6 }}>Cael 的人设 / System Prompt</label>
-              <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} onBlur={e => saveSetting({ system_prompt: e.target.value })} rows={14} placeholder="写下 Cael 是谁、怎么说话、有什么规则..." style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} />
-              <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 8 }}>💡 想让 Cael 主动查记忆，可加一句："聊到过去的约定、事件、Jasmine 的偏好时，先查记忆库再回答。"改完点别处即自动保存。</div>
-            </div>}
           </div>}
         </div>
       </div>}
