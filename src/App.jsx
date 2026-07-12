@@ -175,16 +175,40 @@ export default function PlutocaelChat() {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", theme === "custom" ? COLORS._solidBg : COLORS.bg);
   }, [theme, customTheme]);
-  const saveCustom = (patch) => setCustomTheme(prev => { const next = { ...prev, ...patch }; localStorage.setItem("pluto_custom_theme", JSON.stringify(next)); return next; });
+  // 外观云同步：改动推到服务器，任何设备打开都一致（localStorage仅作秒开缓存）
+  const pushAppearance = (over = {}) => {
+    const payload = { theme, customTheme, transparentBubble, ...over };
+    fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appearance: JSON.stringify(payload) }) }).catch(() => {});
+  };
+  const changeTheme = (key) => { setTheme(key); pushAppearance({ theme: key }); };
+  const saveCustom = (patch) => setCustomTheme(prev => { const next = { ...prev, ...patch }; localStorage.setItem("pluto_custom_theme", JSON.stringify(next)); pushAppearance({ customTheme: next }); return next; });
+  const toggleBubble = () => setTransparentBubble(v => { const next = !v; pushAppearance({ transparentBubble: next }); return next; });
 
-  // 壁纸持久化（存localStorage，纯本地不上传服务器）
+  // 启动时从服务器拉外观配置（覆盖本地缓存）
+  useEffect(() => {
+    fetch(API + "/settings").then(r => r.json()).then(s => {
+      if (!s) return;
+      setSettingsData(s);
+      if (s.appearance) {
+        try {
+          const a = JSON.parse(s.appearance);
+          if (a.theme) setTheme(a.theme);
+          if (a.customTheme) setCustomTheme(prev => ({ ...prev, ...a.customTheme }));
+          if (a.transparentBubble !== undefined) setTransparentBubble(!!a.transparentBubble);
+        } catch (e) {}
+      }
+      if (s.wallpaper !== undefined && s.wallpaper !== null) setWallpaper(s.wallpaper || "");
+    }).catch(() => {});
+  }, []);
+
+  // 本地缓存（秒开用，云端数据到达后覆盖）
   useEffect(() => {
     if (wallpaper) localStorage.setItem("pluto_wallpaper", wallpaper);
     else localStorage.removeItem("pluto_wallpaper");
   }, [wallpaper]);
   useEffect(() => { localStorage.setItem("pluto_transparent_bubble", transparentBubble ? "1" : "0"); }, [transparentBubble]);
 
-  // 选壁纸：压到最长边1600转jpeg存localStorage
+  // 选壁纸：压缩后同步到服务器（跨设备可见）
   const handlePickWallpaper = (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
@@ -198,7 +222,9 @@ export default function PlutocaelChat() {
       const canvas = document.createElement("canvas");
       canvas.width = width; canvas.height = height;
       canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-      setWallpaper(canvas.toDataURL("image/jpeg", 0.82));
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: dataUrl }) }).catch(() => {});
+      setWallpaper(dataUrl);
       URL.revokeObjectURL(url);
     };
     img.src = url;
@@ -207,6 +233,15 @@ export default function PlutocaelChat() {
   // 气泡样式：透明模式=磨砂玻璃（半透明+细边框+模糊，透出壁纸又有轮廓）
   const frostBg = theme === "dark" ? "rgba(70,70,68,0.32)" : "rgba(255,255,255,0.22)";
   const frostBorder = theme === "dark" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
+  // 拟物化质感：凸起(按钮/卡片)与凹陷(输入槽)的光影
+  const embossHi = (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.65)";
+  const skRaised = {
+    backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.30), rgba(0,0,0,0.06))",
+    boxShadow: `0 2px 5px rgba(0,0,0,0.20), 0 6px 14px rgba(0,0,0,0.10), inset 0 1px 0 ${embossHi}, inset 0 -2px 3px rgba(0,0,0,0.12)`
+  };
+  const skCard = { boxShadow: `0 1px 2px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.07), inset 0 1px 0 ${embossHi}` };
+  const skInset = { boxShadow: `inset 0 2px 6px rgba(0,0,0,0.10), inset 0 -1px 0 ${embossHi}, 0 1px 0 ${embossHi}, 0 4px 14px rgba(0,0,0,0.08)` };
+
   // 玻璃模式下，把侧边栏/顶栏/输入栏等实心区域变成半透明磨砂玻璃
   const glassSurface = customTheme.dark ? "rgba(40,40,38,0.5)" : "rgba(255,255,255,0.42)";
   const glassify = (solidBg) => glassMode
@@ -218,9 +253,9 @@ export default function PlutocaelChat() {
     }
     if (isUser) {
       const bg = wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble;
-      // 自定义玻璃模式 或 有壁纸 → 加毛玻璃模糊
+      // 自定义玻璃模式 或 有壁纸 → 加毛玻璃模糊；拟物：气泡带凸起光影
       const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
-      return { background: bg, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur };
+      return { background: bg, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: `0 2px 5px rgba(0,0,0,0.10), inset 0 1px 0 ${embossHi}` };
     }
     return { background: "transparent", border: "none" };
   };
@@ -500,7 +535,7 @@ export default function PlutocaelChat() {
         </div>
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
           <div style={{ padding: "4px 12px", display: "flex", alignItems: "flex-end", justifyContent: "flex-end", gap: 12 }}>
-            <button onClick={handleNewSession} style={{ width: 45, height: 45, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.1)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
+            <button onClick={handleNewSession} style={{ width: 45, height: 45, borderRadius: "50%", border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.1)", ...skRaised }} onMouseEnter={e => e.currentTarget.style.background = COLORS.accentHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.accent}><PlusIcon /></button>
           </div>
         </div>
       </div>
@@ -510,6 +545,28 @@ export default function PlutocaelChat() {
           <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 45, height: 45, borderRadius: "50%", border: `1px solid ${COLORS.sidebarBorder}`, background: COLORS.glass, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)" }} onMouseEnter={e => e.currentTarget.style.background = COLORS.glassHover} onMouseLeave={e => e.currentTarget.style.background = COLORS.glass}><MenuIcon /></button>
           </div>
+          {(() => {
+            const inputBar = (
+              <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+                {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
+                  <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
+                  <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                </div>}
+                <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 96, maxHeight: 400, boxSizing: "border-box", ...skInset }}>
+                  <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
+                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 8 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
+                  <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0 8px 8px", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
+                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 10, marginRight: 10, ...((input.trim() || pendingImage) && !loading ? skRaised : {}) }}><SendIcon /></button>
+                </div>
+              </div>
+            );
+            if (messages.length === 0) {
+              return <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 10vh" }}>
+                <div style={{ fontSize: 28, color: COLORS.textSecondary, marginBottom: 26, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>传讯给 Cael</div>
+                <div style={{ width: "100%" }}>{inputBar}</div>
+              </div>;
+            }
+            return <>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overflowX: "hidden", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box", overflowX: "hidden" }}>
               {messages.map((msg, i) => {
@@ -564,19 +621,10 @@ export default function PlutocaelChat() {
             </div>
           </div>
           <div style={{ padding: "12px 24px 24px", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
-            <div style={{ maxWidth: 768, margin: "0 auto" }}>
-              {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
-                <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
-                <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-              </div>}
-              <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: theme === "dark" ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 96, maxHeight: 400, boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08)", boxSizing: "border-box" }}>
-                <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
-                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 8 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
-                <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0 8px 8px", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
-                <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 10, marginRight: 10 }}><SendIcon /></button>
-              </div>
-            </div>
+            {inputBar}
           </div>
+            </>;
+          })()}
         </>)}
       </div>
 
@@ -609,7 +657,7 @@ export default function PlutocaelChat() {
             </>}
             {["appearance", "api", "behavior", "params"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
-              const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20 };
+              const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
               const rowLast = { ...row, borderBottom: "none" };
               const rowCol = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}` };
@@ -617,7 +665,7 @@ export default function PlutocaelChat() {
               const hint = { fontSize: 12, color: COLORS.placeholder, marginTop: 2 };
               const rowInput = { border: "none", outline: "none", background: "transparent", color: COLORS.text, fontSize: 14, textAlign: "right", flex: 1, minWidth: 0, fontFamily: "inherit" };
               const Toggle = ({ on, onChange }) => (
-                <button onClick={onChange} style={{ width: 46, height: 28, borderRadius: 14, border: "none", cursor: "pointer", background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+                <button onClick={onChange} style={{ width: 46, height: 28, borderRadius: 14, border: "none", cursor: "pointer", background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.18)" }}>
                   <span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                 </button>
               );
@@ -628,12 +676,12 @@ export default function PlutocaelChat() {
                     <div style={{ ...lbl, marginBottom: 10 }}>主题</div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                       {Object.entries(THEMES).map(([key, t]) => (
-                        <button key={key} onClick={() => setTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                        <button key={key} onClick={() => changeTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, ...skCard }}>
                           <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
                           <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
                         </button>
                       ))}
-                      <button onClick={() => setTheme("custom")} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === "custom" ? `2px solid ${customTheme.accent}` : `1px solid ${COLORS.divider}`, background: customTheme.dark ? "#262624" : "#F5F4EE", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                      <button onClick={() => changeTheme("custom")} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === "custom" ? `2px solid ${customTheme.accent}` : `1px solid ${COLORS.divider}`, background: customTheme.dark ? "#262624" : "#F5F4EE", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                         <span style={{ width: 22, height: 22, borderRadius: "50%", background: "conic-gradient(#D97757,#4A7FD4,#3AAF6B,#8A4AD4,#D97757)", display: "block" }} />
                         <span style={{ fontSize: 11, color: customTheme.dark ? "#ECEAE5" : "#1F1E1D" }}>自定义</span>
                       </button>
@@ -670,7 +718,7 @@ export default function PlutocaelChat() {
                       <div><div style={lbl}>背景壁纸</div><div style={hint}>只存在你的设备上，不会上传</div></div>
                       <input ref={wallpaperInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickWallpaper} />
                       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                        {wallpaper && <button onClick={() => setWallpaper("")} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>移除</button>}
+                        {wallpaper && <button onClick={() => { setWallpaper(""); fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: "" }) }).catch(() => {}); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>移除</button>}
                         <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>{wallpaper ? "更换" : "上传"}</button>
                       </div>
                     </div>
@@ -678,7 +726,7 @@ export default function PlutocaelChat() {
                   </div>
                   <div style={rowLast}>
                     <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
-                    <Toggle on={transparentBubble} onChange={() => setTransparentBubble(v => !v)} />
+                    <Toggle on={transparentBubble} onChange={toggleBubble} />
                   </div>
                 </div></>}
 
