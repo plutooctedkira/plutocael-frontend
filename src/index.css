@@ -76,6 +76,16 @@ body {
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
 
+/* 全局按钮按压反馈：按下缩小+变淡，松开回弹；去掉iOS默认灰色点击高亮 */
+button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.15s ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.93);
+  opacity: 0.75;
+}
+
 html, body, #root {
   overflow-x: hidden;
   overflow-y: hidden;

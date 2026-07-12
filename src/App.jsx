@@ -160,6 +160,8 @@ export default function PlutocaelChat() {
   const [boardMessages, setBoardMessages] = useState([]);
   const [newBoardMsg, setNewBoardMsg] = useState("");
   const [pendingImage, setPendingImage] = useState(null);
+  const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
+  const [boardPosting, setBoardPosting] = useState(false);
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem("pluto_wallpaper") || "");
@@ -251,7 +253,7 @@ export default function PlutocaelChat() {
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
   const loadBoard = () => { fetch(API + "/board").then(r => r.json()).then(setBoardMessages).catch(() => {}); };
   useEffect(() => { if (currentPage === "board") loadBoard(); }, [currentPage]);
-  const handlePostBoard = async () => { if (!newBoardMsg.trim()) return; try { await fetch(API + "/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newBoardMsg.trim() }) }); setNewBoardMsg(""); loadBoard(); } catch (err) { console.error("留言失败:", err); } };
+  const handlePostBoard = async () => { if (!newBoardMsg.trim() || boardPosting) return; setBoardPosting(true); try { await fetch(API + "/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newBoardMsg.trim() }) }); setNewBoardMsg(""); loadBoard(); } catch (err) { console.error("留言失败:", err); } finally { setBoardPosting(false); } };
   const handleDeleteBoard = async (id) => { if (!confirm("确定删除这条留言吗？")) return; try { await fetch(API + "/board/" + id, { method: "DELETE" }); loadBoard(); } catch (err) { console.error("删除留言失败:", err); } };
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
@@ -478,11 +480,11 @@ export default function PlutocaelChat() {
             {sessions.length === 0 ? <div style={{ padding: "12px 8px", fontSize: 13, color: COLORS.placeholder }}>还没有对话</div> : sessions.map(s => (
               <div key={s.id} onClick={() => { if (!editingSessionId) { setActiveSessionId(s.id); setSidebarOpen(false); } }} onMouseEnter={() => setHoveredSessionId(s.id)} onMouseLeave={() => setHoveredSessionId(null)} style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", background: s.id === activeSessionId ? COLORS.accentLight : "transparent", marginBottom: 2, position: "relative" }}>
                 {editingSessionId === s.id ? <input ref={editInputRef} value={editingName} onChange={e => setEditingName(e.target.value)} onBlur={handleSaveRename} onKeyDown={e => { if (e.key === "Enter") handleSaveRename(); if (e.key === "Escape") setEditingSessionId(null); }} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 4, padding: "2px 6px", fontSize: 13, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit" }} /> : <>
-                  <div style={{ fontSize: 14, color: COLORS.text, paddingRight: hoveredSessionId === s.id ? 50 : 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
+                  <div style={{ fontSize: 14, color: COLORS.text, paddingRight: (hoveredSessionId === s.id || activeSessionId === s.id) ? 64 : 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</div>
                   {previews[s.id] && <div style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 3, opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{previews[s.id]}</div>}
-                  {hoveredSessionId === s.id && <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 4 }}>
-                    <button onClick={e => handleStartRename(e, s)} style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: COLORS.buttonHover, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.textSecondary }} title="重命名"><EditIcon /></button>
-                    <button onClick={e => handleDeleteSession(e, s.id)} style={{ width: 24, height: 24, borderRadius: 6, border: "none", background: COLORS.buttonHover, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.danger }} title="删除"><CloseIcon /></button>
+                  {(hoveredSessionId === s.id || activeSessionId === s.id) && <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 5 }}>
+                    <button onClick={e => handleStartRename(e, s)} style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: COLORS.buttonHover, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.textSecondary }} title="重命名"><EditIcon /></button>
+                    <button onClick={e => handleDeleteSession(e, s.id)} style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: COLORS.buttonHover, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.danger }} title="删除"><CloseIcon /></button>
                   </div>}
                 </>}
               </div>))}
@@ -507,7 +509,7 @@ export default function PlutocaelChat() {
             <div style={{ maxWidth: 720, margin: "0 auto" }}>
               <textarea value={newBoardMsg} onChange={e => setNewBoardMsg(e.target.value)} placeholder="给 Cael 留句话..." rows={3} style={{ ...ifs, resize: "vertical", padding: "12px", lineHeight: 1.7 }} />
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                <button onClick={handlePostBoard} disabled={!newBoardMsg.trim()} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: newBoardMsg.trim() ? COLORS.accent : COLORS.accentLight, color: newBoardMsg.trim() ? "#fff" : COLORS.placeholder, cursor: newBoardMsg.trim() ? "pointer" : "default", fontSize: 14 }}>留言</button>
+                <button onClick={handlePostBoard} disabled={!newBoardMsg.trim() || boardPosting} style={{ padding: "8px 24px", border: "none", borderRadius: 20, background: newBoardMsg.trim() && !boardPosting ? COLORS.accent : COLORS.accentLight, color: newBoardMsg.trim() && !boardPosting ? "#fff" : COLORS.placeholder, cursor: newBoardMsg.trim() && !boardPosting ? "pointer" : "default", fontSize: 14 }}>{boardPosting ? "留言中..." : "留言"}</button>
               </div>
             </div>
           </div>
@@ -567,7 +569,8 @@ export default function PlutocaelChat() {
                         {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                       </div>
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                        <button onClick={() => navigator.clipboard.writeText(view.text || "")} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="复制"><CopyIcon /></button>
+                        <button onClick={() => { navigator.clipboard.writeText(view.text || ""); setCopiedMsgId(msg.id); setTimeout(() => setCopiedMsgId(c => c === msg.id ? null : c), 1200); }} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: copiedMsgId === msg.id ? "#3AAF6B" : COLORS.placeholder }} title="复制">{copiedMsgId === msg.id ? <Icon size={14}><polyline points="20 6 9 17 4 12" /></Icon> : <CopyIcon />}</button>
+                        {copiedMsgId === msg.id && <span style={{ fontSize: 11, color: "#3AAF6B", alignSelf: "center" }}>已复制</span>}
                         {isUser && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
                         {!isUser && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
                         {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, alignSelf: "center", marginLeft: 4, opacity: 0.8 }}>{formatFullTime(msg.created_at)}</span>}
