@@ -158,6 +158,29 @@ export default function PlutocaelChat() {
   const [mcpToolResult, setMcpToolResult] = useState("");
   const [pendingImage, setPendingImage] = useState(null);
   const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
+  const [showKey, setShowKey] = useState(false);
+  const [showCheapKey, setShowCheapKey] = useState(false);
+  const [apiTest, setApiTest] = useState(null); // null | {loading} | {ok, model, error, warnings}
+
+  // 保存API配置并做真实连通测试（先本地校验，再保存，再实测）
+  const saveAndTestApi = async () => {
+    const bad = (v) => v && /[^\x21-\x7E]/.test(v.trim());
+    const errs = [];
+    if (bad(settingsData.api_key)) errs.push("主力 API Key 里有中文或空格——你可能把模型名贴错框了，Key 应该是 sk- 开头的英文串");
+    if (bad(settingsData.cheap_api_key)) errs.push("便宜渠道 Key 里有中文或空格");
+    if (bad(settingsData.api_base_url)) errs.push("API 地址里有非法字符");
+    if (settingsData.api_key && /claude|gpt|\[/i.test(settingsData.api_key)) errs.push("主力 Key 看起来像模型名——模型名请填在「模型」框");
+    if (errs.length) { setApiTest({ ok: false, error: errs.join("；") }); return; }
+    setApiTest({ loading: true });
+    try {
+      await fetch(API + "/settings/" + (settingsData.id || 1), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "",
+        cheap_api_base_url: settingsData.cheap_api_base_url || "", cheap_api_key: settingsData.cheap_api_key || "", cheap_model: settingsData.cheap_model || ""
+      }) });
+      const r = await fetch(API + "/settings/test-api", { method: "POST" }).then(x => x.json());
+      setApiTest(r);
+    } catch (e) { setApiTest({ ok: false, error: e.message }); }
+  };
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem("pluto_wallpaper") || "");
@@ -732,39 +755,55 @@ export default function PlutocaelChat() {
                   </div>
                 </div></>}
 
-                {settingsSection === "api" && <>
+                {settingsSection === "api" && (() => {
+                  const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
+                    <Icon size={17}>{shown ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}</Icon>
+                  </button>;
+                  return <>
                 <div style={listCard}>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
-                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} onBlur={e => saveSetting({ api_base_url: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={rowInput} />
                   </div>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
-                    <input type="password" value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} onBlur={e => saveSetting({ api_key: e.target.value })} style={rowInput} />
+                    <input type={showKey ? "text" : "password"} value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={rowInput} />
+                    {eyeBtn(showKey, () => setShowKey(v => !v))}
                   </div>
                   <div style={rowLast}>
                     <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
-                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} onBlur={e => saveSetting({ model: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 主力渠道，聊天用。三框可留空=用服务器默认。Key 框只填 sk- 开头的密钥。</div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 主力渠道，聊天用。三框可留空=用服务器默认。Key 框只填 sk- 开头的密钥，点小眼睛可以查看。</div>
 
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
-                    <input type="text" value={settingsData.cheap_api_base_url || ""} placeholder="留空=同主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_base_url: e.target.value })} onBlur={e => saveSetting({ cheap_api_base_url: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.cheap_api_base_url || ""} placeholder="留空=同主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_base_url: e.target.value })} style={rowInput} />
                   </div>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
-                    <input type="password" value={settingsData.cheap_api_key || ""} placeholder="sk- 开头，留空=用主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_key: e.target.value })} onBlur={e => saveSetting({ cheap_api_key: e.target.value })} style={rowInput} />
+                    <input type={showCheapKey ? "text" : "password"} value={settingsData.cheap_api_key || ""} placeholder="sk- 开头，留空=用主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_key: e.target.value })} style={rowInput} />
+                    {eyeBtn(showCheapKey, () => setShowCheapKey(v => !v))}
                   </div>
                   <div style={rowLast}>
                     <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
-                    <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} onBlur={e => saveSetting({ cheap_model: e.target.value })} style={rowInput} />
+                    <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 16px", marginTop: -12 }}>💡 摘要压缩、对话记忆总结这些后台活儿用它，省主力额度。三框都留空就跟主力共用。</div></>}
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩等后台任务用，省主力额度。留空=跟主力共用。</div>
+
+                <button onClick={saveAndTestApi} disabled={apiTest && apiTest.loading} style={{ width: "100%", padding: "13px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, ...skRaised }}>{apiTest && apiTest.loading ? "正在测试连接..." : "保存并测试连接"}</button>
+                {apiTest && !apiTest.loading && (
+                  <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, background: apiTest.ok ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: apiTest.ok ? "#2E8B57" : "#C0392B", ...skCard }}>
+                    {apiTest.ok ? <>✓ 连接成功！当前使用模型：{apiTest.model}</> : <>✗ 没通过：{apiTest.error}{apiTest.model ? <><br />（测试的模型：{apiTest.model}）</> : null}</>}
+                    {(apiTest.warnings || []).map((w, i) => <div key={i} style={{ color: "#B8860B", marginTop: 4 }}>⚠ {w}</div>)}
+                  </div>
+                )}
+                <div style={{ height: 16 }} /></>;
+                })()}
 
                 {settingsSection === "behavior" && <>
                 <div style={listCard}>
