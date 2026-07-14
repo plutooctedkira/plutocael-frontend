@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, Tag, Switch, Button, Modal, Input, App, Select, Spin, Popconfirm } from "antd";
-import { ApiOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, MenuOutlined, DeleteOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { ApiOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, DeleteOutlined, ThunderboltOutlined } from "@ant-design/icons";
 
 const API = import.meta.env.VITE_API_BASE || "/api";
 
@@ -8,7 +8,7 @@ const API = import.meta.env.VITE_API_BASE || "/api";
  * MCP 链接管理 —— 添加/启停/删除/测试外部 MCP 服务器
  * 所有启用服务器的工具会聚合注入 Cael 的聊天
  */
-export default function McpManager({ onMenu }) {
+export default function McpManager() {
   const [servers, setServers] = useState([]);
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -91,10 +91,6 @@ export default function McpManager({ onMenu }) {
 
   return (
     <App>
-      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid #E5E1D8", flexShrink: 0 }}>
-        <Button type="text" icon={<MenuOutlined />} onClick={() => onMenu && onMenu()} size="small" title="菜单" />
-        <span className="flex-1" />
-      </div>
       <div className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
 
         <Card size="small" className="mb-4 rounded-xl" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
