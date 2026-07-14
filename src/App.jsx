@@ -276,13 +276,15 @@ export default function PlutocaelChat() {
     if (transparentBubble) {
       return { background: frostBg, border: `1px solid ${frostBorder}`, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" };
     }
+    // 古早聊天风：用户=粉调胖气泡，AI=浅灰胖气泡，都带小尾巴
+    const dark = theme === "dark" || (theme === "custom" && customTheme.dark);
+    const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
     if (isUser) {
-      const bg = wallpaper ? (theme === "dark" ? "rgba(48,48,46,0.72)" : "rgba(255,255,255,0.55)") : COLORS.userBubble;
-      // 自定义玻璃模式 或 有壁纸 → 加毛玻璃模糊；拟物：气泡带凸起光影
-      const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
+      const bg = theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.82)" : "rgba(245,228,232,0.88)") : COLORS.accentLight);
       return { background: bg, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: `0 2px 5px rgba(0,0,0,0.10), inset 0 1px 0 ${embossHi}` };
     }
-    return { background: "transparent", border: "none" };
+    const aiBg = wallpaper ? (dark ? "rgba(48,48,46,0.82)" : "rgba(255,255,255,0.88)") : (dark ? "#3A3936" : "#EFEFEC");
+    return { background: aiBg, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: `0 2px 5px rgba(0,0,0,0.08), inset 0 1px 0 ${embossHi}` };
   };
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
@@ -524,6 +526,14 @@ export default function PlutocaelChat() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      {/* 装饰刘海：点·扬声器·点，古早小机器风 */}
+      <div style={{ position: "fixed", top: "calc(env(safe-area-inset-top, 0px) + 6px)", left: "50%", transform: "translateX(-50%)", zIndex: 1500, pointerEvents: "none", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#141414", boxShadow: "inset 0 1px 2px rgba(255,255,255,0.25)" }} />
+        <span style={{ width: 108, height: 20, borderRadius: 12, background: "#141414", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.12)" }}>
+          <span style={{ width: 42, height: 5, borderRadius: 3, background: "#2E2E2E" }} />
+        </span>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#141414", boxShadow: "inset 0 1px 2px rgba(120,160,255,0.5)" }} />
+      </div>
       {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 24, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
@@ -577,11 +587,11 @@ export default function PlutocaelChat() {
                   <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
                   <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>}
-                <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 96, maxHeight: 400, boxSizing: "border-box", ...skInset }}>
+                <div style={{ display: "flex", alignItems: "flex-end", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "6px 6px 6px 8px", minHeight: 54, maxHeight: 400, borderRadius: 27, boxSizing: "border-box", ...skInset }}>
                   <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
-                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 8 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
+                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 9 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
                   <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "8px 0 8px 8px", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
-                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 8, marginRight: 8, ...skRaised }}><Icon size={20}><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></Icon></button>
+                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, alignSelf: "flex-end", marginBottom: 9, marginRight: 9, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
               </div>
             );
@@ -627,10 +637,16 @@ export default function PlutocaelChat() {
                         }
                         return null;
                       })()}
-                      <div style={{ padding: isUser ? "12px 16px" : (transparentBubble ? "10px 14px" : "4px 16px"), borderRadius: isUser ? "20px 20px 4px 20px" : (transparentBubble ? "4px 18px 18px 18px" : 0), color: isUser ? (transparentBubble ? COLORS.text : COLORS.userBubbleText) : COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bubbleStyle(isUser) }}>
-                        {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 12, display: "block", marginBottom: view.text ? 8 : 0 }} />}
-                        {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
-                      </div>
+                      {(() => {
+                        const bs = bubbleStyle(isUser);
+                        return <div style={{ position: "relative" }}>
+                          <div style={{ padding: "11px 17px", borderRadius: 22, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bs }}>
+                            {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
+                            {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
+                          </div>
+                          <span style={{ position: "absolute", top: 16, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.background}` } : { left: -8, borderRight: `11px solid ${bs.background}` }) }} />
+                        </div>;
+                      })()}
                       <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
                         <button onClick={() => { navigator.clipboard.writeText(view.text || ""); setCopiedMsgId(msg.id); setTimeout(() => setCopiedMsgId(c => c === msg.id ? null : c), 1200); }} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: copiedMsgId === msg.id ? "#3AAF6B" : COLORS.placeholder }} title="复制">{copiedMsgId === msg.id ? <Icon size={14}><polyline points="20 6 9 17 4 12" /></Icon> : <CopyIcon />}</button>
                         {copiedMsgId === msg.id && <span style={{ fontSize: 11, color: "#3AAF6B", alignSelf: "center" }}>已复制</span>}
