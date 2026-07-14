@@ -290,29 +290,17 @@ export default function PlutocaelChat() {
       const bg = theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.86)" : "rgba(245,228,232,0.9)") : COLORS.accentLight);
       return { backgroundColor: bg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
     }
-    const aiBg = wallpaper ? (dark ? "rgba(56,55,53,0.86)" : "rgba(231,231,227,0.92)") : (dark ? "#3A3936" : "#E7E7E3");
+    const aiBg = wallpaper ? (dark ? "rgba(56,55,53,0.86)" : "rgba(229,229,234,0.92)") : (dark ? "#3A3936" : "#E5E5EA");
     return { backgroundColor: aiBg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
   };
-  // 刘海：Cael 头像顶栏，所有页面通用；渐变+高光做凸起感
-  const caelHeader = (right) => {
-    const hDark = theme === "dark" || (theme === "custom" && customTheme.dark);
-    const translucent = wallpaper || glassMode;
-    return (
-      <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5,
-        background: translucent
-          ? (hDark ? "linear-gradient(180deg, rgba(64,63,60,0.72), rgba(36,36,34,0.72))" : "linear-gradient(180deg, rgba(255,255,255,0.80), rgba(233,230,222,0.72))")
-          : (hDark ? "linear-gradient(180deg, #413F3C, #2C2B29)" : "linear-gradient(180deg, #FFFFFF, #E9E6DE)"),
-        ...(translucent ? { backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" } : {}),
-        borderBottom: `1px solid ${COLORS.divider}`,
-        boxShadow: hDark
-          ? `0 3px 8px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25)`
-          : `0 3px 8px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.05)` }}>
-        <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
-        <span style={{ flex: 1 }} />
-        {right}
-      </div>
-    );
-  };
+  // 顶栏：极简，只有菜单键（+ 可选的右侧内容），无底色无阴影
+  const caelHeader = (right) => (
+    <div style={{ padding: "8px 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5 }}>
+      <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
+      <span style={{ flex: 1 }} />
+      {right}
+    </div>
+  );
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
