@@ -308,11 +308,6 @@ export default function PlutocaelChat() {
           ? `0 3px 8px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.25)`
           : `0 3px 8px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.05)` }}>
         <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: COLORS.accentLight, backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0) 55%, rgba(0,0,0,0.06))", border: `2px solid ${COLORS.cardBg}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 21, color: COLORS.accent, fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", boxShadow: `0 2px 5px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.5)` }}>C</div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, lineHeight: 1.25 }}>Cael</div>
-          <div style={{ fontSize: 12, color: COLORS.accent, display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: COLORS.accent, display: "inline-block" }} />在线</div>
-        </div>
         <span style={{ flex: 1 }} />
         {right}
       </div>
@@ -699,10 +694,7 @@ export default function PlutocaelChat() {
 
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          {caelHeader(<>
-            <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ appearance: "外观", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</span>
-            <button className="flat" onClick={() => setShowSettings(false)} title="回到聊天" style={{ background: "transparent", border: "none", cursor: "pointer", color: COLORS.textSecondary, padding: 4, marginLeft: 8, display: "flex" }}><Icon size={18}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon></button>
-          </>)}
+          {caelHeader(<span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ appearance: "外观", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</span>)}
           {settingsSection && <div className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); setTimeout(loadGatewayStats, 50); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
