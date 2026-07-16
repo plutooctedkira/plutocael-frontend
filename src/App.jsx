@@ -722,7 +722,6 @@ export default function PlutocaelChat() {
         ];
         if (bubbleMenu.isUser) items.unshift(
           { label: "撤回", icon: <Icon size={20}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></Icon>, onClick: () => handleWithdraw(bubbleMenu.id) },
-          { label: "编辑", icon: <Icon size={20}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></Icon>, onClick: () => { setEditingMsgId(bubbleMenu.id); setBubbleMenu(null); } },
         );
         const itemW = 60, panelW = items.length * itemW + 16, panelH = 78;
         const vw = window.innerWidth;
