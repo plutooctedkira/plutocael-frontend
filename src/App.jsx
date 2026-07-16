@@ -310,6 +310,8 @@ export default function PlutocaelChat() {
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
   const dragging = useRef(false);
+  // thinking 底部弹层：存消息id，流式时内容跟着长
+  const [thinkingSheet, setThinkingSheet] = useState(null);
   // 长按气泡菜单：{id, isUser, text, x, y}
   const [bubbleMenu, setBubbleMenu] = useState(null);
   const lpTimer = useRef(null);
@@ -663,10 +665,7 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      {!isUser && msg.reasoning_content && <details style={{ margin: "0 16px 8px", fontSize: 13, color: COLORS.textSecondary }}>
-                        <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>💭 思考过程</summary>
-                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.accentLight, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto" }}>{msg.reasoning_content}</div>
-                      </details>}
+                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => setThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 13px", borderRadius: 14, border: "none", background: COLORS.accentLight, color: COLORS.accent, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit" }}>💭 思考过程</button>}
                       {!isUser && msg.tool_log && (() => {
                         // 过滤记忆相关 MCP 调用（memory_search/memory_list/memory_create/memory_update/memory_delete），只保留非记忆的工具调用
                         const lines = msg.tool_log.split('\n');
@@ -687,11 +686,11 @@ export default function PlutocaelChat() {
                             onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
                             onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
                             onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
-                            style={{ padding: "9px 17px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", ...bs }}>
+                            style={{ padding: "3px 14px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
-                          <span style={{ position: "absolute", top: 14, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
+                          <span style={{ position: "absolute", top: 8, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
                         </div>;
                       })()}
                       {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
@@ -714,6 +713,20 @@ export default function PlutocaelChat() {
       </div>
 
 
+      {thinkingSheet != null && (() => {
+        const tMsg = messages.find(m => m.id === thinkingSheet);
+        return <div onClick={() => setThinkingSheet(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: COLORS.cardBg, borderRadius: "22px 22px 0 0", maxHeight: "72vh", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
+            <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0", flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px", flexShrink: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>💭 思考过程</div>
+              <span style={{ flex: 1 }} />
+              <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+            </div>
+            <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "6px 22px calc(24px + env(safe-area-inset-bottom, 0px))", whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.75, color: COLORS.textSecondary }}>{(tMsg && tMsg.reasoning_content) || "（暂无思考内容）"}</div>
+          </div>
+        </div>;
+      })()}
       {bubbleMenu && (() => {
         // 微信式长按菜单：气泡上方深色面板，图标+文字横排，带指向气泡的小箭头
         const items = [
