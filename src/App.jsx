@@ -310,8 +310,11 @@ export default function PlutocaelChat() {
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
   const dragging = useRef(false);
-  // thinking 底部弹层：存消息id，流式时内容跟着长
+  // thinking 底部弹层：存消息id，流式时内容跟着长；高度可上拉（默认约半屏，最高距顶20px）
   const [thinkingSheet, setThinkingSheet] = useState(null);
+  const [sheetH, setSheetH] = useState(360);
+  const sheetDrag = useRef(null);
+  const openThinkingSheet = (id) => { setSheetH(Math.round(window.innerHeight * 0.47)); setThinkingSheet(id); };
   // 长按气泡菜单：{id, isUser, text, x, y}
   const [bubbleMenu, setBubbleMenu] = useState(null);
   const lpTimer = useRef(null);
@@ -665,7 +668,7 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => setThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 13px", borderRadius: 14, border: "none", background: COLORS.accentLight, color: COLORS.accent, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit" }}>💭 思考过程</button>}
+                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 13px", borderRadius: 14, border: "none", background: COLORS.accentLight, color: COLORS.accent, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit" }}>💭 思考过程</button>}
                       {!isUser && msg.tool_log && (() => {
                         // 过滤记忆相关 MCP 调用（memory_search/memory_list/memory_create/memory_update/memory_delete），只保留非记忆的工具调用
                         const lines = msg.tool_log.split('\n');
@@ -716,14 +719,19 @@ export default function PlutocaelChat() {
       {thinkingSheet != null && (() => {
         const tMsg = messages.find(m => m.id === thinkingSheet);
         return <div onClick={() => setThinkingSheet(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: COLORS.cardBg, borderRadius: "22px 22px 0 0", maxHeight: "72vh", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
-            <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0", flexShrink: 0 }} />
-            <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px", flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>💭 思考过程</div>
-              <span style={{ flex: 1 }} />
-              <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+          <div onClick={e => e.stopPropagation()} style={{ background: COLORS.cardBg, borderRadius: "22px 22px 0 0", height: sheetH, margin: "0 4px", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
+            <div style={{ flexShrink: 0, touchAction: "none", cursor: "grab" }}
+              onPointerDown={e => { sheetDrag.current = { y: e.clientY, h: sheetH }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} }}
+              onPointerMove={e => { if (!sheetDrag.current) return; setSheetH(Math.min(window.innerHeight - 20, Math.max(180, sheetDrag.current.h + (sheetDrag.current.y - e.clientY)))); }}
+              onPointerUp={() => { sheetDrag.current = null; }} onPointerCancel={() => { sheetDrag.current = null; }}>
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0" }} />
+              <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px" }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>💭 思考过程</div>
+                <span style={{ flex: 1 }} />
+                <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+              </div>
             </div>
-            <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "6px 22px calc(24px + env(safe-area-inset-bottom, 0px))", whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.75, color: COLORS.textSecondary }}>{(tMsg && tMsg.reasoning_content) || "（暂无思考内容）"}</div>
+            <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "6px 22px calc(24px + env(safe-area-inset-bottom, 0px))", whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.75, color: COLORS.textSecondary }}>{(tMsg && tMsg.reasoning_content) || "（暂无思考内容）"}</div>
           </div>
         </div>;
       })()}
