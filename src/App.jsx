@@ -668,7 +668,7 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>思考过程<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
+                      {!isUser && msg.reasoning_content && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>thinking<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
                       {!isUser && msg.tool_log && (() => {
                         // 过滤记忆相关 MCP 调用（memory_search/memory_list/memory_create/memory_update/memory_delete），只保留非记忆的工具调用
                         const lines = msg.tool_log.split('\n');

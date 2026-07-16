@@ -93,6 +93,8 @@ button:active:not(:disabled) {
 button:disabled { box-shadow: none; }
 /* 扁平按钮：侧边栏未选中项等，不要拟物凸起 */
 button.flat { box-shadow: none !important; background-image: none !important; }
+/* 幽灵按钮：无按压缩放/凹陷，只是文字轻微变灰作为反馈 */
+button.ghost:active:not(:disabled) { transform: none; opacity: 0.5; box-shadow: none !important; }
 
 html, body, #root {
   overflow-x: hidden;
