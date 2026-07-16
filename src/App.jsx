@@ -668,7 +668,7 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 13px", borderRadius: 14, border: "none", background: COLORS.accentLight, color: COLORS.accent, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit" }}>💭 思考过程</button>}
+                      {!isUser && msg.reasoning_content && <button className="flat" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 13px", borderRadius: 14, border: `1px solid ${frostBorder}`, background: frostBg, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>思考过程<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
                       {!isUser && msg.tool_log && (() => {
                         // 过滤记忆相关 MCP 调用（memory_search/memory_list/memory_create/memory_update/memory_delete），只保留非记忆的工具调用
                         const lines = msg.tool_log.split('\n');
@@ -719,14 +719,14 @@ export default function PlutocaelChat() {
       {thinkingSheet != null && (() => {
         const tMsg = messages.find(m => m.id === thinkingSheet);
         return <div onClick={() => setThinkingSheet(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: COLORS.cardBg, borderRadius: "22px 22px 0 0", height: sheetH, margin: "0 4px", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: barDark ? "rgba(40,40,38,0.78)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)", border: `1px solid ${frostBorder}`, borderBottom: "none", borderRadius: "22px 22px 0 0", height: sheetH, margin: "0 4px", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
             <div style={{ flexShrink: 0, touchAction: "none", cursor: "grab" }}
               onPointerDown={e => { sheetDrag.current = { y: e.clientY, h: sheetH }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} }}
               onPointerMove={e => { if (!sheetDrag.current) return; setSheetH(Math.min(window.innerHeight - 20, Math.max(180, sheetDrag.current.h + (sheetDrag.current.y - e.clientY)))); }}
               onPointerUp={() => { sheetDrag.current = null; }} onPointerCancel={() => { sheetDrag.current = null; }}>
               <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0" }} />
               <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px" }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>💭 思考过程</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>思考过程</div>
                 <span style={{ flex: 1 }} />
                 <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
               </div>
