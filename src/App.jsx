@@ -293,9 +293,14 @@ export default function PlutocaelChat() {
     const aiBg = wallpaper ? (dark ? "rgba(56,55,53,0.86)" : "rgba(224,224,229,0.92)") : (dark ? "#3A3936" : "#E0E0E5");
     return { backgroundColor: aiBg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
   };
-  // 顶栏：极简，只有菜单键（+ 可选的右侧内容），无底色无阴影
+  // 微信式浅灰刘海/底栏：顶部和底部用浅灰条增加层次感（深色模式用深灰，壁纸下半透明磨砂）
+  const barDark = theme === "dark" || (theme === "custom" && customTheme.dark);
+  const barBg = (wallpaper || glassMode)
+    ? { background: barDark ? "rgba(40,40,38,0.80)" : "rgba(237,237,234,0.80)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
+    : { background: barDark ? "#2A2A28" : "#EDEDEA" };
+  // 顶栏：浅灰刘海，只有菜单键（+ 可选的右侧内容）
   const caelHeader = (right) => (
-    <div style={{ padding: "8px 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5 }}>
+    <div style={{ padding: "6px 14px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, ...barBg, borderBottom: `1px solid ${COLORS.divider}` }}>
       <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
       <span style={{ flex: 1 }} />
       {right}
@@ -700,7 +705,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 24px 24px", ...(wallpaper ? { background: "transparent" } : glassify(COLORS.bg)) }}>
+          <div style={{ padding: "12px 18px 22px", ...barBg, borderTop: `1px solid ${COLORS.divider}` }}>
             {inputBar}
           </div>
             </>;
