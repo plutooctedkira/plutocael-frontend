@@ -705,7 +705,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "12px 18px calc(20px + env(safe-area-inset-bottom, 0px))", ...barBg, borderTop: `1px solid ${COLORS.divider}` }}>
+          <div style={{ padding: "8px 18px calc(8px + env(safe-area-inset-bottom, 0px))", ...barBg, borderTop: `1px solid ${COLORS.divider}` }}>
             {inputBar}
           </div>
             </>;
