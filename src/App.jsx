@@ -290,7 +290,7 @@ export default function PlutocaelChat() {
       const bg = theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.86)" : "rgba(245,228,232,0.9)") : COLORS.accentLight);
       return { backgroundColor: bg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
     }
-    const aiBg = wallpaper ? (dark ? "rgba(56,55,53,0.86)" : "rgba(229,229,234,0.92)") : (dark ? "#3A3936" : "#E5E5EA");
+    const aiBg = wallpaper ? (dark ? "rgba(56,55,53,0.86)" : "rgba(224,224,229,0.92)") : (dark ? "#3A3936" : "#E0E0E5");
     return { backgroundColor: aiBg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
   };
   // 顶栏：极简，只有菜单键（+ 可选的右侧内容），无底色无阴影
@@ -597,11 +597,11 @@ export default function PlutocaelChat() {
                 </div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
-                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 1, ...skRaised }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 22, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "4px 14px", minHeight: 44, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
+                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
                     <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "6px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                   </div>
-                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 42, height: 42, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 1, ...skRaised }}><Icon size={20}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
+                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
               </div>
             );
@@ -650,7 +650,7 @@ export default function PlutocaelChat() {
                       {(() => {
                         const bs = bubbleStyle(isUser);
                         return <div style={{ position: "relative" }}>
-                          <div style={{ padding: "11px 17px", borderRadius: 22, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bs }}>
+                          <div style={{ padding: "11px 17px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
