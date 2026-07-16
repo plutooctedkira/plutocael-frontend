@@ -308,9 +308,9 @@ export default function PlutocaelChat() {
   // 长按气泡菜单：{id, isUser, text, x, y}
   const [bubbleMenu, setBubbleMenu] = useState(null);
   const lpTimer = useRef(null);
-  const openBubbleMenu = (msg, isUser, text, x, y) => {
+  const openBubbleMenu = (msg, isUser, text, rect) => {
     if (navigator.vibrate) navigator.vibrate(10);
-    setBubbleMenu({ id: msg.id, isUser, text: text || "", x: Math.min(x, window.innerWidth - 160), y: Math.min(y, window.innerHeight - 200) });
+    setBubbleMenu({ id: msg.id, isUser, text: text || "", rect: { top: rect.top, bottom: rect.bottom, cx: rect.left + rect.width / 2 } });
   };
   const cancelLongPress = () => { if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = null; } };
   const handleWithdraw = async (id) => {
@@ -664,8 +664,8 @@ export default function PlutocaelChat() {
                         const bs = bubbleStyle(isUser);
                         return <div style={{ position: "relative" }}>
                           <div
-                            onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.clientX, e.clientY); }}
-                            onTouchStart={e => { const t = e.touches[0]; cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, t.clientX, t.clientY), 450); }}
+                            onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
+                            onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
                             onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
                             style={{ padding: "9px 17px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
@@ -694,13 +694,26 @@ export default function PlutocaelChat() {
 
 
       {bubbleMenu && (() => {
-        const menuItem = { display: "block", width: "100%", textAlign: "left", padding: "10px 20px", border: "none", background: "transparent", color: COLORS.text, fontSize: 14, cursor: "pointer", borderRadius: 10, fontFamily: "inherit" };
+        // 微信式长按菜单：气泡上方深色面板，图标+文字横排，带指向气泡的小箭头
+        const items = [
+          { label: "复制", icon: <Icon size={20}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>, onClick: () => { navigator.clipboard.writeText(bubbleMenu.text); setBubbleMenu(null); } },
+          { label: "引用", icon: <Icon size={20}><path d="M10 11H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /><path d="M20 11h-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /></Icon>, onClick: () => handleQuote(bubbleMenu.text) },
+        ];
+        if (bubbleMenu.isUser) items.unshift(
+          { label: "撤回", icon: <Icon size={20}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></Icon>, onClick: () => handleWithdraw(bubbleMenu.id) },
+          { label: "编辑", icon: <Icon size={20}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></Icon>, onClick: () => { setEditingMsgId(bubbleMenu.id); setBubbleMenu(null); } },
+        );
+        const itemW = 60, panelW = items.length * itemW + 16, panelH = 78;
+        const vw = window.innerWidth;
+        const left = Math.max(8, Math.min(bubbleMenu.rect.cx - panelW / 2, vw - panelW - 8));
+        const above = bubbleMenu.rect.top - panelH - 12 > 8;
+        const top = above ? bubbleMenu.rect.top - panelH - 10 : bubbleMenu.rect.bottom + 10;
+        const arrowX = Math.max(18, Math.min(bubbleMenu.rect.cx - left, panelW - 18));
+        const panelBg = "rgba(64,64,64,0.97)";
         return <div onClick={() => setBubbleMenu(null)} onContextMenu={e => { e.preventDefault(); setBubbleMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 600 }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left: bubbleMenu.x, top: bubbleMenu.y, minWidth: 140, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12)", padding: 5, overflow: "hidden" }}>
-            {bubbleMenu.isUser && <button className="flat" onClick={() => handleWithdraw(bubbleMenu.id)} style={{ ...menuItem, color: "#C0392B" }}>撤回</button>}
-            {bubbleMenu.isUser && <button className="flat" onClick={() => { setEditingMsgId(bubbleMenu.id); setBubbleMenu(null); }} style={menuItem}>编辑</button>}
-            <button className="flat" onClick={() => { navigator.clipboard.writeText(bubbleMenu.text); setBubbleMenu(null); }} style={menuItem}>复制</button>
-            <button className="flat" onClick={() => handleQuote(bubbleMenu.text)} style={menuItem}>引用</button>
+          <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left, top, width: panelW, height: panelH, background: panelBg, borderRadius: 14, padding: "12px 8px 8px", boxSizing: "border-box", display: "flex", boxShadow: "0 10px 32px rgba(0,0,0,0.32), 0 3px 10px rgba(0,0,0,0.2)", animation: "msgSlideIn 0.18s ease" }}>
+            {items.map(it => <button key={it.label} className="flat" onClick={it.onClick} style={{ flex: 1, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: 0, fontSize: 12, fontFamily: "inherit", lineHeight: 1 }}>{it.icon}<span>{it.label}</span></button>)}
+            <span style={{ position: "absolute", left: arrowX - 7, width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", ...(above ? { bottom: -7, borderTop: `8px solid ${panelBg}` } : { top: -7, borderBottom: `8px solid ${panelBg}` }) }} />
           </div>
         </div>;
       })()}
