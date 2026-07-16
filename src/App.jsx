@@ -317,7 +317,17 @@ export default function PlutocaelChat() {
     setBubbleMenu(null);
     try { await fetch(API + "/messages/" + id, { method: "DELETE" }); setMessages(prev => prev.filter(m => m.id !== id)); } catch (e) { console.error("撤回失败:", e); }
   };
-  const handleQuote = (text) => { setBubbleMenu(null); setInput(prev => `「${text}」\n` + prev); };
+  // 引用：先挂在输入框上方待发送，发送时以标记拼进正文，渲染时拆出来显示成气泡下方小灰条
+  const [pendingQuote, setPendingQuote] = useState(null); // {from, text}
+  const handleQuote = (text, isUser) => { setBubbleMenu(null); setPendingQuote({ from: isUser ? "我" : "Cael", text }); };
+  const parseQuote = (text) => {
+    if (!text || typeof text !== "string") return { text, quote: null };
+    const i = text.lastIndexOf("\n\n〔引用·");
+    if (i === -1) return { text, quote: null };
+    const m = text.slice(i + 2).match(/^〔引用·(.+?)〕([\s\S]*)$/);
+    if (!m) return { text, quote: null };
+    return { text: text.slice(0, i), quote: { from: m[1], text: m[2] } };
+  };
 
   useEffect(() => { fetch(API + "/sessions").then(r => r.json()).then(data => { setSessions(data); if (data.length > 0 && !activeSessionId) setActiveSessionId(data[0].id); data.forEach(s => loadPreview(s.id)); }).catch(err => console.error("加载会话失败:", err)); }, []);
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
@@ -489,9 +499,9 @@ export default function PlutocaelChat() {
 
   // 消息展示辅助：图片消息解出 文字+图片url（本地乐观消息用imageUrl，库里的解JSON）
   const getMsgView = (msg) => {
-    if (msg.msg_type !== "image") return { text: msg.content, img: null };
-    if (msg.imageUrl) return { text: msg.content, img: msg.imageUrl };
-    try { const d = JSON.parse(msg.content); return { text: d.text, img: `data:${d.media_type};base64,${d.data}` }; } catch (e) { return { text: msg.content, img: null }; }
+    if (msg.msg_type !== "image") { const p = parseQuote(msg.content); return { text: p.text, img: null, quote: p.quote }; }
+    if (msg.imageUrl) return { text: msg.content, img: msg.imageUrl, quote: null };
+    try { const d = JSON.parse(msg.content); const p = parseQuote(d.text); return { text: p.text, img: `data:${d.media_type};base64,${d.data}`, quote: p.quote }; } catch (e) { return { text: msg.content, img: null, quote: null }; }
   };
 
   const chatAbortRef = useRef(null);
@@ -516,12 +526,13 @@ export default function PlutocaelChat() {
     if ((!input.trim() && !pendingImage) || loading) return;
     let sid = activeSessionId;
     if (!sid) { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); sid = s.id; } catch (err) { return; } }
-    const content = input; const image = pendingImage;
-    setInput(""); setPendingImage(null);
+    const image = pendingImage;
+    const content = pendingQuote ? `${input}\n\n〔引用·${pendingQuote.from}〕${pendingQuote.text}` : input;
+    setInput(""); setPendingImage(null); setPendingQuote(null);
     const uMsg = { id: Date.now(), role: "user", content, created_at: new Date().toISOString(), ...(image ? { msg_type: "image", imageUrl: image.dataUrl } : {}) };
     const aMsg = { id: Date.now() + 1, role: "assistant", content: "", created_at: new Date().toISOString() };
     setMessages(prev => [...prev, uMsg, aMsg]);
-    if (!previews[sid]) { const pv = content || "[图片]"; setPreviews(prev => ({ ...prev, [sid]: pv.substring(0, 30) + (pv.length > 30 ? "..." : "") })); }
+    if (!previews[sid]) { const pv = input || "[图片]"; setPreviews(prev => ({ ...prev, [sid]: pv.substring(0, 30) + (pv.length > 30 ? "..." : "") })); }
     setLoading(true); await streamChat(sid, content, aMsg.id, image ? { media_type: image.media_type, data: image.data } : null); setLoading(false);
   };
 
@@ -604,6 +615,10 @@ export default function PlutocaelChat() {
           {(() => {
             const inputBar = (
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+                {pendingQuote && <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 10, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)", fontSize: 13, color: COLORS.textSecondary }}>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingQuote.from}：{pendingQuote.text}</span>
+                  <button className="flat" onClick={() => setPendingQuote(null)} style={{ width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.30)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>✕</button>
+                </div>}
                 {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
                   <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
                   <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
@@ -674,6 +689,7 @@ export default function PlutocaelChat() {
                           <span style={{ position: "absolute", top: 14, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
                         </div>;
                       })()}
+                      {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
                       <div style={{ display: "flex", marginTop: 4, justifyContent: isUser ? "flex-end" : "flex-start" }}>
                         {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
@@ -697,7 +713,7 @@ export default function PlutocaelChat() {
         // 微信式长按菜单：气泡上方深色面板，图标+文字横排，带指向气泡的小箭头
         const items = [
           { label: "复制", icon: <Icon size={20}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>, onClick: () => { navigator.clipboard.writeText(bubbleMenu.text); setBubbleMenu(null); } },
-          { label: "引用", icon: <Icon size={20}><path d="M10 11H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /><path d="M20 11h-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /></Icon>, onClick: () => handleQuote(bubbleMenu.text) },
+          { label: "引用", icon: <Icon size={20}><path d="M10 11H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /><path d="M20 11h-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6c0 2-1 3.5-3 4" /></Icon>, onClick: () => handleQuote(bubbleMenu.text, bubbleMenu.isUser) },
         ];
         if (bubbleMenu.isUser) items.unshift(
           { label: "撤回", icon: <Icon size={20}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></Icon>, onClick: () => handleWithdraw(bubbleMenu.id) },
