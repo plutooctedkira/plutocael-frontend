@@ -305,6 +305,19 @@ export default function PlutocaelChat() {
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
   const dragging = useRef(false);
+  // 长按气泡菜单：{id, isUser, text, x, y}
+  const [bubbleMenu, setBubbleMenu] = useState(null);
+  const lpTimer = useRef(null);
+  const openBubbleMenu = (msg, isUser, text, x, y) => {
+    if (navigator.vibrate) navigator.vibrate(10);
+    setBubbleMenu({ id: msg.id, isUser, text: text || "", x: Math.min(x, window.innerWidth - 160), y: Math.min(y, window.innerHeight - 200) });
+  };
+  const cancelLongPress = () => { if (lpTimer.current) { clearTimeout(lpTimer.current); lpTimer.current = null; } };
+  const handleWithdraw = async (id) => {
+    setBubbleMenu(null);
+    try { await fetch(API + "/messages/" + id, { method: "DELETE" }); setMessages(prev => prev.filter(m => m.id !== id)); } catch (e) { console.error("撤回失败:", e); }
+  };
+  const handleQuote = (text) => { setBubbleMenu(null); setInput(prev => `「${text}」\n` + prev); };
 
   useEffect(() => { fetch(API + "/sessions").then(r => r.json()).then(data => { setSessions(data); if (data.length > 0 && !activeSessionId) setActiveSessionId(data[0].id); data.forEach(s => loadPreview(s.id)); }).catch(err => console.error("加载会话失败:", err)); }, []);
   const loadPreview = async (sid) => { try { const res = await fetch(API + "/messages/session/" + sid); const msgs = await res.json(); const f = msgs.find(m => m.role === "user"); if (f) setPreviews(prev => ({ ...prev, [sid]: f.content.substring(0, 30) + (f.content.length > 30 ? "..." : "") })); } catch (e) {} };
@@ -650,19 +663,19 @@ export default function PlutocaelChat() {
                       {(() => {
                         const bs = bubbleStyle(isUser);
                         return <div style={{ position: "relative" }}>
-                          <div style={{ padding: "11px 17px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", ...bs }}>
+                          <div
+                            onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.clientX, e.clientY); }}
+                            onTouchStart={e => { const t = e.touches[0]; cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, t.clientX, t.clientY), 450); }}
+                            onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
+                            style={{ padding: "9px 17px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.7, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
-                          <span style={{ position: "absolute", top: 16, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
+                          <span style={{ position: "absolute", top: 14, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
                         </div>;
                       })()}
-                      <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                        <button onClick={() => { navigator.clipboard.writeText(view.text || ""); setCopiedMsgId(msg.id); setTimeout(() => setCopiedMsgId(c => c === msg.id ? null : c), 1200); }} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: copiedMsgId === msg.id ? "#3AAF6B" : COLORS.placeholder }} title="复制">{copiedMsgId === msg.id ? <Icon size={14}><polyline points="20 6 9 17 4 12" /></Icon> : <CopyIcon />}</button>
-                        {copiedMsgId === msg.id && <span style={{ fontSize: 11, color: "#3AAF6B", alignSelf: "center" }}>已复制</span>}
-                        {isUser && <button onClick={() => setEditingMsgId(msg.id)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="编辑"><EditIcon /></button>}
-                        {!isUser && <button onClick={() => handleRetry(msg)} style={{ padding: "4px 6px", borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.placeholder }} title="重试"><Icon size={14}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Icon></button>}
-                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, alignSelf: "center", marginLeft: 4, opacity: 0.8 }}>{formatFullTime(msg.created_at)}</span>}
+                      <div style={{ display: "flex", marginTop: 4, justifyContent: isUser ? "flex-end" : "flex-start" }}>
+                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
                     </>)}
                   </div>
@@ -680,6 +693,17 @@ export default function PlutocaelChat() {
       </div>
 
 
+      {bubbleMenu && (() => {
+        const menuItem = { display: "block", width: "100%", textAlign: "left", padding: "10px 20px", border: "none", background: "transparent", color: COLORS.text, fontSize: 14, cursor: "pointer", borderRadius: 10, fontFamily: "inherit" };
+        return <div onClick={() => setBubbleMenu(null)} onContextMenu={e => { e.preventDefault(); setBubbleMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 600 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left: bubbleMenu.x, top: bubbleMenu.y, minWidth: 140, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12)", padding: 5, overflow: "hidden" }}>
+            {bubbleMenu.isUser && <button className="flat" onClick={() => handleWithdraw(bubbleMenu.id)} style={{ ...menuItem, color: "#C0392B" }}>撤回</button>}
+            {bubbleMenu.isUser && <button className="flat" onClick={() => { setEditingMsgId(bubbleMenu.id); setBubbleMenu(null); }} style={menuItem}>编辑</button>}
+            <button className="flat" onClick={() => { navigator.clipboard.writeText(bubbleMenu.text); setBubbleMenu(null); }} style={menuItem}>复制</button>
+            <button className="flat" onClick={() => handleQuote(bubbleMenu.text)} style={menuItem}>引用</button>
+          </div>
+        </div>;
+      })()}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           {caelHeader(<span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ appearance: "外观", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</span>)}
