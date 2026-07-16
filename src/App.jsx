@@ -298,9 +298,9 @@ export default function PlutocaelChat() {
   const barBg = (wallpaper || glassMode)
     ? { background: barDark ? "rgba(40,40,38,0.80)" : "rgba(237,237,234,0.80)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
     : { background: barDark ? "#2A2A28" : "#EDEDEA" };
-  // 顶栏：极简透明，只有菜单键（+ 可选的右侧内容）
+  // 顶栏：主题色实底（不透壁纸），只有菜单键（+ 可选的右侧内容）
   const caelHeader = (right) => (
-    <div style={{ padding: "8px 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5 }}>
+    <div style={{ padding: "8px 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
       <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
       <span style={{ flex: 1 }} />
       {right}
@@ -574,7 +574,7 @@ export default function PlutocaelChat() {
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: wallpaper ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : COLORS.bg, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: (wallpaper && currentPage === "chat") ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : (theme === "custom" ? COLORS._solidBg : COLORS.bg), fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none", paddingTop: "env(safe-area-inset-top, 0px)" }}>
       {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 24, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
