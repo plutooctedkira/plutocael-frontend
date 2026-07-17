@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
+import OmbreMemories from './OmbreMemories';
 
 // 开发时走 "/api"（由 vite.config.js 代理到本地后端 3000 端口），
 // 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
@@ -581,6 +582,7 @@ export default function PlutocaelChat() {
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setShowSettings(false); setCurrentPage("mcp"); setSidebarOpen(false); }} className={!showSettings && currentPage === "mcp" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "mcp" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "mcp" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M9 2v6" /><path d="M15 2v6" /><path d="M6 8h12v4a6 6 0 0 1-6 6 6 6 0 0 1-6-6z" /><path d="M12 18v4" /></Icon> MCP 链接</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆</button>
           <div style={{ height: 1, background: COLORS.divider, margin: "10px 6px" }} />
           {[
             { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
@@ -620,6 +622,9 @@ export default function PlutocaelChat() {
         {currentPage === "mcp" ? (<>
           {caelHeader()}
           <McpManager />
+        </>) : currentPage === "obmem" ? (<>
+          {caelHeader()}
+          <OmbreMemories api={API} colors={COLORS} dark={barDark} />
         </>) : (<>
           {caelHeader()}
           {(() => {
