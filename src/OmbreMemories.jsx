@@ -80,6 +80,23 @@ export default function OmbreMemories({ api, colors: C, dark }) {
     } catch (e) { /* 拿不到就用列表里的 */ } finally { setDetailLoading(false); }
   };
 
+  const [patching, setPatching] = useState(false);
+  // 管理：钉选/已解决 开关，PATCH 后同步详情和列表
+  const patchMemory = async (fields) => {
+    if (!selected || patching) return;
+    setPatching(true);
+    try {
+      const r = await fetch(`${api}/ombre-dashboard/buckets/${encodeURIComponent(selected.id)}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields),
+      });
+      if (r.ok) {
+        const d = await r.json().catch(() => null);
+        setSelected(prev => ({ ...prev, ...fields, ...(d && d.id ? d : {}) }));
+        load();
+      }
+    } catch (e) { /* 网络失败保持原状 */ } finally { setPatching(false); }
+  };
+
   const online = status && status.available;
   const chip = (active) => ({
     padding: "5px 14px", borderRadius: 16, border: active ? "none" : `1px solid ${C.divider}`,
@@ -169,6 +186,10 @@ export default function OmbreMemories({ api, colors: C, dark }) {
               </div>
               {detailLoading && <div style={{ fontSize: 12, color: C.placeholder, marginBottom: 8 }}>正在展开完整记忆…</div>}
               <div style={{ fontSize: 14, lineHeight: 1.75, color: C.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", marginBottom: 16 }}>{selected.content || selected.contentPreview || "(空)"}</div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <button className="flat ghost" disabled={patching} onClick={() => patchMemory({ pinned: !selected.pinned })} style={{ flex: 1, padding: "9px 0", borderRadius: 14, border: selected.pinned ? "none" : `1px solid ${C.divider}`, background: selected.pinned ? C.accent : "transparent", color: selected.pinned ? "#fff" : C.textSecondary, fontSize: 13, cursor: "pointer", fontFamily: "inherit", opacity: patching ? 0.5 : 1 }}>{selected.pinned ? "📌 已钉选 · 点击取消" : "📌 钉选"}</button>
+                <button className="flat ghost" disabled={patching} onClick={() => patchMemory({ resolved: !selected.resolved })} style={{ flex: 1, padding: "9px 0", borderRadius: 14, border: selected.resolved ? "none" : `1px solid ${C.divider}`, background: selected.resolved ? "#3AAF6B" : "transparent", color: selected.resolved ? "#fff" : C.textSecondary, fontSize: 13, cursor: "pointer", fontFamily: "inherit", opacity: patching ? 0.5 : 1 }}>{selected.resolved ? "✓ 已解决 · 点击恢复" : "✓ 标记已解决"}</button>
+              </div>
               <div style={{ marginBottom: 14 }}>
                 <div style={{ ...infoRow }}><span style={{ color: C.textSecondary }}>被想起</span><span>{selected.activationCount || 0} 次</span></div>
                 <div style={{ ...infoRow }}><span style={{ color: C.textSecondary }}>创建于</span><span>{fmtTime(selected.createdAt, true)}</span></div>
