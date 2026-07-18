@@ -369,11 +369,28 @@ export default function PlutocaelChat() {
   const editInputRef = useRef(null);
   const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
   const dragging = useRef(false);
-  // thinking 底部弹层：存消息id，流式时内容跟着长；高度可上拉（默认约半屏，最高距顶20px）
+  // steps 底部弹层（thinking+工具调用合并）：存消息id，流式时内容跟着长；高度可上拉（默认约半屏，最高距顶20px）
   const [thinkingSheet, setThinkingSheet] = useState(null);
   const [sheetH, setSheetH] = useState(360);
+  const [openSteps, setOpenSteps] = useState({}); // 每条step的展开状态，默认折叠
   const sheetDrag = useRef(null);
-  const openThinkingSheet = (id) => { setSheetH(Math.round(window.innerHeight * 0.47)); setThinkingSheet(id); };
+  const openThinkingSheet = (id) => { setSheetH(Math.round(window.innerHeight * 0.47)); setOpenSteps({}); setThinkingSheet(id); };
+  // 把消息的 thinking 和工具日志拆成 steps 列表
+  const filterToolLines = (log) => (log || "").split("\n").filter(l => !['→ 调用 memory', '✓ 返回: memory'].some(p => l.includes(p))).filter(l => l.trim());
+  const buildSteps = (m) => {
+    const steps = [];
+    if (m && m.reasoning_content) steps.push({ key: "thinking", kind: "thinking", title: "Thinking", content: m.reasoning_content });
+    if (m && m.tool_log) {
+      let cur = null;
+      for (const l of filterToolLines(m.tool_log)) {
+        const mm = l.match(/^→ 调用 (\S+)\s*(.*)$/);
+        if (mm) { cur = { key: "tool" + steps.length + mm[1], kind: "tool", title: mm[1].charAt(0).toUpperCase() + mm[1].slice(1), content: mm[2] ? "参数: " + mm[2] : "" }; steps.push(cur); }
+        else if (cur) cur.content += (cur.content ? "\n" : "") + l;
+        else { cur = { key: "tool" + steps.length, kind: "tool", title: "工具调用", content: l }; steps.push(cur); }
+      }
+    }
+    return steps;
+  };
   // 长按气泡菜单：{id, isUser, text, x, y}
   const [bubbleMenu, setBubbleMenu] = useState(null);
   const lpTimer = useRef(null);
@@ -734,20 +751,7 @@ export default function PlutocaelChat() {
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
                   <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
-                    {editingMsgId !== msg.id && !isUser && msg.reasoning_content && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>thinking<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
-                    {editingMsgId !== msg.id && !isUser && msg.tool_log && (() => {
-                      // 过滤记忆相关 MCP 调用，只保留非记忆的工具调用
-                      const lines = msg.tool_log.split('\n');
-                      const memPrefixes = ['→ 调用 memory', '✓ 返回: memory'];
-                      const visibleLines = lines.filter(l => !memPrefixes.some(p => l.includes(p)));
-                      if (visibleLines.length > 0) {
-                        return <details style={{ margin: "0 16px 8px 48px", fontSize: 13, color: COLORS.textSecondary }}>
-                          <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
-                          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{visibleLines.join('\n')}</div>
-                        </details>;
-                      }
-                      return null;
-                    })()}
+                    {editingMsgId !== msg.id && !isUser && (msg.reasoning_content || filterToolLines(msg.tool_log).length > 0) && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>steps<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
                     <div style={{ display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                       {(isUser ? avatarUser : avatarAi)
@@ -809,12 +813,30 @@ export default function PlutocaelChat() {
               onPointerUp={() => { sheetDrag.current = null; }} onPointerCancel={() => { sheetDrag.current = null; }}>
               <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0" }} />
               <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px" }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>思考过程</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>Steps</div>
                 <span style={{ flex: 1 }} />
                 <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
               </div>
             </div>
-            <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "6px 22px calc(24px + env(safe-area-inset-bottom, 0px))", whiteSpace: "pre-wrap", fontSize: 13.5, lineHeight: 1.75, color: COLORS.textSecondary }}>{(tMsg && tMsg.reasoning_content) || "（暂无思考内容）"}</div>
+            <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "2px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+              {(() => {
+                const steps = buildSteps(tMsg);
+                if (steps.length === 0) return <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "16px 0" }}>（暂无过程）</div>;
+                return steps.map(st => {
+                  const opened = !!openSteps[st.key];
+                  return <div key={st.key} style={{ borderBottom: `1px solid ${COLORS.divider}` }}>
+                    <button className="flat ghost" onClick={() => setOpenSteps(prev => ({ ...prev, [st.key]: !prev[st.key] }))} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "13px 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}>
+                      {st.kind === "thinking"
+                        ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.placeholder, margin: "0 5px", flexShrink: 0 }} />
+                        : <span style={{ width: 18, height: 18, borderRadius: 5, background: "#DA7756", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, lineHeight: 1, flexShrink: 0 }}>✳</span>}
+                      <span style={{ fontSize: 14.5, color: COLORS.text, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.title}</span>
+                      <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={14}>{opened ? <polyline points="6 9 12 15 18 9" /> : <polyline points="9 18 15 12 9 6" />}</Icon></span>
+                    </button>
+                    {opened && <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.7, color: COLORS.textSecondary, padding: "0 2px 14px 34px", overflowWrap: "anywhere" }}>{st.content || "（空）"}</div>}
+                  </div>;
+                });
+              })()}
+            </div>
           </div>
         </div>;
       })()}
