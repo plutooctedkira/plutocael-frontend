@@ -733,7 +733,22 @@ export default function PlutocaelChat() {
                 const view = getMsgView(msg);
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
-                  <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)`, display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
+                  <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
+                    {editingMsgId !== msg.id && !isUser && msg.reasoning_content && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>thinking<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
+                    {editingMsgId !== msg.id && !isUser && msg.tool_log && (() => {
+                      // 过滤记忆相关 MCP 调用，只保留非记忆的工具调用
+                      const lines = msg.tool_log.split('\n');
+                      const memPrefixes = ['→ 调用 memory', '✓ 返回: memory'];
+                      const visibleLines = lines.filter(l => !memPrefixes.some(p => l.includes(p)));
+                      if (visibleLines.length > 0) {
+                        return <details style={{ margin: "0 16px 8px 48px", fontSize: 13, color: COLORS.textSecondary }}>
+                          <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
+                          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{visibleLines.join('\n')}</div>
+                        </details>;
+                      }
+                      return null;
+                    })()}
+                    <div style={{ display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                       {(isUser ? avatarUser : avatarAi)
                         ? <img src={isUser ? avatarUser : avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -749,20 +764,6 @@ export default function PlutocaelChat() {
                         </div>
                       </div>
                     ) : (<>
-                      {!isUser && msg.reasoning_content && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>thinking<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
-                      {!isUser && msg.tool_log && (() => {
-                        // 过滤记忆相关 MCP 调用（memory_search/memory_list/memory_create/memory_update/memory_delete），只保留非记忆的工具调用
-                        const lines = msg.tool_log.split('\n');
-                        const memPrefixes = ['→ 调用 memory', '✓ 返回: memory'];
-                        const visibleLines = lines.filter(l => !memPrefixes.some(p => l.includes(p)));
-                        if (visibleLines.length > 0) {
-                          return <details style={{ margin: "0 16px 8px", fontSize: 13, color: COLORS.textSecondary }}>
-                            <summary style={{ cursor: "pointer", userSelect: "none", padding: "4px 0", opacity: 0.75 }}>🔧 工具调用</summary>
-                            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, padding: "8px 12px", background: COLORS.sidebar, borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: "auto", fontFamily: "ui-monospace, Consolas, monospace", fontSize: 12, wordBreak: "break-all" }}>{visibleLines.join('\n')}</div>
-                          </details>;
-                        }
-                        return null;
-                      })()}
                       {(() => {
                         const bs = bubbleStyle(isUser);
                         return <div style={{ position: "relative", maxWidth: "100%", width: "fit-content" }}>
@@ -781,6 +782,7 @@ export default function PlutocaelChat() {
                         {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
                     </>)}
+                    </div>
                     </div>
                   </div>
                 </div>);
