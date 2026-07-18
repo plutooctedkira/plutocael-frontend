@@ -827,7 +827,7 @@ export default function PlutocaelChat() {
         if (bubbleMenu.isUser) items.unshift(
           { label: "撤回", icon: <Icon size={20}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></Icon>, onClick: () => handleWithdraw(bubbleMenu.id) },
         );
-        const itemW = 60, panelW = items.length * itemW + 16, panelH = 78;
+        const itemW = 60, panelW = items.length * itemW + 16, panelH = 64;
         const vw = window.innerWidth;
         const left = Math.max(8, Math.min(bubbleMenu.rect.cx - panelW / 2, vw - panelW - 8));
         const above = bubbleMenu.rect.top - panelH - 12 > 8;
@@ -835,8 +835,8 @@ export default function PlutocaelChat() {
         const arrowX = Math.max(18, Math.min(bubbleMenu.rect.cx - left, panelW - 18));
         const panelBg = "rgba(64,64,64,0.97)";
         return <div onClick={() => setBubbleMenu(null)} onContextMenu={e => { e.preventDefault(); setBubbleMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 600, WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left, top, width: panelW, height: panelH, background: panelBg, borderRadius: 14, padding: "12px 8px 8px", boxSizing: "border-box", display: "flex", boxShadow: "0 10px 32px rgba(0,0,0,0.32), 0 3px 10px rgba(0,0,0,0.2)", animation: "msgSlideIn 0.18s ease" }}>
-            {items.map(it => <button key={it.label} className="flat" onClick={it.onClick} style={{ flex: 1, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: 0, fontSize: 12, fontFamily: "inherit", lineHeight: 1 }}>{it.icon}<span>{it.label}</span></button>)}
+          <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left, top, width: panelW, height: panelH, background: panelBg, borderRadius: 14, padding: "8px", boxSizing: "border-box", display: "flex", alignItems: "center", boxShadow: "0 10px 32px rgba(0,0,0,0.32), 0 3px 10px rgba(0,0,0,0.2)", animation: "msgSlideIn 0.18s ease" }}>
+            {items.map(it => <button key={it.label} className="flat" onClick={it.onClick} style={{ flex: 1, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: 0, fontSize: 12, fontFamily: "inherit", lineHeight: 1 }}>{it.icon}<span>{it.label}</span></button>)}
             <span style={{ position: "absolute", left: arrowX - 7, width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", ...(above ? { bottom: -7, borderTop: `8px solid ${panelBg}` } : { top: -7, borderBottom: `8px solid ${panelBg}` }) }} />
           </div>
         </div>;
