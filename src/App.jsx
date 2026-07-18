@@ -300,9 +300,10 @@ export default function PlutocaelChat() {
     // 凸起感靠 backgroundImage 渐变高光罩在纯色 backgroundColor 上（尾巴取纯色，能对上）
     const dark = theme === "dark" || (theme === "custom" && customTheme.dark);
     const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
+    // 只留极淡的顶部提亮，去掉底部暗带——暗带在圆角边缘看起来像脏阴影
     const gloss = dark
-      ? "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.12))"
-      : "linear-gradient(180deg, rgba(255,255,255,0.60), rgba(255,255,255,0.08) 45%, rgba(0,0,0,0.04))";
+      ? "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 55%)"
+      : "linear-gradient(180deg, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%)";
     // 单层柔和投影：内嵌高光线在圆角处会断裂、半透明底会透出多层阴影导致角落发灰
     const raised = dark
       ? "0 2px 6px rgba(0,0,0,0.30)"
