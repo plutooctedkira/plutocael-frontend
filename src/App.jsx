@@ -303,9 +303,10 @@ export default function PlutocaelChat() {
     const gloss = dark
       ? "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.12))"
       : "linear-gradient(180deg, rgba(255,255,255,0.60), rgba(255,255,255,0.08) 45%, rgba(0,0,0,0.04))";
+    // 单层柔和投影：内嵌高光线在圆角处会断裂、半透明底会透出多层阴影导致角落发灰
     const raised = dark
-      ? "0 2px 4px rgba(0,0,0,0.40), 0 5px 12px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -2px 3px rgba(0,0,0,0.25)"
-      : "0 2px 4px rgba(0,0,0,0.13), 0 5px 12px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.65), inset 0 -2px 3px rgba(0,0,0,0.06)";
+      ? "0 2px 6px rgba(0,0,0,0.30)"
+      : "0 2px 6px rgba(0,0,0,0.09)";
     if (isUser) {
       const bg = theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.86)" : "rgba(245,228,232,0.9)") : COLORS.accentLight);
       return { backgroundColor: bg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
