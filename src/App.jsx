@@ -739,7 +739,7 @@ export default function PlutocaelChat() {
                         ? <img src={isUser ? avatarUser : avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                         : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 18, color: COLORS.accent }}>{isUser ? "J" : "C"}</span>}
                     </div>
-                    <div style={{ minWidth: 0 }}>
+                    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
                     {editingMsgId === msg.id ? (
                       <div style={{ width: "100%" }}>
                         <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
@@ -765,7 +765,7 @@ export default function PlutocaelChat() {
                       })()}
                       {(() => {
                         const bs = bubbleStyle(isUser);
-                        return <div style={{ position: "relative" }}>
+                        return <div style={{ position: "relative", maxWidth: "100%", width: "fit-content" }}>
                           <div
                             onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
                             onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
