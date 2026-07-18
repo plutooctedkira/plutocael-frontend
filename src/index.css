@@ -153,12 +153,12 @@ html, body, #root {
   -webkit-touch-callout: none !important;
 }
 
-.msg-ai { margin-left: 28px; margin-right: auto; }
-.msg-user { margin-left: auto; margin-right: 40px; }
+.msg-ai { margin-left: 8px; margin-right: auto; }
+.msg-user { margin-left: auto; margin-right: 12px; }
 
 @media (max-width: 767px) {
-  .msg-ai { margin-left: 4px; }
-  .msg-user { margin-right: 16px; }
+  .msg-ai { margin-left: 0; }
+  .msg-user { margin-right: 2px; }
 }
 
 @keyframes slideUp {

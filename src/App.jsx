@@ -726,7 +726,7 @@ export default function PlutocaelChat() {
             }
             return <>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overflowX: "hidden", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box", overflowX: "hidden" }}>
+            <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 12px", boxSizing: "border-box", overflowX: "hidden" }}>
               {messages.map((msg, i) => {
                 const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && (parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000 || !sameDay(parseTime(msg.created_at), parseTime(messages[i-1].created_at))));
                 const isUser = msg.role === "user";
