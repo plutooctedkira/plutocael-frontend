@@ -204,6 +204,11 @@ export default function PlutocaelChat() {
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
   const [wallpaper, setWallpaper] = useState(() => localStorage.getItem("pluto_wallpaper") || "");
+  // 头像：气泡旁显示，云同步；空=显示默认字母圆
+  const avatarUserInputRef = useRef(null);
+  const avatarAiInputRef = useRef(null);
+  const [avatarUser, setAvatarUser] = useState(() => localStorage.getItem("pluto_avatar_user") || "");
+  const [avatarAi, setAvatarAi] = useState(() => localStorage.getItem("pluto_avatar_ai") || "");
   const [transparentBubble, setTransparentBubble] = useState(() => localStorage.getItem("pluto_transparent_bubble") === "1");
 
   // 主题切换：持久化 + 同步页面底色和状态栏颜色
@@ -243,6 +248,8 @@ export default function PlutocaelChat() {
         } catch (e) {}
       }
       if (s.wallpaper !== undefined && s.wallpaper !== null) setWallpaper(s.wallpaper || "");
+      if (s.avatar_user !== undefined && s.avatar_user !== null) setAvatarUser(s.avatar_user || "");
+      if (s.avatar_ai !== undefined && s.avatar_ai !== null) setAvatarAi(s.avatar_ai || "");
     }).catch(() => {});
   }, []);
 
@@ -252,6 +259,36 @@ export default function PlutocaelChat() {
     else localStorage.removeItem("pluto_wallpaper");
   }, [wallpaper]);
   useEffect(() => { localStorage.setItem("pluto_transparent_bubble", transparentBubble ? "1" : "0"); }, [transparentBubble]);
+  useEffect(() => { if (avatarUser) localStorage.setItem("pluto_avatar_user", avatarUser); else localStorage.removeItem("pluto_avatar_user"); }, [avatarUser]);
+  useEffect(() => { if (avatarAi) localStorage.setItem("pluto_avatar_ai", avatarAi); else localStorage.removeItem("pluto_avatar_ai"); }, [avatarAi]);
+
+  // 选头像：居中裁成正方形压到256px，同步到服务器（跨设备可见）
+  const handlePickAvatar = (who) => (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const S = 256;
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = S; canvas.height = S;
+      canvas.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, S, S);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      const field = who === "user" ? "avatar_user" : "avatar_ai";
+      fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: dataUrl }) }).catch(() => {});
+      (who === "user" ? setAvatarUser : setAvatarAi)(dataUrl);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  };
+  const removeAvatar = (who) => {
+    const field = who === "user" ? "avatar_user" : "avatar_ai";
+    fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: "" }) }).catch(() => {});
+    (who === "user" ? setAvatarUser : setAvatarAi)("");
+  };
 
   // 选壁纸：压缩后同步到服务器（跨设备可见）
   const handlePickWallpaper = (e) => {
@@ -618,6 +655,7 @@ export default function PlutocaelChat() {
           <div style={{ height: 1, background: COLORS.divider, margin: "10px 6px" }} />
           {[
             { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
+            { key: "avatar", label: "头像", icon: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></> },
             { key: "api", label: "API 连接", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
             { key: "behavior", label: "对话行为", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
             { key: "params", label: "模型参数", icon: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></> },
@@ -695,7 +733,13 @@ export default function PlutocaelChat() {
                 const view = getMsgView(msg);
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
-                  <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "80%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
+                  <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)`, display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
+                      {(isUser ? avatarUser : avatarAi)
+                        ? <img src={isUser ? avatarUser : avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 18, color: COLORS.accent }}>{isUser ? "J" : "C"}</span>}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
                     {editingMsgId === msg.id ? (
                       <div style={{ width: "100%" }}>
                         <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
@@ -737,6 +781,7 @@ export default function PlutocaelChat() {
                         {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
                     </>)}
+                    </div>
                   </div>
                 </div>);
               })}
@@ -796,7 +841,7 @@ export default function PlutocaelChat() {
       })()}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          {caelHeader(<span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ appearance: "外观", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</span>)}
+          {caelHeader(<span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ appearance: "外观", avatar: "头像", api: "API 连接", behavior: "对话行为", params: "模型参数", usage: "用量统计" })[settingsSection] || "设置"}</span>)}
           {settingsSection && <div className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); setTimeout(loadGatewayStats, 50); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
@@ -816,7 +861,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["appearance", "api", "behavior", "params"].includes(settingsSection) && (() => {
+            {["appearance", "avatar", "api", "behavior", "params"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -890,6 +935,37 @@ export default function PlutocaelChat() {
                     <Toggle on={transparentBubble} onChange={toggleBubble} />
                   </div>
                 </div></>}
+
+                {settingsSection === "avatar" && (() => {
+                  const preview = (src, letter) => <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
+                    {src ? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 21, color: COLORS.accent }}>{letter}</span>}
+                  </div>;
+                  const btns = (src, who, inputRef) => <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    {src && <button className="ghost" onClick={() => removeAvatar(who)} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>移除</button>}
+                    <button className="ghost" onClick={() => inputRef.current && inputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{src ? "更换" : "上传"}</button>
+                  </div>;
+                  return <>
+                    <input ref={avatarAiInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("ai")} />
+                    <input ref={avatarUserInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("user")} />
+                    <div style={listCard}>
+                      <div style={row}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                          {preview(avatarAi, "C")}
+                          <div><div style={lbl}>Cael 的头像</div><div style={hint}>显示在他的气泡左边</div></div>
+                        </div>
+                        {btns(avatarAi, "ai", avatarAiInputRef)}
+                      </div>
+                      <div style={rowLast}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                          {preview(avatarUser, "J")}
+                          <div><div style={lbl}>我的头像</div><div style={hint}>显示在你的气泡右边</div></div>
+                        </div>
+                        {btns(avatarUser, "user", avatarUserInputRef)}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。没上传时显示默认字母。</div>
+                  </>;
+                })()}
 
                 {settingsSection === "api" && (() => {
                   const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
