@@ -304,10 +304,10 @@ export default function PlutocaelChat() {
     const gloss = dark
       ? "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 55%)"
       : "linear-gradient(180deg, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%)";
-    // 单层柔和投影：内嵌高光线在圆角处会断裂、半透明底会透出多层阴影导致角落发灰
+    // 单层极柔投影：内嵌高光线在圆角处会断裂、半透明底会透出多层阴影导致角落发灰
     const raised = dark
-      ? "0 2px 6px rgba(0,0,0,0.30)"
-      : "0 2px 6px rgba(0,0,0,0.09)";
+      ? "0 1px 4px rgba(0,0,0,0.26)"
+      : "0 1px 4px rgba(0,0,0,0.06)";
     if (isUser) {
       const bg = theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.86)" : "rgba(245,228,232,0.9)") : COLORS.accentLight);
       return { backgroundColor: bg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
@@ -730,7 +730,7 @@ export default function PlutocaelChat() {
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
-                          <span style={{ position: "absolute", top: 8, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "7px solid transparent", ...(isUser ? { right: -8, borderLeft: `11px solid ${bs.backgroundColor}` } : { left: -8, borderRight: `11px solid ${bs.backgroundColor}` }) }} />
+                          <span style={{ position: "absolute", top: 10, width: 14, height: 14, transform: "rotate(45deg)", borderRadius: 3, background: bs.backgroundColor, backdropFilter: bs.backdropFilter, WebkitBackdropFilter: bs.WebkitBackdropFilter, zIndex: -1, ...(isUser ? { right: -5 } : { left: -5 }) }} />
                         </div>;
                       })()}
                       {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
