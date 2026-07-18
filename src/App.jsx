@@ -161,26 +161,45 @@ export default function PlutocaelChat() {
   const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
   const [showKey, setShowKey] = useState(false);
   const [showCheapKey, setShowCheapKey] = useState(false);
-  const [apiTest, setApiTest] = useState(null); // null | {loading} | {ok, model, error, warnings}
+  const [apiTest, setApiTest] = useState({}); // {main|cheap: null|{loading}|{saved}|{ok,model,error,warnings}}
+  const setChanTest = (ch, v) => setApiTest(prev => ({ ...prev, [ch]: v }));
 
-  // 保存API配置并做真实连通测试（先本地校验，再保存，再实测）
-  const saveAndTestApi = async () => {
+  // 主力/便宜渠道各自独立的本地校验
+  const validateChan = (ch) => {
     const bad = (v) => v && /[^\x21-\x7E]/.test(v.trim());
+    const key = ch === "main" ? settingsData.api_key : settingsData.cheap_api_key;
+    const base = ch === "main" ? settingsData.api_base_url : settingsData.cheap_api_base_url;
     const errs = [];
-    if (bad(settingsData.api_key)) errs.push("主力 API Key 里有中文或空格——你可能把模型名贴错框了，Key 应该是 sk- 开头的英文串");
-    if (bad(settingsData.cheap_api_key)) errs.push("便宜渠道 Key 里有中文或空格");
-    if (bad(settingsData.api_base_url)) errs.push("API 地址里有非法字符");
-    if (settingsData.api_key && /claude|gpt|\[/i.test(settingsData.api_key)) errs.push("主力 Key 看起来像模型名——模型名请填在「模型」框");
-    if (errs.length) { setApiTest({ ok: false, error: errs.join("；") }); return; }
-    setApiTest({ loading: true });
+    if (bad(key)) errs.push("API Key 里有中文或空格——你可能把模型名贴错框了，Key 应该是 sk- 开头的英文串");
+    if (key && /claude|gpt|\[/i.test(key)) errs.push("Key 看起来像模型名——模型名请填在「模型」框");
+    if (bad(base)) errs.push("API 地址里有非法字符");
+    return errs;
+  };
+  // 保存：只保存这个渠道的三个字段
+  const saveApi = async (ch) => {
+    const errs = validateChan(ch);
+    if (errs.length) { setChanTest(ch, { ok: false, error: errs.join("；") }); return; }
+    const fields = ch === "main"
+      ? { api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "" }
+      : { cheap_api_base_url: settingsData.cheap_api_base_url || "", cheap_api_key: settingsData.cheap_api_key || "", cheap_model: settingsData.cheap_model || "" };
     try {
-      await fetch(API + "/settings/" + (settingsData.id || 1), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "",
-        cheap_api_base_url: settingsData.cheap_api_base_url || "", cheap_api_key: settingsData.cheap_api_key || "", cheap_model: settingsData.cheap_model || ""
-      }) });
-      const r = await fetch(API + "/settings/test-api", { method: "POST" }).then(x => x.json());
-      setApiTest(r);
-    } catch (e) { setApiTest({ ok: false, error: e.message }); }
+      await fetch(API + "/settings/" + (settingsData.id || 1), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields) });
+      setChanTest(ch, { saved: true });
+      setTimeout(() => setApiTest(prev => (prev[ch] && prev[ch].saved ? { ...prev, [ch]: null } : prev)), 2500);
+    } catch (e) { setChanTest(ch, { ok: false, error: e.message }); }
+  };
+  // 测试：拿输入框里的当前值实测（不保存），便宜渠道留空的字段服务端会回退主力
+  const testApi = async (ch) => {
+    const errs = validateChan(ch);
+    if (errs.length) { setChanTest(ch, { ok: false, error: errs.join("；") }); return; }
+    setChanTest(ch, { loading: true });
+    const payload = ch === "main"
+      ? { channel: "main", api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "" }
+      : { channel: "cheap", api_base_url: settingsData.cheap_api_base_url || "", api_key: settingsData.cheap_api_key || "", model: settingsData.cheap_model || "" };
+    try {
+      const r = await fetch(API + "/settings/test-api", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(x => x.json());
+      setChanTest(ch, r);
+    } catch (e) { setChanTest(ch, { ok: false, error: e.message }); }
   };
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
@@ -875,6 +894,18 @@ export default function PlutocaelChat() {
                   const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
                     <Icon size={17}>{shown ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}</Icon>
                   </button>;
+                  const chanBtns = (ch) => (<>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <button className="ghost" onClick={() => saveApi(ch)} style={{ flex: 1, padding: "11px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>保存</button>
+                      <button className="ghost" disabled={apiTest[ch] && apiTest[ch].loading} onClick={() => testApi(ch)} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, ...skRaised }}>{apiTest[ch] && apiTest[ch].loading ? "测试中..." : "测试连接"}</button>
+                    </div>
+                    {apiTest[ch] && !apiTest[ch].loading && (
+                      <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, background: (apiTest[ch].ok || apiTest[ch].saved) ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: (apiTest[ch].ok || apiTest[ch].saved) ? "#2E8B57" : "#C0392B", ...skCard }}>
+                        {apiTest[ch].saved ? "✓ 已保存" : apiTest[ch].ok ? <>✓ 连接成功！模型：{apiTest[ch].model}</> : <>✗ 没通过：{apiTest[ch].error}{apiTest[ch].model ? <><br />（测试的模型：{apiTest[ch].model}）</> : null}</>}
+                        {(apiTest[ch].warnings || []).map((w, i) => <div key={i} style={{ color: "#B8860B", marginTop: 4 }}>⚠ {w}</div>)}
+                      </div>
+                    )}
+                  </>);
                   return <>
                 <div style={listCard}>
                   <div style={row}>
@@ -892,6 +923,7 @@ export default function PlutocaelChat() {
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 主力渠道，聊天用。三框可留空=用服务器默认。Key 框只填 sk- 开头的密钥，点小眼睛可以查看。</div>
+                {chanBtns("main")}
 
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
                 <div style={listCard}>
@@ -909,15 +941,8 @@ export default function PlutocaelChat() {
                     <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩等后台任务用，省主力额度。留空=跟主力共用。</div>
-
-                <button onClick={saveAndTestApi} disabled={apiTest && apiTest.loading} style={{ width: "100%", padding: "13px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, ...skRaised }}>{apiTest && apiTest.loading ? "正在测试连接..." : "保存并测试连接"}</button>
-                {apiTest && !apiTest.loading && (
-                  <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, background: apiTest.ok ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: apiTest.ok ? "#2E8B57" : "#C0392B", ...skCard }}>
-                    {apiTest.ok ? <>✓ 连接成功！当前使用模型：{apiTest.model}</> : <>✗ 没通过：{apiTest.error}{apiTest.model ? <><br />（测试的模型：{apiTest.model}）</> : null}</>}
-                    {(apiTest.warnings || []).map((w, i) => <div key={i} style={{ color: "#B8860B", marginTop: 4 }}>⚠ {w}</div>)}
-                  </div>
-                )}
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩、自动记忆等后台任务用，省主力额度。留空=跟主力共用。</div>
+                {chanBtns("cheap")}
                 <div style={{ height: 16 }} /></>;
                 })()}
 
