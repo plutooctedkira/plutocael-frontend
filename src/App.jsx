@@ -770,7 +770,7 @@ export default function PlutocaelChat() {
                             onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
                             onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
                             onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
-                            style={{ padding: "3px 14px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", overflow: "hidden", isolation: "isolate", WebkitMaskImage: "-webkit-radial-gradient(white, black)", ...bs }}>
+                            style={{ padding: "4px 14px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", overflow: "hidden", isolation: "isolate", WebkitMaskImage: "-webkit-radial-gradient(white, black)", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
