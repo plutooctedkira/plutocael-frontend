@@ -569,7 +569,18 @@ export default function PlutocaelChat() {
   const activeSession = sessions.find(s => s.id === activeSessionId);
   // Safari(iPhone)解析不了"2026-07-03 07:43:53"这种空格格式，要转成ISO的T
   const parseTime = (d) => new Date(typeof d === "string" ? d.replace(" ", "T") : d);
-  const formatTime = (d) => { if (!d) return ""; const t = parseTime(d); return isNaN(t) ? "" : t.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }); };
+  const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  // 时间分隔标签：当天只显示时刻，昨天/更早自动带上日期，跨年带年份
+  const formatTime = (d) => {
+    if (!d) return ""; const t = parseTime(d); if (isNaN(t)) return "";
+    const hm = t.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    const now = new Date();
+    if (sameDay(t, now)) return hm;
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (sameDay(t, yest)) return `昨天 ${hm}`;
+    if (t.getFullYear() === now.getFullYear()) return `${t.getMonth() + 1}月${t.getDate()}日 ${hm}`;
+    return `${t.getFullYear()}年${t.getMonth() + 1}月${t.getDate()}日 ${hm}`;
+  };
   const formatFullTime = (d) => { if (!d) return ""; const t = parseTime(d); return isNaN(t) ? "" : t.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
   const formatDate = (d) => { if (!d) return ""; return d.split(" ")[0] || d.split("T")[0] || ""; };
   const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
@@ -658,7 +669,7 @@ export default function PlutocaelChat() {
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overflowX: "hidden", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box", overflowX: "hidden" }}>
               {messages.map((msg, i) => {
-                const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000);
+                const showTime = i === 0 || (messages[i-1] && msg.created_at && messages[i-1].created_at && (parseTime(msg.created_at).getTime() - parseTime(messages[i-1].created_at).getTime() > 300000 || !sameDay(parseTime(msg.created_at), parseTime(messages[i-1].created_at))));
                 const isUser = msg.role === "user";
                 const view = getMsgView(msg);
                 return (<div key={msg.id}>
