@@ -151,6 +151,7 @@ export default function PlutocaelChat() {
   const [searchResults, setSearchResults] = useState([]);
   const [gatewayStats, setGatewayStats] = useState(null);
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
+  const [gatewayLogs, setGatewayLogs] = useState([]);
   const [mcpMemories, setMcpMemories] = useState([]);
   const [mcpTools, setMcpTools] = useState([]);
   const [mcpUrl, setMcpUrl] = useState("");
@@ -519,6 +520,11 @@ export default function PlutocaelChat() {
       const data = await res.json();
       setGatewayStats(data);
     } catch (e) {}
+    try {
+      const r2 = await fetch(API + "/gateway/logs?limit=30");
+      const d2 = await r2.json();
+      setGatewayLogs(d2.logs || []);
+    } catch (e) {}
   };
 
   const loadMcpMemories = async () => {
@@ -879,9 +885,48 @@ export default function PlutocaelChat() {
                     <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>请求数</div><div style={{ fontSize: 20, fontWeight: 700 }}>{gatewayStats.summary?.request_count||0}</div></div>
                   </div>
                 </div>
-                {gatewayStats.byModel?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16 }}>
+                {(() => {
+                  const s = gatewayStats.summary || {};
+                  const read = s.total_cache_read || 0, write = s.total_cache_write || 0, fresh = s.total_input || 0;
+                  const hitRate = (read + fresh) > 0 ? Math.round(read / (read + fresh) * 100) : 0;
+                  return <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>Prompt 缓存</div>
+                    <div style={{ display:"flex", gap: 16, flexWrap:"wrap", marginBottom: 10 }}>
+                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>缓存命中读取</div><div style={{ fontSize: 20, fontWeight: 700, color: "#3AAF6B" }}>{read.toLocaleString()}</div></div>
+                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>缓存写入</div><div style={{ fontSize: 20, fontWeight: 700 }}>{write.toLocaleString()}</div></div>
+                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>命中率</div><div style={{ fontSize: 20, fontWeight: 700, color: hitRate > 50 ? "#3AAF6B" : COLORS.text }}>{hitRate}%</div></div>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 4, backgroundColor: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)", overflow: "hidden" }}>
+                      <div style={{ width: `${hitRate}%`, height: "100%", background: "#3AAF6B", borderRadius: 4, transition: "width 0.4s ease" }} />
+                    </div>
+                    <div style={{ fontSize: 11, color: COLORS.placeholder, marginTop: 8 }}>命中缓存的输入按约 1/10 计费；绿色越多越省钱</div>
+                  </div>;
+                })()}
+                {gatewayStats.byModel?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
                   <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按模型</div>
-                  {gatewayStats.byModel.map((m,i) => <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<gatewayStats.byModel.length-1?`1px solid ${COLORS.divider}`:"none" }}><span style={{ fontSize:13 }}>{m.model}</span><span style={{ fontSize:13, fontWeight:500 }}>${(m.cost||0).toFixed(4)}</span></div>)}
+                  {gatewayStats.byModel.map((m,i) => <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<gatewayStats.byModel.length-1?`1px solid ${COLORS.divider}`:"none" }}><span style={{ fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginRight: 8 }}>{m.model}</span><span style={{ fontSize:13, fontWeight:500, flexShrink:0 }}>${(m.cost||0).toFixed(4)}</span></div>)}
+                </div>}
+                {gatewayLogs.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16 }}>
+                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>最近调用</div>
+                  {gatewayLogs.map((l, i) => {
+                    const t = formatFullTime ? formatFullTime(l.created_at) : l.created_at;
+                    const shortModel = String(l.model || "").replace(/^\[.*?\]/, "");
+                    const isBg = l.session_id === "后台任务";
+                    return <div key={l.id} style={{ padding: "7px 0", borderBottom: i < gatewayLogs.length-1 ? `1px solid ${COLORS.divider}` : "none" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 12.5, color: COLORS.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex: 1 }}>{shortModel}</span>
+                        {isBg && <span style={{ fontSize: 10, color: COLORS.accent, background: COLORS.accentLight, padding: "1px 6px", borderRadius: 6, flexShrink: 0 }}>后台</span>}
+                        <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }}>{t}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 10, fontSize: 11, color: COLORS.textSecondary, marginTop: 2 }}>
+                        <span>入 {(l.input_tokens||0).toLocaleString()}</span>
+                        <span>出 {(l.output_tokens||0).toLocaleString()}</span>
+                        {(l.cache_read_tokens||0) > 0 && <span style={{ color: "#3AAF6B" }}>⚡缓存 {(l.cache_read_tokens).toLocaleString()}</span>}
+                        {(l.cache_write_tokens||0) > 0 && <span>写缓存 {(l.cache_write_tokens).toLocaleString()}</span>}
+                        <span style={{ marginLeft: "auto" }}>${(l.cost_usd||0).toFixed(5)}</span>
+                      </div>
+                    </div>;
+                  })}
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
