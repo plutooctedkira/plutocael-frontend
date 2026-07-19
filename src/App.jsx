@@ -152,6 +152,7 @@ export default function PlutocaelChat() {
   const [gatewayStats, setGatewayStats] = useState(null);
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
   const [gatewayLogs, setGatewayLogs] = useState([]);
+  const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
   const [mcpMemories, setMcpMemories] = useState([]);
   const [mcpTools, setMcpTools] = useState([]);
   const [mcpUrl, setMcpUrl] = useState("");
@@ -1104,6 +1105,12 @@ export default function PlutocaelChat() {
                 })()}
 
                 {settingsSection === "behavior" && <>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>Cael 人设（System Prompt）</div>
+                <div style={{ ...listCard, padding: "6px 10px", marginBottom: 10 }}>
+                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 14, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
+                </div>
+                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存人设"}</button>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div><div style={lbl}>Thinking 思考模式</div><div style={hint}>先思考再回答，过程可展开（开启时温度不生效）</div></div>
