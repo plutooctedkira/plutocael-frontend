@@ -757,7 +757,14 @@ export default function PlutocaelChat() {
                 return (<div key={msg.id}>
                   {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
                   <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
-                    {editingMsgId !== msg.id && !isUser && (msg.reasoning_content || filterToolLines(msg.tool_log).length > 0) && <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>steps<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>}
+                    {editingMsgId !== msg.id && !isUser && (() => {
+                      // 标题自适应：只有思考=thinking，只有工具=工具调用，都有=steps
+                      const hasThink = !!msg.reasoning_content;
+                      const hasTools = filterToolLines(msg.tool_log).length > 0;
+                      if (!hasThink && !hasTools) return null;
+                      const label = hasThink && hasTools ? "steps" : hasThink ? "thinking" : "工具调用";
+                      return <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>{label}<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>;
+                    })()}
                     <div style={{ display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                       {(isUser ? avatarUser : avatarAi)
@@ -811,6 +818,8 @@ export default function PlutocaelChat() {
 
       {thinkingSheet != null && (() => {
         const tMsg = messages.find(m => m.id === thinkingSheet);
+        const tKinds = new Set(buildSteps(tMsg).map(s => s.kind));
+        const sheetTitle = tKinds.size > 1 ? "Steps" : tKinds.has("thinking") ? "Thinking" : "工具调用";
         return <div onClick={() => setThinkingSheet(null)} style={{ position: "fixed", inset: 0, zIndex: 700, background: "rgba(0,0,0,0.35)", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: barDark ? "rgba(40,40,38,0.78)" : "rgba(255,255,255,0.72)", backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)", border: `1px solid ${frostBorder}`, borderBottom: "none", borderRadius: "22px 22px 0 0", height: sheetH, margin: "0 4px", display: "flex", flexDirection: "column", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "0 -8px 32px rgba(0,0,0,0.20)" }}>
             <div style={{ flexShrink: 0, touchAction: "none", cursor: "grab" }}
@@ -819,7 +828,7 @@ export default function PlutocaelChat() {
               onPointerUp={() => { sheetDrag.current = null; }} onPointerCancel={() => { sheetDrag.current = null; }}>
               <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0" }} />
               <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px" }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>Steps</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>{sheetTitle}</div>
                 <span style={{ flex: 1 }} />
                 <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
               </div>
@@ -832,9 +841,11 @@ export default function PlutocaelChat() {
                   const opened = !!openSteps[st.key];
                   return <div key={st.key} style={{ borderBottom: `1px solid ${COLORS.divider}` }}>
                     <button className="flat ghost" onClick={() => setOpenSteps(prev => ({ ...prev, [st.key]: !prev[st.key] }))} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "13px 2px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}>
-                      {st.kind === "thinking"
-                        ? <span style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.placeholder, margin: "0 5px", flexShrink: 0 }} />
-                        : <span style={{ width: 18, height: 18, borderRadius: 5, background: "#DA7756", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, lineHeight: 1, flexShrink: 0 }}>✳</span>}
+                      <span style={{ color: COLORS.textSecondary, display: "flex", flexShrink: 0 }}>
+                        {st.kind === "thinking"
+                          ? <Icon size={16}><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></Icon>
+                          : <Icon size={16}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></Icon>}
+                      </span>
                       <span style={{ fontSize: 14.5, color: COLORS.text, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.title}</span>
                       <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={14}>{opened ? <polyline points="6 9 12 15 18 9" /> : <polyline points="9 18 15 12 9 6" />}</Icon></span>
                     </button>
