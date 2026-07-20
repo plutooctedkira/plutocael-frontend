@@ -1268,12 +1268,6 @@ export default function PlutocaelChat() {
                 })()}
 
                 {settingsSection === "behavior" && <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>Cael 人设（System Prompt）</div>
-                <div style={{ ...listCard, padding: "6px 10px", marginBottom: 10 }}>
-                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 14, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
-                </div>
-                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存人设"}</button>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div><div style={lbl}>Thinking 思考模式</div><div style={hint}>先思考再回答，过程可展开（开启时温度不生效）</div></div>
@@ -1298,7 +1292,13 @@ export default function PlutocaelChat() {
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>最大回复 tokens</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.max_reply_tokens || 2000}</span></div>
                     <input type="range" min="256" max="8192" step="128" value={settingsData.max_reply_tokens || 2000} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
                   </div>
-                </div></>}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>System Prompt</div>
+                <div style={{ ...listCard, padding: "6px 10px", marginBottom: 10 }}>
+                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 14, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
+                </div>
+                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存"}</button>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div></>}
 
                 {settingsSection === "chatmgmt" && <>
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>导入与导出</div>
