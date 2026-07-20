@@ -459,6 +459,16 @@ export default function PlutocaelChat() {
     } catch (e) { setMemories([]); }
   };
   useEffect(() => { if (currentPage === "memory") loadMemories(); }, [memoryFilter]);
+  // +面板展开时，消息区跟随动画持续贴底——整个对话界面看起来和面板同步上滑
+  useEffect(() => {
+    if (!showPlusPanel) return;
+    const el = messagesEndRef.current;
+    if (!el) return;
+    let raf; const start = performance.now();
+    const tick = (t) => { el.scrollIntoView({ block: "end" }); if (t - start < 380) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [showPlusPanel]);
   // 自动钉在最后一条消息（打开会话/新消息都定位到底；搜索跳转时让位）
   useEffect(() => {
     if (jumpMsgId != null) return;
