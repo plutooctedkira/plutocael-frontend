@@ -154,6 +154,8 @@ export default function PlutocaelChat() {
   const [gatewayLogs, setGatewayLogs] = useState([]);
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
   // 聊天记录搜索（关键词/图片/链接/日期）
+  const [showChatSearch, setShowChatSearch] = useState(false); // 全屏搜索页
+  const [showDateRow, setShowDateRow] = useState(false); // 搜索页里展开日期选择
   const [chatSearchQ, setChatSearchQ] = useState("");
   const [chatSearchType, setChatSearchType] = useState(""); // "" | image | link
   const [chatSearchDate, setChatSearchDate] = useState("");
@@ -483,7 +485,8 @@ export default function PlutocaelChat() {
     }, 300);
     return () => clearTimeout(t);
   }, [chatSearchQ, chatSearchType, chatSearchDate]);
-  const jumpToMsg = (r) => { setShowSettings(false); setCurrentPage("chat"); setActiveSessionId(r.session_id); setJumpMsgId(r.id); setSidebarOpen(false); };
+  const jumpToMsg = (r) => { setShowSettings(false); setShowChatSearch(false); setCurrentPage("chat"); setActiveSessionId(r.session_id); setJumpMsgId(r.id); setSidebarOpen(false); };
+  const closeChatSearch = () => { setShowChatSearch(false); setShowDateRow(false); setChatSearchQ(""); setChatSearchType(""); setChatSearchDate(""); };
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
   useEffect(() => {
@@ -766,28 +769,6 @@ export default function PlutocaelChat() {
         <div style={{ height: 1, background: COLORS.divider, margin: "4px 20px" }} />
         <div className="panel-scroll" style={{ flex: 1, overflow: "hidden auto", padding: "8px 12px", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
           {currentPage === "chat" && (<>
-            <div style={{ padding: "4px 4px 8px" }}>
-              <input value={chatSearchQ} onChange={e => setChatSearchQ(e.target.value)} placeholder="搜索聊天记录…" style={{ width: "100%", boxSizing: "border-box", border: "none", outline: "none", borderRadius: 14, padding: "8px 13px", fontSize: 13, fontFamily: "inherit", color: COLORS.text, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)" }} />
-              <div style={{ display: "flex", gap: 6, marginTop: 7, alignItems: "center", flexWrap: "wrap" }}>
-                {[{ k: "image", l: "图片" }, { k: "link", l: "链接" }].map(f => (
-                  <button key={f.k} className="flat ghost" onClick={() => setChatSearchType(chatSearchType === f.k ? "" : f.k)} style={{ padding: "3px 11px", borderRadius: 12, border: chatSearchType === f.k ? "none" : `1px solid ${COLORS.divider}`, background: chatSearchType === f.k ? COLORS.accent : "transparent", color: chatSearchType === f.k ? "#fff" : COLORS.textSecondary, fontSize: 11.5, cursor: "pointer", fontFamily: "inherit" }}>{f.l}</button>
-                ))}
-                <input type="date" value={chatSearchDate} onChange={e => setChatSearchDate(e.target.value)} style={{ border: `1px solid ${COLORS.divider}`, borderRadius: 12, padding: "2px 8px", fontSize: 11.5, fontFamily: "inherit", color: chatSearchDate ? COLORS.text : COLORS.placeholder, background: "transparent", outline: "none" }} />
-                {(chatSearchQ || chatSearchType || chatSearchDate) && <button className="flat ghost" onClick={() => { setChatSearchQ(""); setChatSearchType(""); setChatSearchDate(""); }} style={{ padding: "3px 9px", borderRadius: 12, border: "none", background: "transparent", color: COLORS.danger, fontSize: 11.5, cursor: "pointer", fontFamily: "inherit" }}>清除</button>}
-              </div>
-            </div>
-            {chatSearchResults !== null ? (<>
-              <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textSecondary, padding: "4px 8px 6px", letterSpacing: "0.05em" }}>搜到 {chatSearchResults.length} 条{chatSearchResults.length >= 100 ? "（只显示最近100条）" : ""}</div>
-              {chatSearchResults.length === 0 ? <div style={{ padding: "12px 8px", fontSize: 13, color: COLORS.placeholder }}>没有找到相关消息</div> : chatSearchResults.map(r => (
-                <div key={r.id} onClick={() => jumpToMsg(r)} style={{ padding: "9px 12px", borderRadius: 10, cursor: "pointer", background: COLORS.glass, marginBottom: 6, ...skCard }}>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
-                    <span style={{ fontSize: 11, color: COLORS.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{r.session_name || "对话" + r.session_id}</span>
-                    <span style={{ fontSize: 10.5, color: COLORS.placeholder, flexShrink: 0 }}>{formatTime(r.created_at)}</span>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: COLORS.text, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{r.msg_type === "image" ? "🖼 [图片消息]" : r.snippet}</div>
-                </div>
-              ))}
-            </>) : (<>
             <div style={{ fontSize: 11, fontWeight: 600, color: COLORS.textSecondary, padding: "8px 8px 6px", letterSpacing: "0.05em", textTransform: "uppercase" }}>最近对话</div>
             {sessions.length === 0 ? <div style={{ padding: "12px 8px", fontSize: 13, color: COLORS.placeholder }}>还没有对话</div> : sessions.map(s => (
               <div key={s.id} onClick={() => { if (!editingSessionId) { setActiveSessionId(s.id); setSidebarOpen(false); } }} onMouseEnter={() => setHoveredSessionId(s.id)} onMouseLeave={() => setHoveredSessionId(null)} style={{ padding: "10px 12px", borderRadius: 10, cursor: "pointer", background: s.id === activeSessionId ? COLORS.accentLight : COLORS.glass, marginBottom: 7, position: "relative", ...skCard }}>
@@ -800,7 +781,6 @@ export default function PlutocaelChat() {
                   </div>}
                 </>}
               </div>))}
-            </>)}
           </>)}
         </div>
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
@@ -819,7 +799,7 @@ export default function PlutocaelChat() {
           {caelHeader()}
           <OmbreMemories api={API} colors={COLORS} dark={barDark} />
         </>) : (<>
-          {caelHeader()}
+          {caelHeader(<button className="flat ghost" onClick={() => setShowChatSearch(true)} title="搜索聊天记录" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={19}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon></button>)}
           {(() => {
             const inputBar = (
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
@@ -980,6 +960,46 @@ export default function PlutocaelChat() {
           </div>
         </div>;
       })()}
+      {showChatSearch && <div style={{ position: "fixed", inset: 0, zIndex: 550, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 14px 10px", flexShrink: 0 }}>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: COLORS.cardBg, borderRadius: 10, padding: "9px 12px", ...skInset }}>
+            <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={16}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon></span>
+            <input autoFocus value={chatSearchQ} onChange={e => setChatSearchQ(e.target.value)} placeholder="搜索" style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, color: COLORS.text, fontFamily: "inherit" }} />
+            {chatSearchQ && <button className="flat ghost" onClick={() => setChatSearchQ("")} style={{ width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.25)", color: "#fff", cursor: "pointer", fontSize: 10, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 }}>✕</button>}
+          </div>
+          <button className="flat ghost" onClick={closeChatSearch} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 15, padding: "6px 10px", fontFamily: "inherit", flexShrink: 0 }}>取消</button>
+        </div>
+        {(chatSearchType || chatSearchDate) && <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 16px 10px", flexShrink: 0 }}>
+          {chatSearchType && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchType === "image" ? "图片" : "链接"}</span>}
+          {chatSearchDate && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchDate}</span>}
+          <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); setShowDateRow(false); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
+        </div>}
+        {chatSearchResults === null ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "14vh" }}>
+            <div style={{ fontSize: 14, color: COLORS.placeholder, marginBottom: 30 }}>快速搜索聊天内容</div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {[{ k: "date", l: "日期" }, { k: "image", l: "图片" }, { k: "link", l: "链接" }].map((c, i) => (<span key={c.k} style={{ display: "flex", alignItems: "center" }}>
+                {i > 0 && <span style={{ width: 1, height: 17, background: COLORS.divider, margin: "0 26px" }} />}
+                <button className="flat ghost" onClick={() => { if (c.k === "date") setShowDateRow(v => !v); else setChatSearchType(c.k); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 16, padding: "4px 2px", fontFamily: "inherit" }}>{c.l}</button>
+              </span>))}
+            </div>
+            {showDateRow && <input type="date" value={chatSearchDate} onChange={e => setChatSearchDate(e.target.value)} style={{ marginTop: 26, border: `1px solid ${COLORS.divider}`, borderRadius: 12, padding: "8px 14px", fontSize: 14, fontFamily: "inherit", color: COLORS.text, background: COLORS.cardBg, outline: "none" }} />}
+          </div>
+        ) : (
+          <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
+            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>搜到 {chatSearchResults.length} 条{chatSearchResults.length >= 100 ? "（只显示最近100条）" : ""}</div>
+            {chatSearchResults.length === 0 ? <div style={{ padding: "20px 4px", fontSize: 13, color: COLORS.placeholder, textAlign: "center" }}>没有找到相关消息</div> : chatSearchResults.map(r => (
+              <div key={r.id} onClick={() => jumpToMsg(r)} style={{ padding: "10px 13px", borderRadius: 12, cursor: "pointer", background: COLORS.cardBg, marginBottom: 8, ...skCard }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, color: COLORS.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{r.session_name || "对话" + r.session_id}</span>
+                  <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }}>{formatTime(r.created_at)}</span>
+                </div>
+                <div style={{ fontSize: 13.5, color: COLORS.text, lineHeight: 1.55, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{r.msg_type === "image" ? "🖼 [图片消息]" : r.snippet}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
