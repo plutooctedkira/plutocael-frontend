@@ -155,6 +155,9 @@ export default function PlutocaelChat() {
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
   // 聊天记录搜索（关键词/图片/链接/日期）
   const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单
+  const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
+  const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const [showChatSearch, setShowChatSearch] = useState(false); // 全屏搜索页
   const [showCalendar, setShowCalendar] = useState(false); // 按日期查找的日历视图
   const [showDelCalendar, setShowDelCalendar] = useState(false); // 按日期删除的日历
@@ -881,12 +884,26 @@ export default function PlutocaelChat() {
                 </div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   <input ref={fileInputRef} type="file" accept="image/*,text/*,.json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt" style={{ display: "none" }} onChange={handlePickImage} />
-                  <button onClick={() => fileInputRef.current && fileInputRef.current.click()} title="上传图片或文件" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
+                  <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickImage} />
+                  <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handlePickImage} />
+                  <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transform: showPlusPanel ? "rotate(45deg)" : "none", transition: "transform 0.2s ease", ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
                     <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "6px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                   </div>
                   <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
+                {showPlusPanel && <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px", animation: "msgSlideIn 0.22s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                  {[
+                    { l: "照片", ref: photoInputRef, icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
+                    { l: "拍摄", ref: cameraInputRef, icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></> },
+                    { l: "文件", ref: fileInputRef, icon: <><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></> },
+                  ].map(it => (
+                    <button key={it.l} className="flat ghost" onClick={() => { setShowPlusPanel(false); it.ref.current && it.ref.current.click(); }} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 0, fontFamily: "inherit" }}>
+                      <span style={{ width: 58, height: 58, borderRadius: 16, background: COLORS.cardBg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.text, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}><Icon size={26}>{it.icon}</Icon></span>
+                      <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{it.l}</span>
+                    </button>
+                  ))}
+                </div>}
               </div>
             );
             return <>
