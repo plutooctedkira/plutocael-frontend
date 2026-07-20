@@ -154,8 +154,11 @@ export default function PlutocaelChat() {
   const [gatewayLogs, setGatewayLogs] = useState([]);
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
   // 聊天记录搜索（关键词/图片/链接/日期）
+  const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单
   const [showChatSearch, setShowChatSearch] = useState(false); // 全屏搜索页
   const [showCalendar, setShowCalendar] = useState(false); // 按日期查找的日历视图
+  const [showDelCalendar, setShowDelCalendar] = useState(false); // 按日期删除的日历
+  const [delSelected, setDelSelected] = useState(new Set()); // 多选待删日期
   const [chatDates, setChatDates] = useState(new Set()); // 有聊天记录的日期集合
   const calScrollRef = useRef(null);
   const [chatSearchQ, setChatSearchQ] = useState("");
@@ -494,7 +497,67 @@ export default function PlutocaelChat() {
     setShowCalendar(true);
   };
   // 打开日历时滚到最底（今天在最下面，和微信一致）
-  useEffect(() => { if (showCalendar && calScrollRef.current) calScrollRef.current.scrollTop = calScrollRef.current.scrollHeight; }, [showCalendar]);
+  useEffect(() => { if ((showCalendar || showDelCalendar) && calScrollRef.current) calScrollRef.current.scrollTop = calScrollRef.current.scrollHeight; }, [showCalendar, showDelCalendar]);
+  // 共用日历主体：聊过天的日子可点，selectedSet 非空时为多选模式（选中=强调色圆）
+  const renderCalendarBody = (onDayTap, selectedSet) => {
+    const pad2 = n => String(n).padStart(2, "0");
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+    let startY = now.getFullYear(), startM = now.getMonth();
+    const sorted = [...chatDates].sort();
+    if (sorted.length > 0) { const p = sorted[0].split("-").map(Number); startY = p[0]; startM = p[1] - 1; }
+    const months = [];
+    for (let y = startY, m = startM; y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth());) {
+      months.push({ y, m }); m++; if (m > 11) { m = 0; y++; }
+    }
+    return <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 0 4px", borderBottom: `1px solid ${COLORS.divider}` }}>
+        {["日", "一", "二", "三", "四", "五", "六"].map(w => <div key={w} style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder }}>{w}</div>)}
+      </div>
+      {months.map(({ y, m }) => {
+        const first = new Date(y, m, 1).getDay();
+        const days = new Date(y, m + 1, 0).getDate();
+        const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+        return <div key={y + "-" + m} style={{ marginBottom: 6 }}>
+          <div style={{ fontSize: 14, color: COLORS.textSecondary, padding: "12px 2px 6px" }}>{y}年{m + 1}月</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4 }}>
+            {cells.map((d, i) => {
+              if (d === null) return <div key={"b" + i} />;
+              const key = `${y}-${pad2(m + 1)}-${pad2(d)}`;
+              const has = chatDates.has(key);
+              const isToday = key === todayKey;
+              const isSel = selectedSet ? selectedSet.has(key) : false;
+              return <button key={key} className="flat ghost" disabled={!has} onClick={() => onDayTap(key)} style={{ border: "none", background: "transparent", padding: 0, height: isToday ? 52 : 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: has ? "pointer" : "default", fontFamily: "inherit" }}>
+                <span style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: isSel ? COLORS.accent : (isToday && !selectedSet) ? COLORS.accent : "transparent", border: isToday && selectedSet && !isSel ? `1.5px solid ${COLORS.accent}` : "none", color: (isSel || (isToday && !selectedSet)) ? "#fff" : has ? COLORS.text : COLORS.placeholder, fontWeight: has && !isToday ? 500 : 400, opacity: (!has && !isToday) ? 0.5 : 1, boxSizing: "border-box" }}>{d}</span>
+                {isToday && <span style={{ fontSize: 10, color: COLORS.accent, marginTop: 1 }}>今天</span>}
+              </button>;
+            })}
+          </div>
+        </div>;
+      })}
+    </>;
+  };
+  // 按日期多选删除
+  const openDeleteCalendar = async () => {
+    try { const r = await fetch(API + "/messages/dates/all").then(x => x.json()); setChatDates(new Set((r.dates || []).map(x => x.d))); } catch (e) { setChatDates(new Set()); }
+    setDelSelected(new Set());
+    setShowDelCalendar(true);
+  };
+  const doDeleteDates = async () => {
+    if (!delSelected.size) return;
+    if (!confirm(`确定删除选中 ${delSelected.size} 天的全部聊天记录吗？\n不可恢复，建议先去 设置→聊天记录管理 备份一份。`)) return;
+    try {
+      await fetch(API + "/messages/delete-dates", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dates: [...delSelected] }) });
+      setShowDelCalendar(false);
+      const msgs = await fetch(API + "/messages/session/" + (activeSessionId || "")).then(x => x.json());
+      if (Array.isArray(msgs)) setMessages(msgs);
+    } catch (e) {}
+  };
+  const clearChat = async () => {
+    if (!activeSessionId) return;
+    if (!confirm("确定清空整个对话吗？所有消息将被删除且不可恢复。\n建议先去 设置→聊天记录管理 备份一份。")) return;
+    try { await fetch(API + "/messages/session/" + activeSessionId + "/all", { method: "DELETE" }); setMessages([]); } catch (e) {}
+  };
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
   useEffect(() => {
@@ -804,7 +867,7 @@ export default function PlutocaelChat() {
           {caelHeader()}
           <OmbreMemories api={API} colors={COLORS} dark={barDark} />
         </>) : (<>
-          {caelHeader(<button className="flat ghost" onClick={() => setShowChatSearch(true)} title="搜索聊天记录" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={19}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon></button>)}
+          {caelHeader(<button className="flat ghost" onClick={() => setShowChatMenu(true)} title="更多" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></Icon></button>)}
           {(() => {
             const inputBar = (
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
@@ -959,6 +1022,27 @@ export default function PlutocaelChat() {
           </div>
         </div>;
       })()}
+      {showChatMenu && <div onClick={() => setShowChatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 540 }}>
+        <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 52px)", right: 12, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)", padding: 5, minWidth: 176 }}>
+          <button className="flat ghost" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon>搜索聊天记录</button>
+          <button className="flat ghost" onClick={() => { setShowChatMenu(false); openDeleteCalendar(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>按日期删除</button>
+          <button className="flat ghost" onClick={() => { setShowChatMenu(false); clearChat(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>清空对话</button>
+        </div>
+      </div>}
+      {showDelCalendar && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 4px", flexShrink: 0 }}>
+          <button className="flat ghost" onClick={() => setShowDelCalendar(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>按日期删除</span>
+          <span style={{ width: 36 }} />
+        </div>
+        <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 4, flexShrink: 0 }}>点选要删除的日子（可多选），黑字的才有记录</div>
+        <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px 10px" }}>
+          {renderCalendarBody(key => setDelSelected(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; }), delSelected)}
+        </div>
+        <div style={{ padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: `1px solid ${COLORS.divider}` }}>
+          <button className="ghost" disabled={delSelected.size === 0} onClick={doDeleteDates} style={{ width: "100%", padding: "12px", border: "none", borderRadius: 14, background: delSelected.size ? COLORS.danger : COLORS.divider, color: delSelected.size ? "#fff" : COLORS.placeholder, cursor: delSelected.size ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>{delSelected.size ? `删除选中的 ${delSelected.size} 天` : "还没有选中日期"}</button>
+        </div>
+      </div>}
       {showChatSearch && <div style={{ position: "fixed", inset: 0, zIndex: 550, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 14px 10px", flexShrink: 0 }}>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: COLORS.cardBg, borderRadius: 10, padding: "9px 12px", ...skInset }}>
@@ -973,49 +1057,16 @@ export default function PlutocaelChat() {
           {chatSearchDate && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchDate}</span>}
           <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
         </div>}
-        {showCalendar ? (() => {
-          // 微信式「按日期查找」：聊过天的日子黑字可点，没聊的灰掉，今天绿圈
-          const pad2 = n => String(n).padStart(2, "0");
-          const now = new Date();
-          const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-          let startY = now.getFullYear(), startM = now.getMonth();
-          const sorted = [...chatDates].sort();
-          if (sorted.length > 0) { const p = sorted[0].split("-").map(Number); startY = p[0]; startM = p[1] - 1; }
-          const months = [];
-          for (let y = startY, m = startM; y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth());) {
-            months.push({ y, m }); m++; if (m > 11) { m = 0; y++; }
-          }
-          return <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+        {showCalendar ? (
+          <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
             <div style={{ display: "flex", alignItems: "center", padding: "2px 0 4px", position: "sticky", top: 0, background: theme === "custom" ? COLORS._solidBg : COLORS.bg, zIndex: 2 }}>
               <button className="flat ghost" onClick={() => setShowCalendar(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
               <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>按日期查找</span>
               <span style={{ width: 36 }} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 0 4px", borderBottom: `1px solid ${COLORS.divider}` }}>
-              {["日", "一", "二", "三", "四", "五", "六"].map(w => <div key={w} style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder }}>{w}</div>)}
-            </div>
-            {months.map(({ y, m }) => {
-              const first = new Date(y, m, 1).getDay();
-              const days = new Date(y, m + 1, 0).getDate();
-              const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
-              return <div key={y + "-" + m} style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 14, color: COLORS.textSecondary, padding: "12px 2px 6px" }}>{y}年{m + 1}月</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4 }}>
-                  {cells.map((d, i) => {
-                    if (d === null) return <div key={"b" + i} />;
-                    const key = `${y}-${pad2(m + 1)}-${pad2(d)}`;
-                    const has = chatDates.has(key);
-                    const isToday = key === todayKey;
-                    return <button key={key} className="flat ghost" disabled={!has} onClick={() => { setChatSearchDate(key); setShowCalendar(false); }} style={{ border: "none", background: "transparent", padding: 0, height: isToday ? 52 : 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: has ? "pointer" : "default", fontFamily: "inherit" }}>
-                      <span style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: isToday ? COLORS.accent : "transparent", color: isToday ? "#fff" : has ? COLORS.text : COLORS.placeholder, fontWeight: has && !isToday ? 500 : 400, opacity: (!has && !isToday) ? 0.5 : 1 }}>{d}</span>
-                      {isToday && <span style={{ fontSize: 10, color: COLORS.accent, marginTop: 1 }}>今天</span>}
-                    </button>;
-                  })}
-                </div>
-              </div>;
-            })}
-          </div>;
-        })() : chatSearchResults === null ? (
+            {renderCalendarBody(key => { setChatSearchDate(key); setShowCalendar(false); }, null)}
+          </div>
+        ) : chatSearchResults === null ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "14vh" }}>
             <div style={{ fontSize: 14, color: COLORS.placeholder, marginBottom: 30 }}>快速搜索聊天内容</div>
             <div style={{ display: "flex", alignItems: "center" }}>
