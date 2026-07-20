@@ -892,7 +892,8 @@ export default function PlutocaelChat() {
                   </div>
                   <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
-                {showPlusPanel && <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px", animation: "msgSlideIn 0.22s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 140 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.22s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px" }}>
                   {[
                     { l: "照片", ref: photoInputRef, icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
                     { l: "拍摄", ref: cameraInputRef, icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></> },
@@ -903,7 +904,8 @@ export default function PlutocaelChat() {
                       <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{it.l}</span>
                     </button>
                   ))}
-                </div>}
+                </div>
+                </div>
               </div>
             );
             return <>
