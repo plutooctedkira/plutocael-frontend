@@ -812,12 +812,6 @@ export default function PlutocaelChat() {
                 </div>
               </div>
             );
-            if (messages.length === 0) {
-              return <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 10vh" }}>
-                <div style={{ fontSize: 28, color: COLORS.textSecondary, marginBottom: 26, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>传讯给 Cael</div>
-                <div style={{ width: "100%" }}>{inputBar}</div>
-              </div>;
-            }
             return <>
           <div className="msg-scroll" style={{ flex: 1, padding: "24px 0", overflowX: "hidden", overscrollBehaviorY: "contain", overscrollBehaviorX: "none", touchAction: "pan-y", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             <div style={{ maxWidth: 768, width: "100%", margin: "0 auto", padding: "0 12px", boxSizing: "border-box", overflowX: "hidden" }}>
