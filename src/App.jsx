@@ -576,6 +576,8 @@ export default function PlutocaelChat() {
       else setManageMsg("恢复失败：" + (r.error || ""));
     } catch (e) { setManageMsg("恢复失败：" + e.message); }
   };
+  // 智能导入：md/json 都行，后端丢给 DeepSeek 清洗去重后并入当前对话；前端轮询进度
+  const importPollRef = useRef(null);
   const doImport = (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
@@ -583,14 +585,26 @@ export default function PlutocaelChat() {
     const reader = new FileReader();
     reader.onload = async () => {
       try {
-        const data = JSON.parse(reader.result);
-        setManageMsg("导入中…");
-        const r = await fetch(API + "/manage/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(x => x.json());
-        if (r.ok) {
-          setManageMsg(`✓ 导入完成：${r.sessions} 个会话、${r.messages} 条消息`);
-          try { const s = await fetch(API + "/sessions").then(x => x.json()); setSessions(s); } catch (err) {}
-        } else setManageMsg("导入失败：" + (r.error || ""));
-      } catch (err) { setManageMsg("导入失败：文件不是有效的导出 .json"); }
+        setManageMsg("上传中…");
+        const r = await fetch(API + "/manage/import-smart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: reader.result, session_id: activeSessionId }) }).then(x => x.json());
+        if (!r.ok) { setManageMsg("导入失败：" + (r.error || "")); return; }
+        setManageMsg("⏳ 已开始后台处理…");
+        clearInterval(importPollRef.current);
+        importPollRef.current = setInterval(async () => {
+          try {
+            const st = await fetch(API + "/manage/import-status").then(x => x.json());
+            if (st.status === "running") {
+              setManageMsg(`⏳ DeepSeek 后台清洗中… ${st.doneChunks}/${st.totalChunks || "?"} 段，已导入 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条`);
+            } else {
+              clearInterval(importPollRef.current);
+              if (st.status === "done") {
+                setManageMsg(`✓ 导入完成：新增 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条，已并入聊天`);
+                try { const msgs = await fetch(API + "/messages/session/" + (activeSessionId || "")).then(x => x.json()); if (Array.isArray(msgs)) setMessages(msgs); } catch (err) {}
+              } else setManageMsg("导入失败：" + (st.error || "未知错误"));
+            }
+          } catch (err) {}
+        }, 2500);
+      } catch (err) { setManageMsg("导入失败：" + err.message); }
     };
     reader.readAsText(file);
   };
@@ -1337,8 +1351,8 @@ export default function PlutocaelChat() {
                     </div>
                   </div>
                   <div style={rowLast}>
-                    <div><div style={lbl}>导入聊天记录</div><div style={hint}>选择之前导出的 .json，以追加方式恢复</div></div>
-                    <input ref={importInputRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={doImport} />
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>导入聊天记录</div><div style={hint}>.json 或 .md 都行，DeepSeek 在后台清洗无效和重复内容后直接并入当前对话</div></div>
+                    <input ref={importInputRef} type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" style={{ display: "none" }} onChange={doImport} />
                     <button className="ghost" onClick={() => importInputRef.current && importInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
                 </div>
