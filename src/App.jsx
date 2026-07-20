@@ -465,7 +465,7 @@ export default function PlutocaelChat() {
     const el = messagesEndRef.current;
     if (!el) return;
     let raf; const start = performance.now();
-    const tick = (t) => { el.scrollIntoView({ block: "end" }); if (t - start < 380) raf = requestAnimationFrame(tick); };
+    const tick = (t) => { el.scrollIntoView({ block: "end" }); if (t - start < 520) raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [showPlusPanel]);
@@ -902,7 +902,7 @@ export default function PlutocaelChat() {
                   </div>
                   <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
-                <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 140 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.22s ease, transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 140 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease, transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px" }}>
                   {[
                     { l: "照片", ref: photoInputRef, icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
