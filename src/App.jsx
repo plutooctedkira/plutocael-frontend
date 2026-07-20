@@ -654,6 +654,10 @@ export default function PlutocaelChat() {
   };
   // 智能导入：md/json 都行，后端丢给 DeepSeek 清洗去重后并入当前对话；前端轮询进度
   const importPollRef = useRef(null);
+  const [importRunning, setImportRunning] = useState(false);
+  const cancelImport = async () => {
+    try { await fetch(API + "/manage/import-cancel", { method: "POST" }); setManageMsg("⏳ 正在中断…当前段处理完就停"); } catch (e) {}
+  };
   const doImport = (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
@@ -665,16 +669,18 @@ export default function PlutocaelChat() {
         const r = await fetch(API + "/manage/import-smart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: reader.result, session_id: activeSessionId }) }).then(x => x.json());
         if (!r.ok) { setManageMsg("导入失败：" + (r.error || "")); return; }
         setManageMsg("⏳ 已开始后台处理…");
+        setImportRunning(true);
         clearInterval(importPollRef.current);
         importPollRef.current = setInterval(async () => {
           try {
             const st = await fetch(API + "/manage/import-status").then(x => x.json());
             if (st.status === "running") {
-              setManageMsg(`⏳ DeepSeek 后台清洗中… ${st.doneChunks}/${st.totalChunks || "?"} 段，已导入 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条`);
+              if (!st.cancelRequested) setManageMsg(`⏳ DeepSeek 后台清洗中… ${st.doneChunks}/${st.totalChunks || "?"} 段，已导入 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条`);
             } else {
               clearInterval(importPollRef.current);
-              if (st.status === "done") {
-                setManageMsg(`✓ 导入完成：新增 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条，已并入聊天`);
+              setImportRunning(false);
+              if (st.status === "done" || st.status === "cancelled") {
+                setManageMsg(`${st.status === "cancelled" ? "⏹ 已中断" : "✓ 导入完成"}：新增 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条${st.imported > 0 ? "，已并入聊天" : ""}`);
                 try { const msgs = await fetch(API + "/messages/session/" + (activeSessionId || "")).then(x => x.json()); if (Array.isArray(msgs)) setMessages(msgs); } catch (err) {}
               } else setManageMsg("导入失败：" + (st.error || "未知错误"));
             }
@@ -1453,7 +1459,10 @@ export default function PlutocaelChat() {
                     </div>
                   ))}
                 </div>
-                {manageMsg && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, marginBottom: 12, background: manageMsg.startsWith("✓") ? "rgba(58,175,107,0.12)" : "rgba(0,0,0,0.05)", color: manageMsg.startsWith("✓") ? "#2E8B57" : COLORS.textSecondary, ...skCard }}>{manageMsg}</div>}
+                {manageMsg && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, marginBottom: 12, background: manageMsg.startsWith("✓") ? "rgba(58,175,107,0.12)" : "rgba(0,0,0,0.05)", color: manageMsg.startsWith("✓") ? "#2E8B57" : COLORS.textSecondary, display: "flex", alignItems: "center", gap: 10, ...skCard }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>{manageMsg}</span>
+                  {importRunning && <button className="ghost" onClick={cancelImport} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.danger, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit", flexShrink: 0 }}>中断</button>}
+                </div>}
                 <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 恢复会把当前数据先自动快照一份再覆盖，不怕手滑。导入不覆盖现有对话，只追加。</div>
                 </>}
 
