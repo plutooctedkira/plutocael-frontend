@@ -155,7 +155,9 @@ export default function PlutocaelChat() {
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
   // 聊天记录搜索（关键词/图片/链接/日期）
   const [showChatSearch, setShowChatSearch] = useState(false); // 全屏搜索页
-  const [showDateRow, setShowDateRow] = useState(false); // 搜索页里展开日期选择
+  const [showCalendar, setShowCalendar] = useState(false); // 按日期查找的日历视图
+  const [chatDates, setChatDates] = useState(new Set()); // 有聊天记录的日期集合
+  const calScrollRef = useRef(null);
   const [chatSearchQ, setChatSearchQ] = useState("");
   const [chatSearchType, setChatSearchType] = useState(""); // "" | image | link
   const [chatSearchDate, setChatSearchDate] = useState("");
@@ -486,7 +488,13 @@ export default function PlutocaelChat() {
     return () => clearTimeout(t);
   }, [chatSearchQ, chatSearchType, chatSearchDate]);
   const jumpToMsg = (r) => { setShowSettings(false); setShowChatSearch(false); setCurrentPage("chat"); setActiveSessionId(r.session_id); setJumpMsgId(r.id); setSidebarOpen(false); };
-  const closeChatSearch = () => { setShowChatSearch(false); setShowDateRow(false); setChatSearchQ(""); setChatSearchType(""); setChatSearchDate(""); };
+  const closeChatSearch = () => { setShowChatSearch(false); setShowCalendar(false); setChatSearchQ(""); setChatSearchType(""); setChatSearchDate(""); };
+  const openCalendar = async () => {
+    try { const r = await fetch(API + "/messages/dates/all").then(x => x.json()); setChatDates(new Set((r.dates || []).map(x => x.d))); } catch (e) { setChatDates(new Set()); }
+    setShowCalendar(true);
+  };
+  // 打开日历时滚到最底（今天在最下面，和微信一致）
+  useEffect(() => { if (showCalendar && calScrollRef.current) calScrollRef.current.scrollTop = calScrollRef.current.scrollHeight; }, [showCalendar]);
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
   useEffect(() => {
@@ -969,21 +977,62 @@ export default function PlutocaelChat() {
           </div>
           <button className="flat ghost" onClick={closeChatSearch} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 15, padding: "6px 10px", fontFamily: "inherit", flexShrink: 0 }}>取消</button>
         </div>
-        {(chatSearchType || chatSearchDate) && <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 16px 10px", flexShrink: 0 }}>
+        {(chatSearchType || chatSearchDate) && !showCalendar && <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 16px 10px", flexShrink: 0 }}>
           {chatSearchType && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchType === "image" ? "图片" : "链接"}</span>}
           {chatSearchDate && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchDate}</span>}
-          <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); setShowDateRow(false); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
+          <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
         </div>}
-        {chatSearchResults === null ? (
+        {showCalendar ? (() => {
+          // 微信式「按日期查找」：聊过天的日子黑字可点，没聊的灰掉，今天绿圈
+          const pad2 = n => String(n).padStart(2, "0");
+          const now = new Date();
+          const todayKey = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+          let startY = now.getFullYear(), startM = now.getMonth();
+          const sorted = [...chatDates].sort();
+          if (sorted.length > 0) { const p = sorted[0].split("-").map(Number); startY = p[0]; startM = p[1] - 1; }
+          const months = [];
+          for (let y = startY, m = startM; y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth());) {
+            months.push({ y, m }); m++; if (m > 11) { m = 0; y++; }
+          }
+          return <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+            <div style={{ display: "flex", alignItems: "center", padding: "2px 0 4px", position: "sticky", top: 0, background: theme === "custom" ? COLORS._solidBg : COLORS.bg, zIndex: 2 }}>
+              <button className="flat ghost" onClick={() => setShowCalendar(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
+              <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>按日期查找</span>
+              <span style={{ width: 36 }} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 0 4px", borderBottom: `1px solid ${COLORS.divider}` }}>
+              {["日", "一", "二", "三", "四", "五", "六"].map(w => <div key={w} style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder }}>{w}</div>)}
+            </div>
+            {months.map(({ y, m }) => {
+              const first = new Date(y, m, 1).getDay();
+              const days = new Date(y, m + 1, 0).getDate();
+              const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+              return <div key={y + "-" + m} style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 14, color: COLORS.textSecondary, padding: "12px 2px 6px" }}>{y}年{m + 1}月</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4 }}>
+                  {cells.map((d, i) => {
+                    if (d === null) return <div key={"b" + i} />;
+                    const key = `${y}-${pad2(m + 1)}-${pad2(d)}`;
+                    const has = chatDates.has(key);
+                    const isToday = key === todayKey;
+                    return <button key={key} className="flat ghost" disabled={!has} onClick={() => { setChatSearchDate(key); setShowCalendar(false); }} style={{ border: "none", background: "transparent", padding: 0, height: isToday ? 52 : 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: has ? "pointer" : "default", fontFamily: "inherit" }}>
+                      <span style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: isToday ? COLORS.accent : "transparent", color: isToday ? "#fff" : has ? COLORS.text : COLORS.placeholder, fontWeight: has && !isToday ? 500 : 400, opacity: (!has && !isToday) ? 0.5 : 1 }}>{d}</span>
+                      {isToday && <span style={{ fontSize: 10, color: COLORS.accent, marginTop: 1 }}>今天</span>}
+                    </button>;
+                  })}
+                </div>
+              </div>;
+            })}
+          </div>;
+        })() : chatSearchResults === null ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "14vh" }}>
             <div style={{ fontSize: 14, color: COLORS.placeholder, marginBottom: 30 }}>快速搜索聊天内容</div>
             <div style={{ display: "flex", alignItems: "center" }}>
               {[{ k: "date", l: "日期" }, { k: "image", l: "图片" }, { k: "link", l: "链接" }].map((c, i) => (<span key={c.k} style={{ display: "flex", alignItems: "center" }}>
                 {i > 0 && <span style={{ width: 1, height: 17, background: COLORS.divider, margin: "0 26px" }} />}
-                <button className="flat ghost" onClick={() => { if (c.k === "date") setShowDateRow(v => !v); else setChatSearchType(c.k); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 16, padding: "4px 2px", fontFamily: "inherit" }}>{c.l}</button>
+                <button className="flat ghost" onClick={() => { if (c.k === "date") openCalendar(); else setChatSearchType(c.k); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 16, padding: "4px 2px", fontFamily: "inherit" }}>{c.l}</button>
               </span>))}
             </div>
-            {showDateRow && <input type="date" value={chatSearchDate} onChange={e => setChatSearchDate(e.target.value)} style={{ marginTop: 26, border: `1px solid ${COLORS.divider}`, borderRadius: 12, padding: "8px 14px", fontSize: 14, fontFamily: "inherit", color: COLORS.text, background: COLORS.cardBg, outline: "none" }} />}
           </div>
         ) : (
           <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
