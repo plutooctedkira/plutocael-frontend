@@ -652,6 +652,29 @@ export default function PlutocaelChat() {
       else setManageMsg("恢复失败：" + (r.error || ""));
     } catch (e) { setManageMsg("恢复失败：" + e.message); }
   };
+  const doLocalBackup = () => { window.open(API + "/manage/backup/download", "_blank"); setManageMsg("✓ 本地备份已开始下载"); };
+  const doDeleteBackup = async (file) => {
+    if (!confirm(`删除云端备份「${file}」？此操作不可恢复。`)) return;
+    try { await fetch(API + "/manage/backups/" + encodeURIComponent(file), { method: "DELETE" }); loadBackups(); } catch (e) {}
+  };
+  const localRestoreRef = useRef(null);
+  const doLocalRestore = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!confirm(`确定用本地文件「${file.name}」恢复吗？\n当前数据会先自动快照一份，然后被覆盖。`)) return;
+    setManageMsg("恢复中…");
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const b64 = btoa(new Uint8Array(reader.result).reduce((s, b) => s + String.fromCharCode(b), ""));
+        const r = await fetch(API + "/manage/restore-upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ data: b64 }) }).then(x => x.json());
+        if (r.ok) { alert("恢复完成，页面将刷新"); location.reload(); }
+        else setManageMsg("恢复失败：" + (r.error || ""));
+      } catch (err) { setManageMsg("恢复失败：" + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  };
   // 智能导入：md/json 都行，后端丢给 DeepSeek 清洗去重后并入当前对话；前端轮询进度
   const importPollRef = useRef(null);
   const [importRunning, setImportRunning] = useState(false);
@@ -1519,19 +1542,35 @@ export default function PlutocaelChat() {
                     <button className="ghost" onClick={() => importInputRef.current && importInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>备份与恢复</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>备份</div>
+                <div style={listCard}>
+                  <div style={row}>
+                    <div><div style={lbl}>云端备份</div><div style={hint}>在服务器上给整个数据库拍个快照</div></div>
+                    <button className="ghost" onClick={doBackup} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>备份到云端</button>
+                  </div>
+                  <div style={rowLast}>
+                    <div><div style={lbl}>本地备份</div><div style={hint}>把数据库下载到你的设备，自己保管</div></div>
+                    <button className="ghost" onClick={doLocalBackup} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>下载到本地</button>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>恢复</div>
                 <div style={listCard}>
                   <div style={manageBackups.length > 0 ? row : rowLast}>
-                    <div><div style={lbl}>立即备份</div><div style={hint}>在服务器上给整个数据库拍个快照</div></div>
-                    <button className="ghost" onClick={doBackup} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>备份</button>
+                    <div><div style={lbl}>从本地文件恢复</div><div style={hint}>选择之前下载的 .db 备份文件</div></div>
+                    <input ref={localRestoreRef} type="file" accept=".db,application/octet-stream" style={{ display: "none" }} onChange={doLocalRestore} />
+                    <button className="ghost" onClick={() => localRestoreRef.current && localRestoreRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
+                  {manageBackups.length === 0 ? null : <div style={{ ...rowCol, borderBottom: "none", paddingBottom: 4 }}><div style={{ fontSize: 11, color: COLORS.placeholder }}>云端备份</div></div>}
                   {manageBackups.map((b, i) => (
                     <div key={b.file} style={i < manageBackups.length - 1 ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 13, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.file.replace(/^plutocael-/, "").replace(/\.db$/, "")}</div>
                         <div style={hint}>{(b.size / 1024 / 1024).toFixed(1)} MB</div>
                       </div>
-                      <button className="ghost" onClick={() => doRestore(b.file)} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 12, fontFamily: "inherit", flexShrink: 0 }}>恢复</button>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        <button className="ghost" onClick={() => doRestore(b.file)} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>恢复</button>
+                        <button className="ghost" onClick={() => doDeleteBackup(b.file)} title="删除备份" style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(0,0,0,0.05)", color: COLORS.danger, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
+                      </div>
                     </div>
                   ))}
                 </div>
