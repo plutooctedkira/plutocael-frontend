@@ -680,8 +680,8 @@ export default function PlutocaelChat() {
               clearInterval(importPollRef.current);
               setImportRunning(false);
               if (st.status === "done" || st.status === "cancelled") {
-                setManageMsg(`${st.status === "cancelled" ? "⏹ 已中断" : "✓ 导入完成"}：新增 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条${st.imported > 0 ? "，已并入聊天" : ""}`);
-                try { const msgs = await fetch(API + "/messages/session/" + (activeSessionId || "")).then(x => x.json()); if (Array.isArray(msgs)) setMessages(msgs); } catch (err) {}
+                setManageMsg(`${st.status === "cancelled" ? "⏹ 已中断" : "✓ 清洗完成"}：整理出 ${st.imported} 条，跳过重复/无效 ${st.skipped} 条`);
+                if (st.imported > 0) { await loadStaging(); setShowStaging(true); }
               } else setManageMsg("导入失败：" + (st.error || "未知错误"));
             }
           } catch (err) {}
@@ -691,6 +691,46 @@ export default function PlutocaelChat() {
     reader.readAsText(file);
   };
   const exportChat = (fmt) => { window.open(API + "/manage/export?format=" + fmt, "_blank"); };
+
+  // ── 导入暂存审阅区：清洗结果先落缓存，改删满意后上传到对话 / 备份 ──
+  const [showStaging, setShowStaging] = useState(false);
+  const [stagingItems, setStagingItems] = useState([]);
+  const [editStageId, setEditStageId] = useState(null);
+  const [editStageText, setEditStageText] = useState("");
+  const loadStaging = async () => {
+    try { const r = await fetch(API + "/manage/staging").then(x => x.json()); setStagingItems(r.items || []); } catch (e) { setStagingItems([]); }
+  };
+  const saveStageEdit = async (id) => {
+    try { await fetch(API + "/manage/staging/" + id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editStageText }) }); } catch (e) {}
+    setStagingItems(prev => prev.map(m => m.id === id ? { ...m, content: editStageText } : m));
+    setEditStageId(null); setEditStageText("");
+  };
+  const delStageItem = async (id) => {
+    try { await fetch(API + "/manage/staging/" + id, { method: "DELETE" }); } catch (e) {}
+    setStagingItems(prev => prev.filter(m => m.id !== id));
+  };
+  const toggleStageRole = async (m) => {
+    const role = m.role === "user" ? "assistant" : "user";
+    try { await fetch(API + "/manage/staging/" + m.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) }); } catch (e) {}
+    setStagingItems(prev => prev.map(x => x.id === m.id ? { ...x, role } : x));
+  };
+  const commitStaging = async () => {
+    if (!stagingItems.length) return;
+    if (!confirm(`确定把这 ${stagingItems.length} 条上传到当前对话吗？`)) return;
+    try {
+      const r = await fetch(API + "/manage/staging/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: activeSessionId }) }).then(x => x.json());
+      setShowStaging(false); setStagingItems([]);
+      setManageMsg(`✓ 已上传：新增 ${r.imported} 条，跳过重复 ${r.skipped} 条`);
+      const msgs = await fetch(API + "/messages/session/" + (r.session_id || activeSessionId || "")).then(x => x.json());
+      if (Array.isArray(msgs)) setMessages(msgs);
+    } catch (e) {}
+  };
+  const discardStaging = async () => {
+    if (!confirm("放弃这批清洗结果吗？暂存区会清空。")) return;
+    try { await fetch(API + "/manage/staging/clear", { method: "POST" }); } catch (e) {}
+    setShowStaging(false); setStagingItems([]); setManageMsg("已放弃这批导入");
+  };
+  const exportStaging = (fmt) => { window.open(API + "/manage/staging/export?format=" + fmt, "_blank"); };
 
   // 单项自动保存：改开关/输入即刻写库，不用再手动点保存
   const saveSetting = async (patch) => {
@@ -1058,6 +1098,42 @@ export default function PlutocaelChat() {
           </div>
         </div>;
       })()}
+      {showStaging && <div style={{ position: "fixed", inset: 0, zIndex: 570, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 6px", flexShrink: 0 }}>
+          <button className="flat ghost" onClick={() => setShowStaging(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>审阅导入（{stagingItems.length} 条）</span>
+          <button className="flat ghost" onClick={discardStaging} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13, padding: "6px 8px", fontFamily: "inherit" }}>放弃</button>
+        </div>
+        <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 8, flexShrink: 0 }}>点消息可编辑，点角色标签可切换用户/Cael，✕ 删除</div>
+        <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px 12px" }}>
+          {stagingItems.length === 0 ? <div style={{ textAlign: "center", padding: "30px 0", fontSize: 13, color: COLORS.placeholder }}>暂存区空了</div> : stagingItems.map(m => (
+            <div key={m.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+              <button className="flat ghost" onClick={() => toggleStageRole(m)} style={{ flexShrink: 0, marginTop: 2, padding: "3px 9px", borderRadius: 10, border: "none", background: m.role === "user" ? COLORS.accentLight : (theme === "dark" || (theme === "custom" && customTheme.dark) ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"), color: m.role === "user" ? COLORS.accent : COLORS.textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: 44, textAlign: "center" }}>{m.role === "user" ? "我" : "Cael"}</button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {editStageId === m.id ? (
+                  <div>
+                    <textarea value={editStageText} onChange={e => setEditStageText(e.target.value)} rows={3} autoFocus style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.accent}`, borderRadius: 10, padding: "8px 10px", fontSize: 13.5, lineHeight: 1.6, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical" }} />
+                    <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "flex-end" }}>
+                      <button className="ghost" onClick={() => { setEditStageId(null); setEditStageText(""); }} style={{ padding: "5px 14px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>取消</button>
+                      <button className="ghost" onClick={() => saveStageEdit(m.id)} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>保存</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div onClick={() => { setEditStageId(m.id); setEditStageText(m.content); }} style={{ padding: "9px 12px", borderRadius: 12, background: COLORS.cardBg, cursor: "text", fontSize: 13.5, lineHeight: 1.6, color: COLORS.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", ...skCard }}>{m.content}</div>
+                )}
+              </div>
+              <button className="flat ghost" onClick={() => delStageItem(m.id)} style={{ flexShrink: 0, marginTop: 4, width: 24, height: 24, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.06)", color: COLORS.danger, cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: `1px solid ${COLORS.divider}`, display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="ghost" onClick={() => exportStaging("json")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>备份.json</button>
+            <button className="ghost" onClick={() => exportStaging("md")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>.md</button>
+          </div>
+          <button className="ghost" disabled={stagingItems.length === 0} onClick={commitStaging} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: stagingItems.length ? COLORS.accent : COLORS.divider, color: stagingItems.length ? "#fff" : COLORS.placeholder, cursor: stagingItems.length ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>上传到当前对话</button>
+        </div>
+      </div>}
       {showChatMenu && <div onClick={() => setShowChatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 540 }}>
         <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 52px)", right: 12, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)", padding: 5, minWidth: 176 }}>
           <button className="flat ghost" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon>搜索聊天记录</button>
@@ -1438,7 +1514,7 @@ export default function PlutocaelChat() {
                     </div>
                   </div>
                   <div style={rowLast}>
-                    <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>导入聊天记录</div><div style={hint}>.json 或 .md 都行，DeepSeek 在后台清洗无效和重复内容后直接并入当前对话</div></div>
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>导入聊天记录</div><div style={hint}>.json 或 .md 都行，DeepSeek 清洗后进入审阅区，你改删满意再上传到对话或备份</div></div>
                     <input ref={importInputRef} type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" style={{ display: "none" }} onChange={doImport} />
                     <button className="ghost" onClick={() => importInputRef.current && importInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
