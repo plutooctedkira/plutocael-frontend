@@ -1621,7 +1621,28 @@ export default function PlutocaelChat() {
                     <Toggle on={settingsData.date_mark !== 0} onChange={() => saveSetting({ date_mark: settingsData.date_mark === 0 ? 1 : 0 })} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 这三个开关影响的是发给 Cael 的上下文，改动即刻生效。</div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px" }}>💡 这三个开关影响的是发给 Cael 的上下文，改动即刻生效。</div>
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>滚动上下文管理</div>
+                <div style={listCard}>
+                  <div style={settingsData.ctx_manage !== 0 ? row : rowLast}>
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>启用滚动管理</div><div style={hint}>把对话分成"摘要区+冻结区+活跃区"，控制体积、稳定请求前缀以吃满缓存省钱；聊得越久越明显</div></div>
+                    <Toggle on={settingsData.ctx_manage !== 0} onChange={() => saveSetting({ ctx_manage: settingsData.ctx_manage === 0 ? 1 : 0 })} />
+                  </div>
+                  {settingsData.ctx_manage !== 0 && <>
+                  <div style={rowCol}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>轮换阈值</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.ctx_active_rounds || 8} 轮</span></div>
+                    <input type="range" min="3" max="30" step="1" value={settingsData.ctx_active_rounds || 8} onChange={e => setSettingsData({ ...settingsData, ctx_active_rounds: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ ctx_active_rounds: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ ctx_active_rounds: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
+                    <div style={hint}>活跃区累积到这么多轮对话就冻结成稳定前缀</div>
+                  </div>
+                  <div style={{ ...rowCol, borderBottom: "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>保留摘要块</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.ctx_summary_keep || 3} 块</span></div>
+                    <input type="range" min="1" max="8" step="1" value={settingsData.ctx_summary_keep || 3} onChange={e => setSettingsData({ ...settingsData, ctx_summary_keep: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ ctx_summary_keep: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ ctx_summary_keep: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
+                    <div style={hint}>更早的对话压成摘要，最多留这么多块，超了丢最旧的</div>
+                  </div>
+                  </>}
+                </div>
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 摘要用便宜渠道后台生成，不占聊天额度。原始消息不会被删，聊天界面照常能看到全部。</div>
                 </>}
               </>;
             })()}
