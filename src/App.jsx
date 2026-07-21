@@ -1421,9 +1421,12 @@ export default function PlutocaelChat() {
                     <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
                     <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
                       {["#F8E1E7", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
-                        <button key={c || "default"} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c ? c : "默认"} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c || COLORS.accentLight, cursor: "pointer", padding: 0, flexShrink: 0 }} />
+                        <button key={c} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c, cursor: "pointer", padding: 0, flexShrink: 0 }} />
                       ))}
-                      <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} title="自定义颜色" style={{ width: 26, height: 26, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />
+                      <label title="自定义颜色" style={{ position: "relative", width: 26, height: 26, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "conic-gradient(#F8E1E7,#FBF3D8,#F2FCE5,#ECF5FC,#EFE3F9,#F8E1E7)", border: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ width: 11, height: 11, borderRadius: "50%", background: COLORS.cardBg }} />
+                        <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%", padding: 0, border: "none" }} />
+                      </label>
                     </div>
                   </div>
                 </div></>}
