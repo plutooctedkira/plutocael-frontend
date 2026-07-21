@@ -1420,7 +1420,7 @@ export default function PlutocaelChat() {
                   <div style={rowLast}>
                     <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
                     <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      {["", "#F8E1E7", "#DCEBFA", "#DFF3E3", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
+                      {["", "#F8E1E7", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
                         <button key={c || "default"} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c ? c : "默认"} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c || COLORS.accentLight, cursor: "pointer", padding: 0, flexShrink: 0 }} />
                       ))}
                       <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} title="自定义颜色" style={{ width: 26, height: 26, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />
