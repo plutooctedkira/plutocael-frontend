@@ -207,6 +207,33 @@ export default function PlutocaelChat() {
   const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
   const [showKey, setShowKey] = useState(false);
   const [showCheapKey, setShowCheapKey] = useState(false);
+  // API 渠道预设（存多个一键切换）
+  const [channels, setChannels] = useState([]);
+  const [chanForm, setChanForm] = useState(null); // null | {id?, name, api_base_url, api_key, model}
+  const [chTest, setChTest] = useState(null); // {id, loading|ok|error}
+  const loadChannels = async () => { try { const r = await fetch(API + "/settings/channels").then(x => x.json()); setChannels(r.channels || []); } catch (e) {} };
+  const saveChannel = async () => {
+    const f = chanForm; if (!f || !f.name.trim()) return;
+    try {
+      if (f.id) await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+      else await fetch(API + "/settings/channels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+      setChanForm(null); loadChannels();
+    } catch (e) {}
+  };
+  const delChannel = async (id) => { if (!confirm("删除这个渠道？")) return; try { await fetch(API + "/settings/channels/" + id, { method: "DELETE" }); loadChannels(); } catch (e) {} };
+  const activateChannel = async (ch) => {
+    try {
+      await fetch(API + "/settings/channels/" + ch.id + "/activate", { method: "POST" });
+      setSettingsData(prev => ({ ...prev, api_base_url: ch.api_base_url, api_key: ch.api_key, model: ch.model }));
+    } catch (e) {}
+  };
+  const testChannel = async (ch) => {
+    setChTest({ id: ch.id, loading: true });
+    try {
+      const r = await fetch(API + "/settings/test-api", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel: "main", api_base_url: ch.api_base_url, api_key: ch.api_key, model: ch.model }) }).then(x => x.json());
+      setChTest({ id: ch.id, ...r });
+    } catch (e) { setChTest({ id: ch.id, ok: false, error: e.message }); }
+  };
   const [apiTest, setApiTest] = useState({}); // {main|cheap: null|{loading}|{saved}|{ok,model,error,warnings}}
   const setChanTest = (ch, v) => setApiTest(prev => ({ ...prev, [ch]: v }));
 
@@ -654,6 +681,7 @@ export default function PlutocaelChat() {
     setShowSettings(true);
     if (key === "usage") loadGatewayStats();
     if (key === "chatmgmt") { setManageMsg(""); loadBackups(); }
+    if (key === "api") loadChannels();
     if (!settingsData) { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); } catch (err) { console.error("加载设置失败:", err); } }
   };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
@@ -1483,7 +1511,46 @@ export default function PlutocaelChat() {
                       </div>
                     )}
                   </>);
+                  const isActiveChan = (ch) => (ch.model || "") === (settingsData.model || "") && (ch.api_base_url || "") === (settingsData.api_base_url || "");
+                  const chanInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
                   return <>
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>我的渠道（一键切换）</div>
+                <div style={listCard}>
+                  {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 13, color: COLORS.placeholder, textAlign: "center" }}>还没有保存的渠道，点下面「添加渠道」存几个，崩了一键切换</div>}
+                  {channels.map((ch, i) => {
+                    const active = isActiveChan(ch);
+                    const t = chTest && chTest.id === ch.id ? chTest : null;
+                    return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 14, color: COLORS.text, fontWeight: active ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
+                          {active && <span style={{ fontSize: 10, color: "#fff", background: "#3AAF6B", padding: "1px 7px", borderRadius: 8, flexShrink: 0 }}>使用中</span>}
+                        </div>
+                        <div style={{ fontSize: 11, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{ch.model || "（默认模型）"}</div>
+                        {t && !t.loading && <div style={{ fontSize: 11, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
+                      </div>
+                      <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
+                        <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
+                        {!active && <button className="ghost" onClick={() => activateChannel(ch)} style={{ padding: "5px 12px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>使用</button>}
+                        <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, name: ch.name, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
+                        <button className="flat ghost" onClick={() => delChannel(ch.id)} title="删除" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
+                      </div>
+                    </div>;
+                  })}
+                  {chanForm && <div style={{ ...rowCol, borderBottom: "none" }}>
+                    <input value={chanForm.name} onChange={e => setChanForm({ ...chanForm, name: e.target.value })} placeholder="渠道名字（如：酒酿opus）" style={chanInput} />
+                    <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（留空=服务器默认）" style={chanInput} />
+                    <input value={chanForm.api_key} onChange={e => setChanForm({ ...chanForm, api_key: e.target.value })} placeholder="API Key（sk- 开头，留空=沿用当前）" style={chanInput} />
+                    <input value={chanForm.model} onChange={e => setChanForm({ ...chanForm, model: e.target.value })} placeholder="模型名（如 [可颂-反重力-0.4]claude-opus-4-6-thinking）" style={{ ...chanInput, marginBottom: 10 }} />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button className="ghost" onClick={() => setChanForm(null)} style={{ flex: 1, padding: "9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>取消</button>
+                      <button className="ghost" onClick={saveChannel} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{chanForm.id ? "保存修改" : "添加"}</button>
+                    </div>
+                  </div>}
+                </div>
+                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", marginBottom: 20 }}>+ 添加渠道</button>}
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>手动配置（主力渠道）</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
