@@ -41,6 +41,28 @@ const THEMES = {
     buttonHover: "#F0D9E2", danger: "#C0392B", divider: "#F0D9E2", cardBg: "#FFFFFF",
     glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
   },
+  mint: {
+    label: "嫩绿",
+    bg: "#F2FCE5", sidebar: "#E9F6D9", sidebarBorder: "#D8ECC4", sidebarHover: "#E1F0CE",
+    sidebarActive: "#6FB03E", sidebarActiveText: "#FFFFFF",
+    input: "#FFFFFF", inputBorder: "#D0E6BC",
+    userBubble: "#E4F3D2", userBubbleText: "#2A3320",
+    text: "#2A3320", textSecondary: "#657056", placeholder: "#A3B491",
+    accent: "#6FB03E", accentHover: "#5D9832", accentLight: "#E4F3D2",
+    buttonHover: "#E1F0CE", danger: "#C0392B", divider: "#D8ECC4", cardBg: "#FFFFFF",
+    glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
+  },
+  sky: {
+    label: "天蓝",
+    bg: "#ECF5FC", sidebar: "#DFEEF9", sidebarBorder: "#C9E1F2", sidebarHover: "#D6E8F6",
+    sidebarActive: "#4A90D9", sidebarActiveText: "#FFFFFF",
+    input: "#FFFFFF", inputBorder: "#C2DCF0",
+    userBubble: "#D8EAF8", userBubbleText: "#1E2A36",
+    text: "#1E2A36", textSecondary: "#5A6B7A", placeholder: "#98ACBE",
+    accent: "#4A90D9", accentHover: "#3A7BC0", accentLight: "#D8EAF8",
+    buttonHover: "#D6E8F6", danger: "#C0392B", divider: "#C9E1F2", cardBg: "#FFFFFF",
+    glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
+  },
 };
 const CAT_COLORS = {
   "生活": { bg: "#FFF3E6", text: "#D4804A" },
@@ -1398,7 +1420,7 @@ export default function PlutocaelChat() {
                   <div style={rowLast}>
                     <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
                     <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      {["", "#F8E1E7", "#DCEBFA", "#DFF3E3", "#EFE3F9", "#FBF3D8"].map(c => (
+                      {["", "#F8E1E7", "#DCEBFA", "#DFF3E3", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
                         <button key={c || "default"} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c ? c : "默认"} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c || COLORS.accentLight, cursor: "pointer", padding: 0, flexShrink: 0 }} />
                       ))}
                       <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} title="自定义颜色" style={{ width: 26, height: 26, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />
