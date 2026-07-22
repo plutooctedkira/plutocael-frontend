@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, Tag, Switch, Button, Modal, Input, App, Select, Spin, Popconfirm } from "antd";
 import { ApiOutlined, ReloadOutlined, PlusOutlined, PlayCircleOutlined, DeleteOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import PullRefresh from "./PullRefresh";
 
 const API = import.meta.env.VITE_API_BASE || "/api";
 
@@ -91,7 +92,7 @@ export default function McpManager() {
 
   return (
     <App>
-      <div className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
+      <PullRefresh onRefresh={load} color="#3AAF6B" className="p-4 max-w-lg mx-auto w-full" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", overscrollBehaviorY: "contain", touchAction: "pan-y", boxSizing: "border-box" }}>
 
         <Card size="small" className="mb-4 rounded-xl" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
           <div className="flex flex-wrap gap-4 text-sm items-center">
@@ -162,7 +163,7 @@ export default function McpManager() {
             {toolResult && <Card size="small" className="mt-2 bg-gray-50" style={{ boxShadow: "0 2px 5px rgba(0,0,0,0.14), 0 6px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.5)" }}><pre className="text-xs whitespace-pre-wrap break-all m-0 font-mono text-gray-700">{toolResult}</pre></Card>}
           </div>
         </Modal>
-      </div>
+      </PullRefresh>
     </App>
   );
 }

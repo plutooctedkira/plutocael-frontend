@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 import OmbreMemories from './OmbreMemories';
+import PullRefresh from './PullRefresh';
 
 // 开发时走 "/api"（由 vite.config.js 代理到本地后端 3000 端口），
 // 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
@@ -711,6 +712,13 @@ export default function PlutocaelChat() {
     if (key === "usage") loadGatewayStats();
     if (key === "chatmgmt") { setManageMsg(""); loadBackups(); }
     if (key === "api") loadChannels();
+  };
+  // 下拉刷新设置页：重新拉当前分区的数据
+  const refreshSettings = async () => {
+    try { const s = await fetch(API + "/settings").then(r => r.json()); if (s && !s.error) setSettingsData(s); } catch (e) {}
+    if (settingsSection === "usage") await loadGatewayStats();
+    if (settingsSection === "chatmgmt") await loadBackups();
+    if (settingsSection === "api") await loadChannels();
     if (!settingsData) { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); } catch (err) { console.error("加载设置失败:", err); } }
   };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
@@ -1355,7 +1363,7 @@ export default function PlutocaelChat() {
             <span style={{ flex: 1 }} />
             <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ "": "设置", appearance: "外观", avatar: "头像", api: "API 连接", behavior: "对话行为与模型参数", mcp: "MCP 链接", chatmgmt: "聊天记录管理", memoryopts: "记忆", usage: "用量统计" })[settingsSection] || "设置"}</span>
           </div>
-          {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager /></div> : <div className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
+          {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager /></div> : <PullRefresh onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); loadGatewayStats(p); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
               {gatewayStats ? (<>
@@ -1766,7 +1774,7 @@ export default function PlutocaelChat() {
                 </>}
               </>;
             })()}
-          </div>}
+          </PullRefresh>}
         </div>
       </div>}
 

@@ -183,6 +183,8 @@ html, body, #root {
   to   { transform: translateY(0); }
 }
 
+@keyframes ptrSpin { to { transform: rotate(360deg); } }
+
 /* 开屏：花体字缓缓上浮+淡入，底下一道光线拉开，整屏再淡出 */
 @keyframes splashRise {
   0%   { opacity: 0; transform: translateY(14px) scale(0.96); letter-spacing: 2px; }

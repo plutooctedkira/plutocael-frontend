@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import PullRefresh from "./PullRefresh";
 
 /**
  * 记忆页：展示 Ombre Brain(OB) 的记忆桶
@@ -131,7 +132,7 @@ export default function OmbreMemories({ api, colors: C, dark }) {
         </div>
 
         {/* 列表 */}
-        <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))" }}>
+        <PullRefresh onRefresh={load} color={C.accent} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", paddingBottom: "calc(20px + env(safe-area-inset-bottom, 0px))" }}>
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px 0", fontSize: 13, color: C.placeholder }}>加载中…</div>
           ) : error ? (
@@ -162,7 +163,7 @@ export default function OmbreMemories({ api, colors: C, dark }) {
               </div>
             </button>
           ))}
-        </div>
+        </PullRefresh>
       </div>
 
       {/* 详情：底部上弹卡片，可拖高 */}
