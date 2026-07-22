@@ -1086,13 +1086,13 @@ export default function PlutocaelChat() {
                         </div>;
                       })()}
                       {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
-                      <div style={{ display: "flex", marginTop: 4, alignItems: "center", justifyContent: isUser ? "flex-end" : "space-between", gap: 8 }}>
+                      <div style={{ display: "flex", width: "100%", marginTop: 4, alignItems: "center", gap: 8 }}>
+                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                         {!isUser && (() => {
                           let u = null; try { u = msg.usage ? (typeof msg.usage === "string" ? JSON.parse(msg.usage) : msg.usage) : null; } catch (e) {}
-                          if (!u || (!u.in && !u.out)) return <span />;
-                          return <span style={{ fontSize: 10.5, color: COLORS.placeholder, opacity: 0.75, padding: "0 6px", whiteSpace: "nowrap" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}` : ""}${u.cw ? ` · 缓存写入 ${u.cw}` : ""}`}>↑{u.in} ↓{u.out}{u.cr ? ` ⚡${u.cr}` : ""}</span>;
+                          if (!u || (!u.in && !u.out)) return null;
+                          return <span style={{ fontSize: 10.5, color: COLORS.placeholder, opacity: 0.75, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}` : ""}${u.cw ? ` · 缓存写入 ${u.cw}` : ""}`}>↑{u.in} ↓{u.out}{u.cr ? ` ⚡${u.cr}` : ""}</span>;
                         })()}
-                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
                       </div>
                     </>)}
                     </div>
