@@ -646,6 +646,14 @@ export default function PlutocaelChat() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // 触觉反馈：任何按钮按下时轻震一下（Android/部分设备支持；iOS Safari 目前不支持 vibrate，会静默跳过）
+  useEffect(() => {
+    if (!("vibrate" in navigator)) return;
+    const onDown = (e) => { if (e.target && e.target.closest && e.target.closest("button")) { try { navigator.vibrate(8); } catch (err) {} } };
+    document.addEventListener("pointerdown", onDown, { passive: true });
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, []);
+
   // 从左边缘右滑打开侧边栏：覆盖平移，侧边栏跟手指盖过内容
   useEffect(() => {
     let startX = 0, startY = 0, tracking = false, dir = null; // dir: null/'h'/'v'

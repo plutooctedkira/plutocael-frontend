@@ -76,6 +76,23 @@ body {
 ::-webkit-scrollbar { display: none; }
 * { scrollbar-width: none; }
 
+/* 消灭网页痕迹 + 原生手感 */
+* {
+  -webkit-tap-highlight-color: transparent;   /* 点击不闪灰色高光 */
+  -webkit-touch-callout: none;                /* 长按不弹系统菜单 */
+}
+/* 默认禁止文字选择（网页味最重的来源），只有真正要输入/阅读的地方放开 */
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable="true"], .selectable {
+  -webkit-user-select: text; user-select: text;
+  -webkit-touch-callout: default;
+}
+/* 所有滚动区都上惯性滚动 + 边界不外溢（不带动整页回弹） */
+.msg-scroll, .panel-scroll, [data-scroll] {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* 拟物化：所有按钮凸起+阴影，像真实按键；按下凹陷 */
 button {
   -webkit-tap-highlight-color: transparent;
