@@ -1086,8 +1086,8 @@ export default function PlutocaelChat() {
                         </div>;
                       })()}
                       {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
-                      <div style={{ display: "flex", width: "100%", marginTop: 4, alignItems: "center", gap: 8 }}>
-                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px" }}>{formatFullTime(msg.created_at)}</span>}
+                      <div style={{ display: "flex", alignSelf: "stretch", marginTop: 4, alignItems: "center", gap: 8 }}>
+                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px", ...(isUser ? { marginLeft: "auto" } : {}) }}>{formatFullTime(msg.created_at)}</span>}
                         {!isUser && (() => {
                           let u = null; try { u = msg.usage ? (typeof msg.usage === "string" ? JSON.parse(msg.usage) : msg.usage) : null; } catch (e) {}
                           if (!u || (!u.in && !u.out)) return null;
