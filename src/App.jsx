@@ -1548,26 +1548,8 @@ export default function PlutocaelChat() {
                     </div>
                   </div>}
                 </div>
-                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", marginBottom: 20 }}>+ 添加渠道</button>}
-
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>手动配置（主力渠道）</div>
-                <div style={listCard}>
-                  <div style={row}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
-                    <input type="text" value={settingsData.api_base_url || ""} placeholder="留空用默认" onChange={e => setSettingsData({ ...settingsData, api_base_url: e.target.value })} style={rowInput} />
-                  </div>
-                  <div style={row}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
-                    <input type={showKey ? "text" : "password"} value={settingsData.api_key || ""} placeholder="sk- 开头，留空用服务器默认" onChange={e => setSettingsData({ ...settingsData, api_key: e.target.value })} style={rowInput} />
-                    {eyeBtn(showKey, () => setShowKey(v => !v))}
-                  </div>
-                  <div style={rowLast}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
-                    <input type="text" value={settingsData.model || ""} placeholder="留空用默认渠道" onChange={e => setSettingsData({ ...settingsData, model: e.target.value })} style={rowInput} />
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 主力渠道，聊天用。三框可留空=用服务器默认。Key 框只填 sk- 开头的密钥，点小眼睛可以查看。</div>
-                {chanBtns("main")}
+                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", marginBottom: 8 }}>+ 添加渠道</button>}
+                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 20px" }}>💡 同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
 
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
                 <div style={listCard}>
