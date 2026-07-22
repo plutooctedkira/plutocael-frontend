@@ -165,6 +165,9 @@ export default function PlutocaelChat() {
   const [newMemory, setNewMemory] = useState({ title: "", content: "", layer: "episodic", importance: 3 });
   const [editingMemory, setEditingMemory] = useState(null);
   const [expandedMemoryId, setExpandedMemoryId] = useState(null);
+  // 开屏动画：每次打开 app 显示一次花体字，约 2.2s 后淡出
+  const [splash, setSplash] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setSplash(false), 2200); return () => clearTimeout(t); }, []);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingMsgContent, setEditingMsgContent] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -1003,6 +1006,10 @@ export default function PlutocaelChat() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: (wallpaper && currentPage === "chat") ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : (theme === "custom" ? COLORS._solidBg : COLORS.bg), fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none" }}>
+      {splash && <div style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, animation: "splashFade 0.6s ease 1.6s forwards", pointerEvents: "none" }}>
+        <div style={{ fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic", fontSize: "min(19vw, 92px)", color: COLORS.accent, animation: "splashRise 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) forwards", textShadow: `0 2px 30px ${COLORS.accent}55`, lineHeight: 1 }}>Plutocael</div>
+        <div style={{ height: 1.5, width: 0, background: `linear-gradient(90deg, transparent, ${COLORS.accent}, transparent)`, marginTop: 18, animation: "splashLine 1.1s ease 0.6s forwards", opacity: 0.7 }} />
+      </div>}
       {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
         <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 24, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
