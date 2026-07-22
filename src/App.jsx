@@ -1125,7 +1125,11 @@ export default function PlutocaelChat() {
                         {!isUser && (() => {
                           let u = null; try { u = msg.usage ? (typeof msg.usage === "string" ? JSON.parse(msg.usage) : msg.usage) : null; } catch (e) {}
                           if (!u || (!u.in && !u.out)) return null;
-                          return <span style={{ fontSize: 10.5, color: COLORS.placeholder, opacity: 0.75, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}` : ""}${u.cw ? ` · 缓存写入 ${u.cw}` : ""}`}>↑{u.in} ↓{u.out}{u.cr ? ` ⚡${u.cr}` : ""}</span>;
+                          return <span style={{ fontSize: 10.5, opacity: 0.85, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}（省钱）` : ""}${u.cw ? ` · 缓存写入 ${u.cw}（花钱）` : ""}`}>
+                            <span style={{ color: COLORS.placeholder }}>↑{u.in} ↓{u.out}</span>
+                            {u.cr ? <span style={{ color: "#3AAF6B" }}> ⚡{u.cr}</span> : null}
+                            {u.cw ? <span style={{ color: "#D9534F" }}> ✎{u.cw}</span> : null}
+                          </span>;
                         })()}
                       </div>
                     </>)}
