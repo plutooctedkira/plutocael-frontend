@@ -184,6 +184,10 @@ export default function PlutocaelChat() {
   const [showCalendar, setShowCalendar] = useState(false); // 按日期查找的日历视图
   const [showDelCalendar, setShowDelCalendar] = useState(false); // 按日期删除的日历
   const [delSelected, setDelSelected] = useState(new Set()); // 多选待删日期
+  const [showMoveDate, setShowMoveDate] = useState(false); // 按日期改期
+  const [moveFrom, setMoveFrom] = useState(""); // 要挪走的那天
+  const [moveTo, setMoveTo] = useState(""); // 挪到哪天
+  const [dateCounts, setDateCounts] = useState([]); // [{d,c}] 有消息的日期+条数
   const [chatDates, setChatDates] = useState(new Set()); // 有聊天记录的日期集合
   const calScrollRef = useRef(null);
   const [chatSearchQ, setChatSearchQ] = useState("");
@@ -619,6 +623,20 @@ export default function PlutocaelChat() {
     if (!activeSessionId) return;
     if (!confirm("确定清空整个对话吗？所有消息将被删除且不可恢复。\n建议先去 设置→聊天记录管理 备份一份。")) return;
     try { await fetch(API + "/messages/session/" + activeSessionId + "/all", { method: "DELETE" }); setMessages([]); } catch (e) {}
+  };
+  const openMoveDate = async () => {
+    try { const r = await fetch(API + "/messages/dates/all").then(x => x.json()); setDateCounts(r.dates || []); } catch (e) { setDateCounts([]); }
+    setMoveFrom(""); setMoveTo(""); setShowMoveDate(true);
+  };
+  const doMoveDate = async () => {
+    if (!moveFrom || !moveTo) return;
+    if (!confirm(`把 ${moveFrom} 这天的所有消息整体挪到 ${moveTo} 吗？`)) return;
+    try {
+      const r = await fetch(API + "/messages/move-date", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from: moveFrom, to: moveTo }) }).then(x => x.json());
+      setShowMoveDate(false);
+      const msgs = await fetch(API + "/messages/session/" + (activeSessionId || "")).then(x => x.json());
+      if (Array.isArray(msgs)) setMessages(msgs);
+    } catch (e) {}
   };
   useEffect(() => { if (editingSessionId && editInputRef.current) { editInputRef.current.focus(); editInputRef.current.select(); } }, [editingSessionId]);
 
@@ -1222,8 +1240,30 @@ export default function PlutocaelChat() {
       {showChatMenu && <div onClick={() => setShowChatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 540 }}>
         <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 52px)", right: 12, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)", padding: 5, minWidth: 176 }}>
           <button className="flat ghost" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon>搜索聊天记录</button>
+          <button className="flat ghost" onClick={() => { setShowChatMenu(false); openMoveDate(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M14 15l3 3-3 3" /><path d="M17 18H8" /></Icon>按日期改期</button>
           <button className="flat ghost" onClick={() => { setShowChatMenu(false); openDeleteCalendar(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>按日期删除</button>
           <button className="flat ghost" onClick={() => { setShowChatMenu(false); clearChat(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>清空对话</button>
+        </div>
+      </div>}
+      {showMoveDate && <div onClick={() => setShowMoveDate(false)} style={{ position: "fixed", inset: 0, zIndex: 560, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "80vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(20px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+          <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 6px", flexShrink: 0 }} />
+          <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, textAlign: "center", paddingBottom: 4 }}>按日期改期</div>
+          <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 10 }}>先选要挪走的那天，再选正确的日期</div>
+          <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px", flex: 1, minHeight: 0 }}>
+            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "2px 2px 8px" }}>① 选要挪走的那天</div>
+            {dateCounts.length === 0 ? <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "10px 0" }}>没有消息</div> : dateCounts.map(d => (
+              <button key={d.d} className="flat ghost" onClick={() => setMoveFrom(d.d)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 10, border: moveFrom === d.d ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: moveFrom === d.d ? COLORS.accentLight : "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", marginBottom: 6 }}>
+                <span>{d.d}</span><span style={{ fontSize: 12, color: COLORS.textSecondary }}>{d.c} 条</span>
+              </button>
+            ))}
+            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "12px 2px 8px" }}>② 挪到哪天</div>
+            <input type="date" value={moveTo} onChange={e => setMoveTo(e.target.value)} style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: moveTo ? COLORS.text : COLORS.placeholder, background: COLORS.bg, outline: "none" }} />
+          </div>
+          <div style={{ display: "flex", gap: 10, padding: "12px 16px 0", flexShrink: 0 }}>
+            <button className="ghost" onClick={() => setShowMoveDate(false)} style={{ flex: 1, padding: "12px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>取消</button>
+            <button className="ghost" disabled={!moveFrom || !moveTo} onClick={doMoveDate} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: (moveFrom && moveTo) ? COLORS.accent : COLORS.divider, color: (moveFrom && moveTo) ? "#fff" : COLORS.placeholder, cursor: (moveFrom && moveTo) ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>{moveFrom && moveTo ? `把 ${moveFrom} 挪到 ${moveTo}` : "改期"}</button>
+          </div>
         </div>
       </div>}
       {showDelCalendar && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
