@@ -770,6 +770,7 @@ export default function PlutocaelChat() {
   const [stagingItems, setStagingItems] = useState([]);
   const [editStageId, setEditStageId] = useState(null);
   const [editStageText, setEditStageText] = useState("");
+  const [stageDate, setStageDate] = useState(""); // 给整批导入指定的日期
   const loadStaging = async () => {
     try { const r = await fetch(API + "/manage/staging").then(x => x.json()); setStagingItems(r.items || []); } catch (e) { setStagingItems([]); }
   };
@@ -789,9 +790,9 @@ export default function PlutocaelChat() {
   };
   const commitStaging = async () => {
     if (!stagingItems.length) return;
-    if (!confirm(`确定把这 ${stagingItems.length} 条上传到当前对话吗？`)) return;
+    if (!confirm(`确定把这 ${stagingItems.length} 条上传到当前对话吗？${stageDate ? "\n这批将归到 " + stageDate : ""}`)) return;
     try {
-      const r = await fetch(API + "/manage/staging/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: activeSessionId }) }).then(x => x.json());
+      const r = await fetch(API + "/manage/staging/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: activeSessionId, base_date: stageDate }) }).then(x => x.json());
       setShowStaging(false); setStagingItems([]);
       setManageMsg(`✓ 已上传：新增 ${r.imported} 条，跳过重复 ${r.skipped} 条`);
       const msgs = await fetch(API + "/messages/session/" + (r.session_id || activeSessionId || "")).then(x => x.json());
@@ -1183,6 +1184,12 @@ export default function PlutocaelChat() {
           <button className="flat ghost" onClick={discardStaging} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13, padding: "6px 8px", fontFamily: "inherit" }}>放弃</button>
         </div>
         <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 8, flexShrink: 0 }}>点消息可编辑，点角色标签可切换用户/Cael，✕ 删除</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px 10px", flexShrink: 0 }}>
+          <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>这批对话的日期</span>
+          <input type="date" value={stageDate} onChange={e => setStageDate(e.target.value)} style={{ border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "6px 10px", fontSize: 13, fontFamily: "inherit", color: stageDate ? COLORS.text : COLORS.placeholder, background: COLORS.cardBg, outline: "none" }} />
+          {stageDate ? <button className="flat ghost" onClick={() => setStageDate("")} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "4px 6px" }}>清除</button>
+            : <span style={{ fontSize: 11, color: COLORS.placeholder }}>不选=用今天</span>}
+        </div>
         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px 12px" }}>
           {stagingItems.length === 0 ? <div style={{ textAlign: "center", padding: "30px 0", fontSize: 13, color: COLORS.placeholder }}>暂存区空了</div> : stagingItems.map(m => (
             <div key={m.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
