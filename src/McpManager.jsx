@@ -120,6 +120,9 @@ export default function McpManager() {
                 title={<span className="flex items-center gap-2"><ApiOutlined style={{ color: s.enabled ? "#3AAF6B" : "#aaa" }} /><span className="text-sm font-medium">{s.name}</span>{s.enabled ? <Tag color="green" className="text-[11px]">启用</Tag> : <Tag className="text-[11px]">停用</Tag>}</span>}
                 extra={<Switch checked={!!s.enabled} onChange={() => toggleServer(s)} size="small" />}
               >
+                <div className="text-xs mb-2" style={{ color: s.enabled ? "#3AAF6B" : "#aaa" }}>
+                  {s.enabled ? `● 已连接 · ${serverTools.length} 个工具已启用` : "○ 已停用"}
+                </div>
                 <div className="text-xs text-gray-400 mb-2 break-all">{s.url}</div>
                 {serverTools.length > 0 && <div className="flex flex-wrap gap-1 mb-2">{serverTools.map(x => <Tag key={x.name} className="text-[11px]">{x.name}</Tag>)}</div>}
                 {t && !t.loading && (t.ok

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 
 // 下拉刷新：滚到顶部继续下拉，超过阈值松手触发 onRefresh
 // 用法：<PullRefresh onRefresh={async()=>{...}} className="panel-scroll" style={{...}}>内容</PullRefresh>
-export default function PullRefresh({ onRefresh, className, style, color = "#888", children }) {
+export default function PullRefresh({ onRefresh, className, style, color = "#888", disabled = false, children }) {
   const ref = useRef(null);
   const startY = useRef(0);
   const pulling = useRef(false);
@@ -10,6 +10,8 @@ export default function PullRefresh({ onRefresh, className, style, color = "#888
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const THRESH = 64;
+
+  if (disabled) return <div className={className} style={style}>{children}</div>;
 
   const onTouchStart = (e) => {
     if (refreshing) return;
