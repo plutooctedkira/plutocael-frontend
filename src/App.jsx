@@ -200,7 +200,9 @@ export default function PlutocaelChat() {
     try { await fetch(API + "/settings/skills/" + sk.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) }); } catch (e) {}
   };
   // 聊天记录搜索（关键词/图片/链接/日期）
-  const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单
+  const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单（整屏页）
+  const [chatMenuClosing, setChatMenuClosing] = useState(false);
+  const closeChatMenu = () => { setChatMenuClosing(true); setTimeout(() => { setShowChatMenu(false); setChatMenuClosing(false); }, 260); };
   const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
   const photoInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -1317,9 +1319,9 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
-      {showChatMenu && <div style={{ position: "fixed", inset: 0, zIndex: 545, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: "slideRightIn 0.25s cubic-bezier(0.22, 0.61, 0.36, 1)" }}>
+      {showChatMenu && <div style={{ position: "fixed", inset: 0, zIndex: 545, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${chatMenuClosing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 8px", flexShrink: 0 }}>
-          <button className="flat ghost" onClick={() => setShowChatMenu(false)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <button className="flat ghost" onClick={closeChatMenu} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
           <span style={{ flex: 1 }} />
           <span style={{ fontSize: 13, color: COLORS.textSecondary }}>更多</span>
         </div>
