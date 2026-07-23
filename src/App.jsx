@@ -1095,28 +1095,19 @@ export default function PlutocaelChat() {
                   </div>
                   <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
-                <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 380 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease, transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)" }}>
-                <div style={{ background: COLORS.cardBg, borderRadius: 16, overflow: "hidden", margin: "14px 2px 4px", ...skCard }}>
-                  {(() => {
-                    const rows = [
-                      { l: "照片", action: () => photoInputRef.current && photoInputRef.current.click(), icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
-                      { l: "拍摄", action: () => cameraInputRef.current && cameraInputRef.current.click(), icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></> },
-                      { l: "文件", action: () => fileInputRef.current && fileInputRef.current.click(), icon: <><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></> },
-                      { l: "技能", action: () => { loadSkills(); setShowSkillPicker(true); }, icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /> },
-                      { l: "Thinking 思考", toggle: !!(settingsData && settingsData.enable_thinking), onToggle: () => saveSetting({ enable_thinking: settingsData && settingsData.enable_thinking ? 0 : 1 }), icon: <><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></> },
-                      { l: "搜索聊天记录", action: () => setShowChatSearch(true), icon: <><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></> },
-                      { l: "清空对话", danger: true, action: () => clearChat(), icon: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></> },
-                    ];
-                    return rows.map((it, i) => (
-                      <button key={it.l} className="flat ghost" onClick={() => { if (it.toggle !== undefined) { it.onToggle(); return; } setShowPlusPanel(false); it.action(); }}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 15px", border: "none", borderBottom: i < rows.length - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", color: it.danger ? COLORS.danger : COLORS.text, cursor: "pointer", fontSize: 14.5, fontFamily: "inherit", textAlign: "left" }}>
-                        <span style={{ color: it.danger ? COLORS.danger : COLORS.textSecondary, display: "flex", flexShrink: 0 }}><Icon size={19}>{it.icon}</Icon></span>
-                        <span style={{ flex: 1 }}>{it.l}</span>
-                        {it.toggle !== undefined ? <Toggle on={it.toggle} onChange={it.onToggle} />
-                          : <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={15}><polyline points="9 18 15 12 9 6" /></Icon></span>}
-                      </button>
-                    ));
-                  })()}
+                <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 140 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease, transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px" }}>
+                  {[
+                    { l: "照片", ref: photoInputRef, icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
+                    { l: "拍摄", ref: cameraInputRef, icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></> },
+                    { l: "文件", ref: fileInputRef, icon: <><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></> },
+                    { l: "技能", action: () => { loadSkills(); setShowSkillPicker(true); }, icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /> },
+                  ].map(it => (
+                    <button key={it.l} className="flat ghost" onClick={() => { setShowPlusPanel(false); if (it.action) it.action(); else if (it.ref.current) it.ref.current.click(); }} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 0, fontFamily: "inherit" }}>
+                      <span style={{ width: 58, height: 58, borderRadius: 16, background: COLORS.cardBg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.text, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}><Icon size={26}>{it.icon}</Icon></span>
+                      <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{it.l}</span>
+                    </button>
+                  ))}
                 </div>
                 </div>
               </div>
