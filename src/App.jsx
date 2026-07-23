@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 import OmbreMemories from './OmbreMemories';
 import PullRefresh from './PullRefresh';
+import SwipeRow from './SwipeRow';
 
 // 开发时走 "/api"（由 vite.config.js 代理到本地后端 3000 端口），
 // 生产构建时用 .env.production 里的 VITE_API_BASE 指向线上后端
@@ -179,6 +180,25 @@ export default function PlutocaelChat() {
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
   const [gatewayLogs, setGatewayLogs] = useState([]);
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
+  // Skill：额外指令块
+  const [skills, setSkills] = useState([]);
+  const [skillForm, setSkillForm] = useState(null); // null | {id?, name, content, grp}
+  const [showSkillPicker, setShowSkillPicker] = useState(false); // 工具栏的技能选择底部弹层
+  const loadSkills = async () => { try { const r = await fetch(API + "/settings/skills").then(x => x.json()); setSkills(r.skills || []); } catch (e) {} };
+  const saveSkill = async () => {
+    const f = skillForm; if (!f || !f.name.trim()) return;
+    try {
+      if (f.id) await fetch(API + "/settings/skills/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+      else await fetch(API + "/settings/skills", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
+      setSkillForm(null); loadSkills();
+    } catch (e) {}
+  };
+  const delSkill = async (id) => { if (!confirm("删除这个 skill？")) return; try { await fetch(API + "/settings/skills/" + id, { method: "DELETE" }); loadSkills(); } catch (e) {} };
+  const toggleSkill = async (sk) => {
+    const active = sk.active ? 0 : 1;
+    setSkills(prev => prev.map(x => x.id === sk.id ? { ...x, active } : x));
+    try { await fetch(API + "/settings/skills/" + sk.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) }); } catch (e) {}
+  };
   // 聊天记录搜索（关键词/图片/链接/日期）
   const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单
   const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
@@ -722,6 +742,7 @@ export default function PlutocaelChat() {
     if (key === "usage") loadGatewayStats();
     if (key === "chatmgmt") { setManageMsg(""); loadBackups(); }
     if (key === "api") loadChannels();
+    if (key === "skill") loadSkills();
   };
   // 下拉刷新设置页：重新拉当前分区的数据
   const refreshSettings = async () => {
@@ -1080,8 +1101,9 @@ export default function PlutocaelChat() {
                     { l: "照片", ref: photoInputRef, icon: <><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></> },
                     { l: "拍摄", ref: cameraInputRef, icon: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></> },
                     { l: "文件", ref: fileInputRef, icon: <><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><polyline points="13 2 13 9 20 9" /></> },
+                    { l: "技能", action: () => { loadSkills(); setShowSkillPicker(true); }, icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /> },
                   ].map(it => (
-                    <button key={it.l} className="flat ghost" onClick={() => { setShowPlusPanel(false); it.ref.current && it.ref.current.click(); }} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 0, fontFamily: "inherit" }}>
+                    <button key={it.l} className="flat ghost" onClick={() => { setShowPlusPanel(false); if (it.action) it.action(); else if (it.ref.current) it.ref.current.click(); }} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 0, fontFamily: "inherit" }}>
                       <span style={{ width: 58, height: 58, borderRadius: 16, background: COLORS.cardBg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.text, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}><Icon size={26}>{it.icon}</Icon></span>
                       <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{it.l}</span>
                     </button>
@@ -1275,6 +1297,26 @@ export default function PlutocaelChat() {
           <button className="ghost" disabled={stagingItems.length === 0} onClick={commitStaging} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: stagingItems.length ? COLORS.accent : COLORS.divider, color: stagingItems.length ? "#fff" : COLORS.placeholder, cursor: stagingItems.length ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>上传到当前对话</button>
         </div>
       </div>}
+      {showSkillPicker && <div onClick={() => setShowSkillPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 560, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "70vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(20px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+          <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 6px", flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", padding: "2px 18px 8px", flexShrink: 0 }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, flex: 1 }}>选择技能</span>
+            <button className="flat ghost" onClick={() => { setShowSkillPicker(false); openSettingsPage("skill"); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "4px 6px" }}>去编辑</button>
+          </div>
+          <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px" }}>
+            {skills.length === 0 ? <div style={{ fontSize: 13, color: COLORS.placeholder, textAlign: "center", padding: "20px 0" }}>还没有技能，去「去编辑」添加</div> : skills.map(s => (
+              <button key={s.id} className="flat ghost" onClick={() => toggleSkill(s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 12, border: s.active ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: s.active ? COLORS.accentLight : "transparent", cursor: "pointer", fontFamily: "inherit", marginBottom: 8, textAlign: "left" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, color: COLORS.text, fontWeight: s.active ? 600 : 400 }}>{s.name}{s.grp ? <span style={{ fontSize: 11, color: COLORS.placeholder, marginLeft: 6 }}>{s.grp}</span> : null}</div>
+                  <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{(s.content || "（空）").slice(0, 44)}</div>
+                </div>
+                {s.active && <span style={{ fontSize: 11, color: "#fff", background: COLORS.accent, padding: "1px 8px", borderRadius: 8, flexShrink: 0 }}>已启用</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>}
       {showChatMenu && <div onClick={() => setShowChatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 540 }}>
         <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 52px)", right: 12, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)", padding: 5, minWidth: 176, transformOrigin: "top right", animation: "menuPop 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)" }}>
           <button className="flat ghost" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon>搜索聊天记录</button>
@@ -1371,7 +1413,7 @@ export default function PlutocaelChat() {
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
             <button className="flat ghost" onClick={() => { if (settingsSection !== "") setSettingsSection(""); else setShowSettings(false); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ "": "设置", appearance: "外观", avatar: "头像", api: "API 连接", behavior: "对话行为与模型参数", mcp: "MCP", chatmgmt: "聊天记录管理", memoryopts: "记忆", usage: "用量统计" })[settingsSection] || "设置"}</span>
+            <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ "": "设置", appearance: "外观", avatar: "头像", api: "API 连接", behavior: "对话行为与模型参数", skill: "技能 Skill", mcp: "MCP", chatmgmt: "聊天记录管理", memoryopts: "记忆", usage: "用量统计" })[settingsSection] || "设置"}</span>
           </div>
           {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
@@ -1431,7 +1473,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["", "appearance", "avatar", "api", "behavior", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
+            {["", "appearance", "avatar", "api", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -1457,6 +1499,7 @@ export default function PlutocaelChat() {
                       { key: "api", label: "API 连接", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
                       { key: "mcp", label: "MCP", icon: <><path d="M9 2v6" /><path d="M15 2v6" /><path d="M6 8h12v4a6 6 0 0 1-6 6 6 6 0 0 1-6-6z" /><path d="M12 18v4" /></> },
                       { key: "behavior", label: "对话行为与模型参数", icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
+                      { key: "skill", label: "技能 Skill", icon: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></> },
                       { key: "chatmgmt", label: "聊天记录管理", icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></> },
                       { key: "memoryopts", label: "记忆", icon: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></> },
                       { key: "usage", label: "用量统计", icon: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></> },
@@ -1688,6 +1731,42 @@ export default function PlutocaelChat() {
                 </div>
                 <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存"}</button>
                 <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div></>}
+
+                {settingsSection === "skill" && (() => {
+                  const skInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
+                  const groups = {};
+                  for (const s of skills) { (groups[s.grp || "未分组"] = groups[s.grp || "未分组"] || []).push(s); }
+                  return <>
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 10px" }}>💡 启用的技能会作为额外指令追加到 Cael 人设末尾（不替换基础人设）。左滑可删除。</div>
+                    {Object.keys(groups).length === 0 && !skillForm && <div style={{ ...listCard, padding: 16, textAlign: "center", fontSize: 13, color: COLORS.placeholder }}>还没有技能，点下面添加一个</div>}
+                    {Object.entries(groups).map(([g, list]) => <div key={g} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>{g}</div>
+                      {list.map(s => (
+                        <div key={s.id} style={{ marginBottom: 8 }}>
+                          <SwipeRow onDelete={() => delSkill(s.id)}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: COLORS.cardBg, ...skCard, borderRadius: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }} onClick={() => setSkillForm({ id: s.id, name: s.name, content: s.content || "", grp: s.grp || "" })}>
+                                <div style={{ fontSize: 14, color: COLORS.text, fontWeight: s.active ? 600 : 400 }}>{s.name}</div>
+                                <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{(s.content || "（空）").slice(0, 40)}</div>
+                              </div>
+                              <Toggle on={!!s.active} onChange={() => toggleSkill(s)} />
+                            </div>
+                          </SwipeRow>
+                        </div>
+                      ))}
+                    </div>)}
+                    {skillForm && <div style={{ ...listCard, padding: "12px 12px 10px", marginBottom: 12 }}>
+                      <input value={skillForm.name} onChange={e => setSkillForm({ ...skillForm, name: e.target.value })} placeholder="技能名字（如：翻译腔）" style={skInput} />
+                      <input value={skillForm.grp} onChange={e => setSkillForm({ ...skillForm, grp: e.target.value })} placeholder="分组（可选，如：语气 / 角色）" style={skInput} />
+                      <textarea value={skillForm.content} onChange={e => setSkillForm({ ...skillForm, content: e.target.value })} rows={6} placeholder="技能的额外指令内容……启用后会追加到 Cael 人设末尾" style={{ ...skInput, minHeight: 110, resize: "vertical", lineHeight: 1.6 }} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="ghost" onClick={() => setSkillForm(null)} style={{ flex: 1, padding: "9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>取消</button>
+                        <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{skillForm.id ? "保存修改" : "添加"}</button>
+                      </div>
+                    </div>}
+                    {!skillForm && <button className="ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>+ 添加技能</button>}
+                  </>;
+                })()}
 
                 {settingsSection === "chatmgmt" && <>
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>导入与导出</div>
