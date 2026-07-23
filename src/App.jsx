@@ -185,6 +185,7 @@ export default function PlutocaelChat() {
   const [skillForm, setSkillForm] = useState(null); // null | {id?, name, content, grp}
   const [showSkillPicker, setShowSkillPicker] = useState(false); // 工具栏的技能选择底部弹层
   const [skillGroupCollapsed, setSkillGroupCollapsed] = useState(new Set()); // 折叠的skill分组
+  const [mcpAddSignal, setMcpAddSignal] = useState(0); // 顶部+触发MCP新增
   const loadSkills = async () => { try { const r = await fetch(API + "/settings/skills").then(x => x.json()); setSkills(r.skills || []); } catch (e) {} };
   const saveSkill = async () => {
     const f = skillForm; if (!f || !f.name.trim()) return;
@@ -1466,9 +1467,10 @@ export default function PlutocaelChat() {
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
             <button className="flat ghost" onClick={() => { if (settingsSection !== "") setSettingsSection(""); else setShowSettings(false); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
             <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>{({ "": "设置", appearance: "外观", avatar: "头像", api: "API 连接", behavior: "对话行为与模型参数", skill: "Skill", mcp: "MCP", chatmgmt: "聊天记录管理", memoryopts: "记忆", usage: "用量统计" })[settingsSection] || "设置"}</span>
+            {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
+            {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
           </div>
-          {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
+          {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} addSignal={mcpAddSignal} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); loadGatewayStats(p); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
               {gatewayStats ? (<>
@@ -1790,8 +1792,8 @@ export default function PlutocaelChat() {
                   const groups = {};
                   for (const s of skills) { (groups[s.grp || "未分组"] = groups[s.grp || "未分组"] || []).push(s); }
                   return <>
-                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 10px" }}>💡 启用的 Skill 会作为额外指令追加到 Cael 人设末尾（不替换基础人设）。左滑可删除。</div>
-                    {Object.keys(groups).length === 0 && !skillForm && <div style={{ ...listCard, padding: 16, textAlign: "center", fontSize: 13, color: COLORS.placeholder }}>还没有 Skill，点下面添加一个</div>}
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 10px" }}>💡 启用的 Skill 会追加到 Cael 人设末尾（不替换基础人设）。右上角 + 添加，左滑删除。</div>
+                    {Object.keys(groups).length === 0 && !skillForm && <div style={{ ...listCard, padding: 16, textAlign: "center", fontSize: 13, color: COLORS.placeholder }}>还没有 Skill，点右上角 + 添加</div>}
                     {Object.entries(groups).map(([g, list]) => {
                       const collapsed = skillGroupCollapsed.has(g);
                       return <div key={g} style={{ marginBottom: 14 }}>
@@ -1831,7 +1833,6 @@ export default function PlutocaelChat() {
                         <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{skillForm.id ? "保存修改" : "添加"}</button>
                       </div>
                     </div>}
-                    {!skillForm && <button className="ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>+ 添加 Skill</button>}
                   </>;
                 })()}
 

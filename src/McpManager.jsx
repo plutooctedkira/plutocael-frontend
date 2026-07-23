@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PullRefresh from "./PullRefresh";
 import SwipeRow from "./SwipeRow";
 
@@ -9,11 +9,15 @@ const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewB
  * MCP 服务器管理：卡片列表(名称+已连接/工具标签) → 点进底部编辑弹层
  * 左滑删除；启用的服务器工具聚合给 Cael
  */
-export default function McpManager({ colors: C, dark }) {
+export default function McpManager({ colors: C, dark, addSignal }) {
   const [servers, setServers] = useState([]);
   const [tools, setTools] = useState([]);
   const [sheet, setSheet] = useState(null); // null | {id?, name, url, enabled}
   const [test, setTest] = useState(null); // {loading} | {ok, tools|error}
+
+  // 顶部 + 号点击时 addSignal 递增 → 打开新增弹层
+  const lastSignal = useRef(addSignal);
+  useEffect(() => { if (addSignal !== lastSignal.current) { lastSignal.current = addSignal; setTest(null); setSheet({ name: "", url: "", enabled: true }); } }, [addSignal]);
 
   const load = async () => {
     try {
@@ -79,14 +83,12 @@ export default function McpManager({ colors: C, dark }) {
                       <span style={{ fontSize: 11.5, padding: "2px 10px", borderRadius: 11, background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", color: C.textSecondary, border: `1px solid ${C.divider}` }}>工具: {serverTools.length}/{serverTools.length}</span>
                     </span>
                   </span>
-                  <span style={{ color: C.placeholder, display: "flex", flexShrink: 0 }}><Icon size={16}><polyline points="9 18 15 12 9 6" /></Icon></span>
                 </button>
               </SwipeRow>
             </div>;
           })}
 
-          <button className="ghost" onClick={() => { setTest(null); setSheet({ name: "", url: "", enabled: true }); }} style={{ width: "100%", padding: "12px", border: `1px dashed ${C.divider}`, borderRadius: 16, background: "transparent", color: C.accent, cursor: "pointer", fontSize: 13.5, fontFamily: "inherit", marginTop: 4 }}>+ 添加 MCP</button>
-          <div style={{ fontSize: 12, color: C.placeholder, padding: "12px 4px 0", lineHeight: 1.7 }}>💡 地址填完整的 MCP 端点（Streamable HTTP），鉴权直接拼在 URL 里，例如 https://xxx.com/mcp?api_key=你的key</div>
+          <div style={{ fontSize: 12, color: C.placeholder, padding: "12px 4px 0", lineHeight: 1.7 }}>💡 右上角 + 添加。地址填完整的 MCP 端点（Streamable HTTP），鉴权直接拼在 URL 里，例如 https://xxx.com/mcp?api_key=你的key</div>
         </div>
       </PullRefresh>
 
