@@ -1317,15 +1317,48 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
-      {showChatMenu && <div onClick={() => setShowChatMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 540 }}>
-        <div onClick={e => e.stopPropagation()} style={{ position: "absolute", top: "calc(env(safe-area-inset-top, 0px) + 52px)", right: 12, background: COLORS.cardBg, borderRadius: 14, boxShadow: "0 8px 28px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)", padding: 5, minWidth: 208, transformOrigin: "top right", animation: "menuPop 0.2s cubic-bezier(0.22, 0.61, 0.36, 1)" }}>
-          {(() => { const on = !!(settingsData && settingsData.enable_thinking); return (
-          <button className="flat ghost" onClick={() => saveSetting({ enable_thinking: on ? 0 : 1 })} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", borderBottom: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></Icon><span style={{ flex: 1 }}>Thinking 思考</span><span style={{ width: 40, height: 24, borderRadius: 12, background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s" }}><span style={{ position: "absolute", top: 2, left: on ? 18 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.25)" }} /></span></button>
-          ); })()}
-          <button className="flat ghost" onClick={() => { setShowChatMenu(false); setShowChatSearch(true); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon>搜索聊天记录</button>
-          <button className="flat ghost" onClick={() => { setShowChatMenu(false); openMoveDate(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M14 15l3 3-3 3" /><path d="M17 18H8" /></Icon>按日期改期</button>
-          <button className="flat ghost" onClick={() => { setShowChatMenu(false); openDeleteCalendar(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>按日期删除</button>
-          <button className="flat ghost" onClick={() => { setShowChatMenu(false); clearChat(); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "11px 14px", border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, fontFamily: "inherit", borderRadius: 10, textAlign: "left" }}><Icon size={17}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>清空对话</button>
+      {showChatMenu && <div style={{ position: "fixed", inset: 0, zIndex: 545, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: "slideRightIn 0.25s cubic-bezier(0.22, 0.61, 0.36, 1)" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 8px", flexShrink: 0 }}>
+          <button className="flat ghost" onClick={() => setShowChatMenu(false)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: 13, color: COLORS.textSecondary }}>更多</span>
+        </div>
+        <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "8px 16px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
+          {(() => {
+            const on = !!(settingsData && settingsData.enable_thinking);
+            const card = { background: COLORS.cardBg, borderRadius: 14, overflow: "hidden", marginBottom: 16, ...skCard };
+            const rowBtn = (i, n) => ({ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 15px", border: "none", borderBottom: i < n - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", cursor: "pointer", fontSize: 14.5, fontFamily: "inherit", textAlign: "left" });
+            const chev = <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={15}><polyline points="9 18 15 12 9 6" /></Icon></span>;
+            return <>
+              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>开关</div>
+              <div style={card}>
+                <button className="flat ghost" onClick={() => saveSetting({ enable_thinking: on ? 0 : 1 })} style={{ ...rowBtn(0, 1), color: COLORS.text }}>
+                  <span style={{ color: COLORS.textSecondary, display: "flex", flexShrink: 0 }}><Icon size={19}><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></Icon></span>
+                  <span style={{ flex: 1 }}>Thinking 思考</span>
+                  <span style={{ width: 46, height: 28, borderRadius: 14, background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.18)" }}><span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} /></span>
+                </button>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>聊天记录</div>
+              <div style={card}>
+                {[
+                  { l: "搜索聊天记录", icon: <><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>, act: () => { setShowChatMenu(false); setShowChatSearch(true); } },
+                  { l: "按日期改期", icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="M14 15l3 3-3 3" /><path d="M17 18H8" /></>, act: () => { setShowChatMenu(false); openMoveDate(); } },
+                  { l: "按日期删除", icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>, act: () => { setShowChatMenu(false); openDeleteCalendar(); } },
+                ].map((it, i, a) => (
+                  <button key={it.l} className="flat ghost" onClick={it.act} style={{ ...rowBtn(i, a.length), color: COLORS.text }}>
+                    <span style={{ color: COLORS.textSecondary, display: "flex", flexShrink: 0 }}><Icon size={19}>{it.icon}</Icon></span>
+                    <span style={{ flex: 1 }}>{it.l}</span>{chev}
+                  </button>
+                ))}
+              </div>
+              <div style={card}>
+                <button className="flat ghost" onClick={() => { setShowChatMenu(false); clearChat(); }} style={{ ...rowBtn(0, 1), color: COLORS.danger }}>
+                  <span style={{ color: COLORS.danger, display: "flex", flexShrink: 0 }}><Icon size={19}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></span>
+                  <span style={{ flex: 1 }}>清空对话</span>{chev}
+                </button>
+              </div>
+            </>;
+          })()}
         </div>
       </div>}
       {showMoveDate && <div onClick={() => setShowMoveDate(false)} style={{ position: "fixed", inset: 0, zIndex: 560, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
