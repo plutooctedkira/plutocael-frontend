@@ -690,34 +690,48 @@ export default function PlutocaelChat() {
     return () => document.removeEventListener("pointerdown", onDown);
   }, []);
 
-  // 从左边缘右滑打开侧边栏：覆盖平移，侧边栏跟手指盖过内容
+  // 边缘右滑：主界面=开侧边栏；其它页面/浮层=返回上一级
+  const navRef = useRef({ isChatRoot: () => true, goBack: () => {} });
+  navRef.current = {
+    isChatRoot: () => currentPage === "chat" && !showSettings && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
+    goBack: () => {
+      if (showChatMenu) return closeChatMenu();
+      if (thinkingSheet != null) return setThinkingSheet(null);
+      if (showSkillPicker) return setShowSkillPicker(false);
+      if (showStaging) return setShowStaging(false);
+      if (showMoveDate) return setShowMoveDate(false);
+      if (showDelCalendar) return setShowDelCalendar(false);
+      if (showChatSearch) { if (showCalendar) return setShowCalendar(false); return closeChatSearch(); }
+      if (showSettings) { if (settingsSection !== "") return setSettingsSection(""); return setShowSettings(false); }
+      if (currentPage !== "chat") return setCurrentPage("chat");
+    },
+  };
   useEffect(() => {
-    let startX = 0, startY = 0, tracking = false, dir = null; // dir: null/'h'/'v'
+    let startX = 0, startY = 0, lastDx = 0, tracking = false, dir = null, root = true;
     const onStart = (e) => {
       if (sidebarOpen) return;
       if (e.touches[0].clientX > 24) return; // 只在最左边缘起手
-      tracking = true; dir = null;
+      tracking = true; dir = null; lastDx = 0; root = navRef.current.isChatRoot();
       startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     };
     const onMove = (e) => {
       if (!tracking) return;
       const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
+      lastDx = dx;
       if (dir === null) {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
         dir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-        if (dir === 'v') { tracking = false; return; } // 竖滑交给页面滚动
-        dragging.current = true;
+        if (dir === 'v') { tracking = false; return; }
+        if (root) dragging.current = true;
       }
-      if (dir === 'h' && dx > 0) {
-        e.preventDefault();
-        setDragOffset(Math.min(280, dx));
-      }
+      if (dir === 'h' && dx > 0 && root) { e.preventDefault(); setDragOffset(Math.min(280, dx)); }
     };
     const onEnd = () => {
       if (!tracking) return;
       tracking = false; dragging.current = false;
-      setDragOffset(prev => { if (prev > 90) setSidebarOpen(true); return 0; });
+      if (root) { setDragOffset(prev => { if (prev > 90) setSidebarOpen(true); return 0; }); }
+      else if (dir === 'h' && lastDx > 60) { navRef.current.goBack(); }
     };
     document.addEventListener("touchstart", onStart, { passive: true });
     document.addEventListener("touchmove", onMove, { passive: false });
