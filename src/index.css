@@ -81,6 +81,13 @@ body {
   -webkit-tap-highlight-color: transparent;   /* 点击不闪灰色高光 */
   -webkit-touch-callout: none;                /* 长按不弹系统菜单 */
 }
+/* 图片禁止拖拽：长按头像/图片不再浮起拖影跟着手指走 */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 /* 默认禁止文字选择（网页味最重的来源），只有真正要输入/阅读的地方放开 */
 body { -webkit-user-select: none; user-select: none; }
 input, textarea, [contenteditable="true"], .selectable {
