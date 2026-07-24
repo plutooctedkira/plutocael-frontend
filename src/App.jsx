@@ -245,12 +245,16 @@ export default function PlutocaelChat() {
   const [chTest, setChTest] = useState(null); // {id, loading|ok|error}
   const loadChannels = async () => { try { const r = await fetch(API + "/settings/channels").then(x => x.json()); setChannels(r.channels || []); } catch (e) {} };
   const saveChannel = async () => {
-    const f = chanForm; if (!f || !f.name.trim()) return;
+    const f = chanForm;
+    if (!f) return;
+    if (!f.name.trim()) { alert("给渠道起个名字吧"); return; }
     try {
-      if (f.id) await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
-      else await fetch(API + "/settings/channels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
-      setChanForm(null); loadChannels();
-    } catch (e) {}
+      const r = f.id
+        ? await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(x => x.json())
+        : await fetch(API + "/settings/channels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(x => x.json());
+      if (r && r.error) { alert("保存失败：" + r.error); return; }
+      setChanForm(null); await loadChannels();
+    } catch (e) { alert("保存失败：" + e.message); }
   };
   const delChannel = async (id) => { if (!confirm("删除这个渠道？")) return; try { await fetch(API + "/settings/channels/" + id, { method: "DELETE" }); loadChannels(); } catch (e) {} };
   const activateChannel = async (ch) => {
@@ -1469,6 +1473,7 @@ export default function PlutocaelChat() {
             <span style={{ flex: 1 }} />
             {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
+            {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ name: "", api_base_url: "", api_key: "", model: "" })} title="添加渠道" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
           </div>
           {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} addSignal={mcpAddSignal} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
@@ -1755,16 +1760,6 @@ export default function PlutocaelChat() {
                 })()}
 
                 {settingsSection === "behavior" && <>
-                <div style={listCard}>
-                  <div style={row}>
-                    <div><div style={lbl}>Thinking 思考模式</div><div style={hint}>先思考再回答，过程可展开（开启时温度不生效）</div></div>
-                    <Toggle on={!!settingsData.enable_thinking} onChange={() => saveSetting({ enable_thinking: settingsData.enable_thinking ? 0 : 1 })} />
-                  </div>
-                  <div style={rowLast}>
-                    <div><div style={lbl}>MCP 工具</div><div style={hint}>让 Cael 自己调记忆工具，点一下即刻生效</div></div>
-                    <Toggle on={!!settingsData.enable_mcp} onChange={() => saveSetting({ enable_mcp: settingsData.enable_mcp ? 0 : 1 })} />
-                  </div>
-                </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>模型参数</div>
                 <div style={listCard}>
                   <div style={rowCol}>
