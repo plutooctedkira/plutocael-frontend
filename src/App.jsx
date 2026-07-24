@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 import OmbreMemories from './OmbreMemories';
+import Diary from './Diary';
 import PullRefresh from './PullRefresh';
 import SwipeRow from './SwipeRow';
 
@@ -1084,6 +1085,7 @@ export default function PlutocaelChat() {
         <div style={{ padding: "0 12px 16px" }}>
           <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆库</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("diary"); setSidebarOpen(false); }} className={!showSettings && currentPage === "diary" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "diary" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "diary" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></Icon> 日记</button>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
@@ -1100,6 +1102,9 @@ export default function PlutocaelChat() {
         </>) : currentPage === "obmem" ? (<div key="obmem" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)", willChange: "transform" }}>
           {caelHeader()}
           <OmbreMemories api={API} colors={COLORS} dark={barDark} />
+        </div>) : currentPage === "diary" ? (<div key="diary" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)", willChange: "transform" }}>
+          {caelHeader()}
+          <Diary api={API} colors={COLORS} dark={barDark} />
         </div>) : (<>
           {caelHeader(<button className="flat ghost" onClick={() => setShowChatMenu(true)} title="更多" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></Icon></button>)}
           {(() => {
@@ -1541,7 +1546,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["", "appearance", "avatar", "api", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
+            {["", "appearance", "api", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -1560,7 +1565,6 @@ export default function PlutocaelChat() {
                   // 设置根菜单：功能 / 通用 两组
                   const MENU = [
                     { group: "通用", items: [
-                      { key: "avatar", label: "头像", icon: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></> },
                       { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
                     ]},
                     { group: "功能", items: [
@@ -1657,9 +1661,8 @@ export default function PlutocaelChat() {
                       </label>
                     </div>
                   </div>
-                </div></>}
-
-                {settingsSection === "avatar" && (() => {
+                </div>
+                {(() => {
                   const preview = (src, letter) => <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                     {src ? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 21, color: COLORS.accent }}>{letter}</span>}
                   </div>;
@@ -1668,6 +1671,7 @@ export default function PlutocaelChat() {
                     <button className="ghost" onClick={() => inputRef.current && inputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{src ? "更换" : "上传"}</button>
                   </div>;
                   return <>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>头像</div>
                     <input ref={avatarAiInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("ai")} />
                     <input ref={avatarUserInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("user")} />
                     <div style={listCard}>
@@ -1686,9 +1690,10 @@ export default function PlutocaelChat() {
                         {btns(avatarUser, "user", avatarUserInputRef)}
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。没上传时显示默认字母。</div>
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。</div>
                   </>;
                 })()}
+                </>}
 
                 {settingsSection === "api" && (() => {
                   const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
