@@ -212,6 +212,7 @@ export default function PlutocaelChat() {
   const [showDiary, setShowDiary] = useState(false); // 日记（整屏页，可滑出）
   const [diaryClosing, setDiaryClosing] = useState(false);
   const closeDiary = () => { setDiaryClosing(true); setTimeout(() => { setShowDiary(false); setDiaryClosing(false); }, 270); };
+  const diaryReaderRef = useRef({ isOpen: () => false, close: () => {} }); // 日记详情页打开状态，供返回手势优先关它
   const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
   const photoInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -716,7 +717,7 @@ export default function PlutocaelChat() {
       if (showDelCalendar) return setShowDelCalendar(false);
       if (showChatSearch) { if (showCalendar) return setShowCalendar(false); return closeChatSearch(); }
       if (showSettings) { if (settingsSection !== "") { setSettingsSection(""); setSectionAnimKey(k => k + 1); return; } return closeSettings(); }
-      if (showDiary) return closeDiary();
+      if (showDiary) { if (diaryReaderRef.current.isOpen()) return diaryReaderRef.current.close(); return closeDiary(); }
       if (currentPage !== "chat") return setCurrentPage("chat");
     },
   };
@@ -1484,7 +1485,7 @@ export default function PlutocaelChat() {
           <button className="flat ghost" onClick={closeDiary} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><polyline points="15 18 9 12 15 6" /></Icon></button>
           <span style={{ flex: 1 }} />
         </div>
-        <Diary api={API} colors={COLORS} dark={barDark} />
+        <Diary api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
       </div>}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>

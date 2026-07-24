@@ -7,11 +7,13 @@ const fmtDate = (d) => { if (!d) return ""; const p = String(d).split("-"); retu
 const firstLine = (c) => String(c || "").split("\n").map(s => s.trim()).find(Boolean) || "无更多文本";
 
 // 日记：Apple 备忘录风格，每条标题+日期+首行预览，点开整篇
-export default function Diary({ api, colors: C, dark }) {
+export default function Diary({ api, colors: C, dark, readerRef }) {
   const [entries, setEntries] = useState(null);
   const [open, setOpen] = useState(null); // 打开的整篇
   const [closing, setClosing] = useState(false); // 详情页滑出中
   const closeReader = () => { setClosing(true); setTimeout(() => { setOpen(null); setClosing(false); }, 260); };
+  // 把详情页开关暴露给父级返回手势：详情页打开时优先关它（回到列表），而不是整个日记
+  if (readerRef) readerRef.current = { isOpen: () => !!open, close: closeReader };
 
   const load = async () => {
     try { const r = await fetch(api + "/diary").then(x => x.json()); setEntries(r.entries || []); } catch (e) { setEntries([]); }
