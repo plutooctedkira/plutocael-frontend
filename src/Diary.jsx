@@ -10,6 +10,8 @@ const firstLine = (c) => String(c || "").split("\n").map(s => s.trim()).find(Boo
 export default function Diary({ api, colors: C, dark }) {
   const [entries, setEntries] = useState(null);
   const [open, setOpen] = useState(null); // 打开的整篇
+  const [closing, setClosing] = useState(false); // 详情页滑出中
+  const closeReader = () => { setClosing(true); setTimeout(() => { setOpen(null); setClosing(false); }, 260); };
 
   const load = async () => {
     try { const r = await fetch(api + "/diary").then(x => x.json()); setEntries(r.entries || []); } catch (e) { setEntries([]); }
@@ -38,9 +40,9 @@ export default function Diary({ api, colors: C, dark }) {
         </div>
       </PullRefresh>
 
-      {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+      {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${closing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
-          <button className="flat ghost" onClick={() => setOpen(null)} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 15, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>日记</button>
+          <button className="flat ghost" onClick={closeReader} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 15, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>日记</button>
           <span style={{ flex: 1 }} />
         </div>
         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "4px 22px calc(30px + env(safe-area-inset-bottom, 0px))" }}>
