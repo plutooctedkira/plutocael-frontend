@@ -186,6 +186,9 @@ export default function PlutocaelChat() {
   const [showSkillPicker, setShowSkillPicker] = useState(false); // 工具栏的技能选择底部弹层
   const [skillGroupCollapsed, setSkillGroupCollapsed] = useState(new Set()); // 折叠的skill分组
   const [mcpAddSignal, setMcpAddSignal] = useState(0); // 顶部+触发MCP新增
+  const [settingsClosing, setSettingsClosing] = useState(false);
+  const closeSettings = () => { setSettingsClosing(true); setTimeout(() => { setShowSettings(false); setSettingsClosing(false); }, 270); };
+  const [sectionAnimKey, setSectionAnimKey] = useState(0); // 分区切换的翻页动画key
   const loadSkills = async () => { try { const r = await fetch(API + "/settings/skills").then(x => x.json()); setSkills(r.skills || []); } catch (e) {} };
   const saveSkill = async () => {
     const f = skillForm; if (!f || !f.name.trim()) return;
@@ -708,7 +711,7 @@ export default function PlutocaelChat() {
       if (showMoveDate) return setShowMoveDate(false);
       if (showDelCalendar) return setShowDelCalendar(false);
       if (showChatSearch) { if (showCalendar) return setShowCalendar(false); return closeChatSearch(); }
-      if (showSettings) { if (settingsSection !== "") return setSettingsSection(""); return setShowSettings(false); }
+      if (showSettings) { if (settingsSection !== "") { setSettingsSection(""); setSectionAnimKey(k => k + 1); return; } return closeSettings(); }
       if (currentPage !== "chat") return setCurrentPage("chat");
     },
   };
@@ -716,9 +719,12 @@ export default function PlutocaelChat() {
     let startX = 0, startY = 0, lastDx = 0, tracking = false, dir = null, root = true;
     const onStart = (e) => {
       if (sidebarOpen) return;
-      if (e.touches[0].clientX > 24) return; // 只在最左边缘起手
-      tracking = true; dir = null; lastDx = 0; root = navRef.current.isChatRoot();
-      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      const x0 = e.touches[0].clientX;
+      root = navRef.current.isChatRoot();
+      // 聊天主界面仍从左边缘起手开侧边栏（避免和内容/输入冲突）；其它页面右滑返回可在屏幕任意处起手
+      if (root && x0 > 30) return;
+      tracking = true; dir = null; lastDx = 0;
+      startX = x0; startY = e.touches[0].clientY;
     };
     const onMove = (e) => {
       if (!tracking) return;
@@ -760,6 +766,7 @@ export default function PlutocaelChat() {
   const openSettingsPage = async (key) => {
     setSidebarOpen(false);
     setSettingsSection(key);
+    setSectionAnimKey(k => k + 1);
     setShowSettings(true);
     if (key === "usage") loadGatewayStats();
     if (key === "chatmgmt") { setManageMsg(""); loadBackups(); }
@@ -1090,10 +1097,10 @@ export default function PlutocaelChat() {
         {currentPage === "mcp" ? (<>
           {caelHeader()}
           <McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} />
-        </>) : currentPage === "obmem" ? (<>
+        </>) : currentPage === "obmem" ? (<div key="obmem" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)", willChange: "transform" }}>
           {caelHeader()}
           <OmbreMemories api={API} colors={COLORS} dark={barDark} />
-        </>) : (<>
+        </div>) : (<>
           {caelHeader(<button className="flat ghost" onClick={() => setShowChatMenu(true)} title="更多" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></Icon></button>)}
           {(() => {
             const inputBar = (
@@ -1466,15 +1473,16 @@ export default function PlutocaelChat() {
           </div>
         )}
       </div>}
-      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
-            <button className="flat ghost" onClick={() => { if (settingsSection !== "") setSettingsSection(""); else setShowSettings(false); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
+            <button className="flat ghost" onClick={() => { if (settingsSection !== "") { setSettingsSection(""); setSectionAnimKey(k => k + 1); } else closeSettings(); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
             <span style={{ flex: 1 }} />
             {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ name: "", api_base_url: "", api_key: "", model: "" })} title="添加渠道" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
           </div>
+          <div key={sectionAnimKey} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "pageTurnIn 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} addSignal={mcpAddSignal} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
             {settingsSection === "usage" && <>
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); loadGatewayStats(p); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
@@ -1927,6 +1935,7 @@ export default function PlutocaelChat() {
               </>;
             })()}
           </PullRefresh>}
+          </div>
         </div>
       </div>}
 
