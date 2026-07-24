@@ -706,7 +706,7 @@ export default function PlutocaelChat() {
   // 边缘右滑：主界面=开侧边栏；其它页面/浮层=返回上一级
   const navRef = useRef({ isChatRoot: () => true, goBack: () => {} });
   navRef.current = {
-    isChatRoot: () => currentPage === "chat" && !showSettings && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
+    isChatRoot: () => currentPage === "chat" && !showSettings && !showDiary && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
     goBack: () => {
       if (showChatMenu) return closeChatMenu();
       if (thinkingSheet != null) return setThinkingSheet(null);
