@@ -1121,9 +1121,9 @@ export default function PlutocaelChat() {
                   <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
-                  {/* accept 不含图片类型 → iOS 直达文件App；纯 image/* → 直达照片图库；带 capture → 直达相机 */}
+                  {/* accept 不含图片类型 → iOS 直达文件App；具体图片类型(不用 image/* 通配) → 直达照片图库，不弹「拍照/图库/文件」抽屉；带 capture → 直达相机 */}
                   <input ref={fileInputRef} type="file" accept=".json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt,text/plain,text/markdown,application/json" style={{ display: "none" }} onChange={handlePickImage} />
-                  <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickImage} />
+                  <input ref={photoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/heic,image/heif,image/webp,image/gif" style={{ display: "none" }} onChange={handlePickImage} />
                   <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handlePickImage} />
                   <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transform: showPlusPanel ? "rotate(45deg)" : "none", transition: "transform 0.2s ease", ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
