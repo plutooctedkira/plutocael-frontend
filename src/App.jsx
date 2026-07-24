@@ -1832,13 +1832,26 @@ export default function PlutocaelChat() {
                         ))}
                       </div>;
                     })}
-                    {skillForm && <div style={{ ...listCard, padding: "12px 12px 10px", marginBottom: 12 }}>
-                      <input value={skillForm.name} onChange={e => setSkillForm({ ...skillForm, name: e.target.value })} placeholder="Skill 名字（如：翻译腔）" style={skInput} />
-                      <input value={skillForm.grp} onChange={e => setSkillForm({ ...skillForm, grp: e.target.value })} placeholder="分组（可选，如：语气 / 角色）" style={skInput} />
-                      <textarea value={skillForm.content} onChange={e => setSkillForm({ ...skillForm, content: e.target.value })} rows={6} placeholder="这条 Skill 的额外指令内容……启用后会追加到 Cael 人设末尾" style={{ ...skInput, minHeight: 110, resize: "vertical", lineHeight: 1.6 }} />
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button className="ghost" onClick={() => setSkillForm(null)} style={{ flex: 1, padding: "9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>取消</button>
-                        <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{skillForm.id ? "保存修改" : "添加"}</button>
+                    {skillForm && <div onClick={() => setSkillForm(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "86vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(18px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                        <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
+                        <div style={{ display: "flex", alignItems: "center", padding: "4px 16px 10px", flexShrink: 0 }}>
+                          <button className="flat ghost" onClick={() => setSkillForm(null)} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+                          <span style={{ flex: 1, textAlign: "center", fontSize: 15.5, fontWeight: 600, color: COLORS.text }}>{skillForm.id ? "编辑 Skill" : "添加 Skill"}</span>
+                          <span style={{ width: 32 }} />
+                        </div>
+                        <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "2px 18px 6px" }}>
+                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>名称</div>
+                          <input value={skillForm.name} onChange={e => setSkillForm({ ...skillForm, name: e.target.value })} placeholder="Skill 名字（如：翻译腔）" style={{ ...skInput, marginBottom: 14 }} />
+                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>分组（可选）</div>
+                          <input value={skillForm.grp} onChange={e => setSkillForm({ ...skillForm, grp: e.target.value })} placeholder="如：语气 / 角色" style={{ ...skInput, marginBottom: 14 }} />
+                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>指令内容</div>
+                          <textarea value={skillForm.content} onChange={e => setSkillForm({ ...skillForm, content: e.target.value })} rows={6} placeholder="这条 Skill 的额外指令内容……启用后会追加到 Cael 人设末尾" style={{ ...skInput, minHeight: 130, resize: "vertical", lineHeight: 1.6, marginBottom: 4 }} />
+                        </div>
+                        <div style={{ display: "flex", gap: 10, padding: "10px 18px 0", flexShrink: 0 }}>
+                          <button className="ghost" onClick={() => setSkillForm(null)} style={{ padding: "12px 18px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>取消</button>
+                          <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>✓ {skillForm.id ? "保存修改" : "添加"}</button>
+                        </div>
                       </div>
                     </div>}
                   </>;
