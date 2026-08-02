@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PullRefresh from "./PullRefresh";
+import Icon from "./Icon";
 
-const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>);
 // 2026-07-24 → 2026-7-24
 const fmtDate = (d) => { if (!d) return ""; const p = String(d).split("-"); return p.length === 3 ? `${p[0]}-${Number(p[1])}-${Number(p[2])}` : d; };
 const firstLine = (c) => String(c || "").split("\n").map(s => s.trim()).find(Boolean) || "无更多文本";

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
-const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>);
+import Icon from "./Icon";
 
 // 工具调用摘要：把参数压成一行，别在手机上刷屏
 const brief = (name, input) => {

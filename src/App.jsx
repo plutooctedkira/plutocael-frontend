@@ -4,6 +4,7 @@ import OmbreMemories from './OmbreMemories';
 import Diary from './Diary';
 import Agent from './Agent';
 import PullRefresh from './PullRefresh';
+import Icon from "./Icon";
 import SwipeRow from './SwipeRow';
 
 // 开发时走 "/api"（由 vite.config.js 代理到本地后端 3000 端口），
@@ -78,7 +79,6 @@ const CAT_COLORS = {
 const CAT_DEFAULT = { bg: "#F0F0F0", text: "#6B6B6B" };
 function getCatColor(cat) { return CAT_COLORS[cat] || CAT_DEFAULT; }
 
-const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>);
 function SendIcon() { return <Icon size={18}><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></Icon>; }
 function PlusIcon() { return <Icon><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>; }
 function ChatIcon() { return <Icon size={18}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>; }

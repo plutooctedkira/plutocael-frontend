@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import PullRefresh from "./PullRefresh";
+import Icon from "./Icon";
 import SwipeRow from "./SwipeRow";
 
 const API = import.meta.env.VITE_API_BASE || "/api";
-const Icon = ({ children, size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>);
 
 /**
  * MCP 服务器管理：卡片列表(名称+已连接/工具标签) → 点进底部编辑弹层
