@@ -69,55 +69,9 @@ const THEMES = {
     glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
   },
 };
-const CAT_COLORS = {
-  "生活": { bg: "#FFF3E6", text: "#D4804A" },
-  "开发日志": { bg: "#E8F0FE", text: "#4A7FD4" },
-  "小说灵感": { bg: "#F3E8FE", text: "#8A4AD4" },
-  "工作计划": { bg: "#E6F9EE", text: "#3AAF6B" },
-  "记忆库": { bg: "#F5E8E0", text: "#C4623F" },
-};
-const CAT_DEFAULT = { bg: "#F0F0F0", text: "#6B6B6B" };
-function getCatColor(cat) { return CAT_COLORS[cat] || CAT_DEFAULT; }
-
-function SendIcon() { return <Icon size={18}><line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" /></Icon>; }
-function PlusIcon() { return <Icon><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon>; }
 function ChatIcon() { return <Icon size={18}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>; }
-function MemoryIcon() { return <Icon size={18}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>; }
 function MenuIcon() { return <Icon size={20}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>; }
-function CloseIcon() { return <Icon size={12}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>; }
 function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
-function SettingsIcon() { return <Icon size={18}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon>; }
-function TrashIcon() { return <Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon>; }
-function CopyIcon() { return <Icon size={14}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></Icon>; }
-function StarIcon({ filled }) { return <Icon size={14}>{filled ? <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" /> : <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />}</Icon>; }
-
-// MCP 记忆的层级(记忆衰退机制按 core→episodic 从慢到快)
-const LAYERS = [
-  { key: "core", label: "核心", color: { bg: "#F5E8E0", text: "#C4623F" }, halfLife: "永久" },
-  { key: "semantic", label: "语义", color: { bg: "#E8F0FE", text: "#4A7FD4" }, halfLife: "~90天" },
-  { key: "procedural", label: "程序", color: { bg: "#E6F9EE", text: "#3AAF6B" }, halfLife: "~30天" },
-  { key: "episodic", label: "情节", color: { bg: "#F3E8FE", text: "#8A4AD4" }, halfLife: "~7天" },
-];
-const LAYER_MAP = Object.fromEntries(LAYERS.map(l => [l.key, l]));
-const DEFAULT_CATEGORIES = LAYERS.map(l => l.key);
-
-// 记忆衰退计算（与 MCP 服务器 decay.py 一致）
-// core层永久不衰退；其余：半衰期=30+(重要性-1)×7.5天，强度=0.5^(未访问天数/半衰期)
-function computeDecay(m) {
-  const importance = m.importance || 3;
-  if (m.layer === "core") return { strength: 1, isCore: true, halflife: null, days: 0 };
-  const halflife = 30 + (importance - 1) * 7.5;
-  const last = m.last_accessed ? new Date(String(m.last_accessed).replace(" ", "T")) : null;
-  const days = (last && !isNaN(last.getTime())) ? Math.max(0, (Date.now() - last.getTime()) / 86400000) : 0;
-  const strength = Math.max(0, Math.min(1, Math.pow(0.5, days / halflife)));
-  return { strength, isCore: false, halflife, days };
-}
-// 强度 → 颜色（新鲜绿 → 淡黄 → 褪色红）
-function decayColor(s) {
-  if (s >= 0.66) return "#3AAF6B";
-  if (s >= 0.33) return "#E0A030";
-  return "#C0655A";
-}
 
 const DEFAULT_CUSTOM = { dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
 // hex + 透明度百分比 → rgba
