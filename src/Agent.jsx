@@ -10,7 +10,7 @@ const brief = (name, input) => {
   return Object.keys(i).length ? JSON.stringify(i).slice(0, 60) : "";
 };
 
-// 克老师：跑在 VPS 上的编码 agent，能真的改代码和部署
+// 工作台：跑在 VPS 上的编码 agent，能真的改代码和部署
 export default function Agent({ api, colors: C, dark }) {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
@@ -74,7 +74,7 @@ export default function Agent({ api, colors: C, dark }) {
       <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px 12px" }}>
         <div style={{ maxWidth: 620, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "6px 4px 2px" }}>
-            <div style={{ fontSize: 30, fontWeight: 800, color: C.text, letterSpacing: "0.5px" }}>克老师</div>
+            <div style={{ fontSize: 30, fontWeight: 800, color: C.text, letterSpacing: "0.5px" }}>工作台</div>
             {msgs.length > 0 && <button className="flat ghost" onClick={reset} style={{ marginLeft: "auto", border: "none", background: "transparent", color: C.placeholder, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>清空</button>}
           </div>
           <div style={{ fontSize: 13, color: C.placeholder, padding: "0 4px 16px" }}>
