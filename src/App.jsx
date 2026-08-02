@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 import OmbreMemories from './OmbreMemories';
 import Diary from './Diary';
+import Agent from './Agent';
 import PullRefresh from './PullRefresh';
 import SwipeRow from './SwipeRow';
 
@@ -212,6 +213,9 @@ export default function PlutocaelChat() {
   const [showDiary, setShowDiary] = useState(false); // 日记（整屏页，可滑出）
   const [diaryClosing, setDiaryClosing] = useState(false);
   const closeDiary = () => { setDiaryClosing(true); setTimeout(() => { setShowDiary(false); setDiaryClosing(false); }, 270); };
+  const [showAgent, setShowAgent] = useState(false); // 克老师（编码 agent，整屏页）
+  const [agentClosing, setAgentClosing] = useState(false);
+  const closeAgent = () => { setAgentClosing(true); setTimeout(() => { setShowAgent(false); setAgentClosing(false); }, 270); };
   const diaryReaderRef = useRef({ isOpen: () => false, close: () => {} }); // 日记详情页打开状态，供返回手势优先关它
   const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
   const photoInputRef = useRef(null);
@@ -707,7 +711,7 @@ export default function PlutocaelChat() {
   // 边缘右滑：主界面=开侧边栏；其它页面/浮层=返回上一级
   const navRef = useRef({ isChatRoot: () => true, goBack: () => {} });
   navRef.current = {
-    isChatRoot: () => currentPage === "chat" && !showSettings && !showDiary && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
+    isChatRoot: () => currentPage === "chat" && !showSettings && !showDiary && !showAgent && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
     goBack: () => {
       if (showChatMenu) return closeChatMenu();
       if (thinkingSheet != null) return setThinkingSheet(null);
@@ -718,6 +722,7 @@ export default function PlutocaelChat() {
       if (showChatSearch) { if (showCalendar) return setShowCalendar(false); return closeChatSearch(); }
       if (showSettings) { if (settingsSection !== "") { setSettingsSection(""); setSectionAnimKey(k => k + 1); return; } return closeSettings(); }
       if (showDiary) { if (diaryReaderRef.current.isOpen()) return diaryReaderRef.current.close(); return closeDiary(); }
+      if (showAgent) return closeAgent();
       if (currentPage !== "chat") return setCurrentPage("chat");
     },
   };
@@ -1091,6 +1096,7 @@ export default function PlutocaelChat() {
           <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
           <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆库</button>
           <button onClick={() => { setShowSettings(false); setShowDiary(true); setSidebarOpen(false); }} className={showDiary ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showDiary ? COLORS.sidebarActive : "transparent", color: showDiary ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></Icon> 日记</button>
+          <button onClick={() => { setShowSettings(false); setShowAgent(true); setSidebarOpen(false); }} className={showAgent ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showAgent ? COLORS.sidebarActive : "transparent", color: showAgent ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></Icon> 克老师</button>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
@@ -1486,6 +1492,13 @@ export default function PlutocaelChat() {
           <span style={{ flex: 1 }} />
         </div>
         <Diary api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
+      </div>}
+      {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", animation: `${agentClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 4px", flexShrink: 0 }}>
+          <button className="flat ghost" onClick={closeAgent} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <span style={{ flex: 1 }} />
+        </div>
+        <Agent api={API} colors={COLORS} dark={barDark} />
       </div>}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
