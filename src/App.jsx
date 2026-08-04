@@ -1458,6 +1458,18 @@ export default function PlutocaelChat() {
                   <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按模型</div>
                   {gatewayStats.byModel.map((m,i) => <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<gatewayStats.byModel.length-1?`1px solid ${COLORS.divider}`:"none" }}><span style={{ fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginRight: 8 }}>{m.model}</span><span style={{ fontSize:13, fontWeight:500, flexShrink:0 }}>${(m.cost||0).toFixed(4)}</span></div>)}
                 </div>}
+                {gatewayStats.byTask?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按任务（聊天以外的后台开销）</div>
+                  {gatewayStats.byTask.map((t, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: i < gatewayStats.byTask.length - 1 ? `1px solid ${COLORS.divider}` : "none" }}>
+                      <span style={{ minWidth: 0, marginRight: 8 }}>
+                        <span style={{ display: "block", fontSize: 13, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.task}</span>
+                        <span style={{ display: "block", fontSize: 11, color: COLORS.placeholder, marginTop: 2 }}>{t.request_count} 次 · 入 {(t.input_tokens || 0).toLocaleString()} / 出 {(t.output_tokens || 0).toLocaleString()}</span>
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 500, flexShrink: 0 }}>${(t.cost || 0).toFixed(4)}</span>
+                    </div>
+                  ))}
+                </div>}
                 {gatewayLogs.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16 }}>
                   <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>最近调用</div>
                   {gatewayLogs.map((l, i) => {
