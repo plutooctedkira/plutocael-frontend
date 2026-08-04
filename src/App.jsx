@@ -132,6 +132,21 @@ export default function PlutocaelChat() {
   const [chanForm, setChanForm] = useState(null); // null | {id?, name, api_base_url, api_key, model}
   const [chTest, setChTest] = useState(null); // {id, loading|ok|error}
   const loadChannels = async () => { try { const r = await fetch(API + "/settings/channels").then(x => x.json()); setChannels(r.channels || []); } catch (e) {} };
+  // 各类任务分别用哪个渠道
+  const [taskModels, setTaskModels] = useState({ tasks: [], assigned: {} });
+  const [taskPicker, setTaskPicker] = useState(null); // 正在选渠道的任务 {key,label}
+  const loadTaskModels = async () => {
+    try {
+      const [tm] = await Promise.all([fetch(API + "/settings/task-models").then(x => x.json()), loadChannels()]);
+      setTaskModels({ tasks: tm.tasks || [], assigned: tm.assigned || {} });
+    } catch (e) {}
+  };
+  const assignTask = async (task, channel_id) => {
+    setTaskModels(p => ({ ...p, assigned: { ...p.assigned, [task]: channel_id || undefined } }));
+    setTaskPicker(null);
+    try { await fetch(API + "/settings/task-models/" + task, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel_id: channel_id || null }) }); } catch (e) {}
+    loadTaskModels();
+  };
   const saveChannel = async () => {
     const f = chanForm;
     if (!f) return;
@@ -658,6 +673,7 @@ export default function PlutocaelChat() {
     if (key === "usage") loadGatewayStats();
     if (key === "chatmgmt") { setManageMsg(""); loadBackups(); }
     if (key === "api") loadChannels();
+    if (key === "taskmodels") loadTaskModels();
     if (key === "skill") loadSkills();
   };
   // 下拉刷新设置页：重新拉当前分区的数据
@@ -666,6 +682,7 @@ export default function PlutocaelChat() {
     if (settingsSection === "usage") await loadGatewayStats();
     if (settingsSection === "chatmgmt") await loadBackups();
     if (settingsSection === "api") await loadChannels();
+    if (settingsSection === "taskmodels") await loadTaskModels();
     if (!settingsData) { try { const res = await fetch(API + "/settings"); setSettingsData(await res.json()); } catch (err) { console.error("加载设置失败:", err); } }
   };
   const handleSaveSettings = async () => { if (!settingsData) return; setSettingsSaving(true); try { await fetch(API + "/settings/" + settingsData.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settingsData) }); } catch (err) { console.error("保存设置失败:", err); } finally { setSettingsSaving(false); } };
@@ -1376,6 +1393,27 @@ export default function PlutocaelChat() {
         </div>
         <Agent api={API} colors={COLORS} dark={barDark} />
       </div>}
+      {taskPicker && <div onClick={() => setTaskPicker(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "78vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(18px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+          <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
+          <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 15.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个渠道</div>
+          <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px" }}>
+            {[{ id: null, name: "跟随默认", model: "" }, ...channels].map(c => {
+              const on = (taskModels.assigned[taskPicker.key] || null) === c.id;
+              return <button key={c.id ?? "default"} className="flat ghost" onClick={() => assignTask(taskPicker.key, c.id)}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "13px 14px", marginBottom: 7, borderRadius: 13, border: "none", background: on ? COLORS.accentLight : (barDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)"), cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0, border: `2px solid ${on ? COLORS.accent : COLORS.divider}`, background: on ? COLORS.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {on && <Icon size={11}><polyline points="20 6 9 17 4 12" /></Icon>}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 14.5, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                  {c.model && <span style={{ display: "block", fontSize: 11.5, color: COLORS.placeholder, marginTop: 2, fontFamily: "ui-monospace, monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.model}</span>}
+                </span>
+              </button>;
+            })}
+          </div>
+        </div>
+      </div>}
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
@@ -1444,7 +1482,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["", "appearance", "api", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
+            {["", "appearance", "api", "taskmodels", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -1469,6 +1507,7 @@ export default function PlutocaelChat() {
                     ]},
                     { group: "功能", items: [
                       { key: "api", label: "API 连接", icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></> },
+                      { key: "taskmodels", label: "默认模型", icon: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></> },
                       { key: "mcp", label: "MCP", icon: <><path d="M9 2v6" /><path d="M15 2v6" /><path d="M6 8h12v4a6 6 0 0 1-6 6 6 6 0 0 1-6-6z" /><path d="M12 18v4" /></> },
                       { key: "skill", label: "Skill", icon: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></> },
                       { key: "chatmgmt", label: "聊天记录管理", icon: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></> },
@@ -1592,6 +1631,31 @@ export default function PlutocaelChat() {
                   </>;
                 })()}
                 </>}
+
+                {settingsSection === "taskmodels" && (() => {
+                  const chanOf = (task) => channels.find(c => c.id === taskModels.assigned[task]);
+                  return <>
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", lineHeight: 1.7 }}>
+                      给每类任务单独指定渠道。没指定的沿用原来的规则（后台任务走便宜渠道、聊天走主力），所以不配也不会有变化。
+                    </div>
+                    {taskModels.tasks.map(t => {
+                      const c = chanOf(t.key);
+                      return <div key={t.key} style={{ ...listCard, marginBottom: 10 }}>
+                        <button className="flat ghost" onClick={() => setTaskPicker(t)} style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "13px 14px" }}>
+                          <div style={{ fontSize: 14.5, color: COLORS.text, fontWeight: 600 }}>{t.label}</div>
+                          <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 3, lineHeight: 1.5 }}>{t.desc}</div>
+                          <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 7, padding: "8px 11px", borderRadius: 10, background: barDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}>
+                            <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, background: c ? COLORS.accent : COLORS.divider, color: c ? "#fff" : COLORS.textSecondary }}>{c ? "指" : "默"}</span>
+                            <span style={{ fontSize: 13.5, color: c ? COLORS.text : COLORS.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {c ? `${c.name}${c.model ? " · " + c.model : ""}` : "跟随默认"}
+                            </span>
+                          </div>
+                        </button>
+                      </div>;
+                    })}
+                    {channels.length === 0 && <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
+                  </>;
+                })()}
 
                 {settingsSection === "api" && (() => {
                   const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
