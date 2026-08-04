@@ -55,15 +55,15 @@ export default function AuthGate({ children }) {
   return (
     <div style={wrap}>
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, width: "min(88vw, 320px)" }}>
-        <div style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 40, color: C.text, letterSpacing: "0.5px" }}>Plutocael</div>
+        <div style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 42, lineHeight: 1.25, color: C.text, letterSpacing: "0.5px" }}>Plutocael</div>
         <input
           ref={inputRef} type="password" value={pwd} onChange={e => setPwd(e.target.value)}
           placeholder="访问口令" autoComplete="current-password"
-          style={{ width: "100%", boxSizing: "border-box", padding: "13px 16px", fontSize: 16, textAlign: "center", borderRadius: 14, border: `1px solid ${C.inputBorder}`, background: C.input, color: C.text, outline: "none", fontFamily: "inherit" }}
+          style={{ width: "100%", boxSizing: "border-box", padding: "13px 16px", fontSize: 17, textAlign: "center", borderRadius: 14, border: `1px solid ${C.inputBorder}`, background: C.input, color: C.text, outline: "none", fontFamily: "inherit" }}
         />
-        {err && <div style={{ fontSize: 13, color: C.danger }}>{err}</div>}
+        {err && <div style={{ fontSize: 14, color: C.danger }}>{err}</div>}
         <button type="submit" disabled={idle}
-          style={{ width: "100%", padding: "13px", fontSize: 15, borderRadius: 14, border: "none", background: idle ? C.divider : C.accent, color: "#fff", cursor: idle ? "default" : "pointer", fontFamily: "inherit" }}>
+          style={{ width: "100%", padding: "13px", fontSize: 16, borderRadius: 14, border: "none", background: idle ? C.divider : C.accent, color: "#fff", cursor: idle ? "default" : "pointer", fontFamily: "inherit" }}>
           {busy ? "验证中…" : "进入"}
         </button>
       </form>

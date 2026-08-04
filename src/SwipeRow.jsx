@@ -19,7 +19,7 @@ export default function SwipeRow({ onDelete, children, deleteLabel = "删除", r
   const onEnd = () => { if (!tracking.current) return; tracking.current = false; if (dir.current === "h") setX(x < -W / 2 ? -W : 0); };
   return (
     <div style={{ position: "relative", overflow: "hidden", borderRadius: radius }}>
-      <button onClick={() => { setX(0); onDelete && onDelete(); }} style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: W, border: "none", borderRadius: `0 ${radius}px ${radius}px 0`, background: "#D9534F", color: "#fff", fontSize: 13, cursor: "pointer", fontFamily: "inherit", opacity: x < -2 ? 1 : 0 }}>{deleteLabel}</button>
+      <button onClick={() => { setX(0); onDelete && onDelete(); }} style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: W, border: "none", borderRadius: `0 ${radius}px ${radius}px 0`, background: "#D9534F", color: "#fff", fontSize: 14, cursor: "pointer", fontFamily: "inherit", opacity: x < -2 ? 1 : 0 }}>{deleteLabel}</button>
       <div onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd} onTouchCancel={onEnd}
         style={{ transform: `translateX(${x}px)`, transition: tracking.current ? "none" : "transform 0.25s cubic-bezier(0.22,0.61,0.36,1)", position: "relative", zIndex: 1, willChange: "transform", touchAction: "pan-y" }}>
         {children}

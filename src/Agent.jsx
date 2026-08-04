@@ -73,14 +73,14 @@ export default function Agent({ api, colors: C, dark }) {
       <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px 12px" }}>
         <div style={{ maxWidth: 620, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "6px 4px 2px" }}>
-            <div style={{ fontSize: 30, fontWeight: 800, color: C.text, letterSpacing: "0.5px" }}>工作台</div>
-            {msgs.length > 0 && <button className="flat ghost" onClick={reset} style={{ marginLeft: "auto", border: "none", background: "transparent", color: C.placeholder, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>清空</button>}
+            <div style={{ fontSize: 32, lineHeight: 1.25, fontWeight: 800, color: C.text, letterSpacing: "0.5px" }}>工作台</div>
+            {msgs.length > 0 && <button className="flat ghost" onClick={reset} style={{ marginLeft: "auto", border: "none", background: "transparent", color: C.placeholder, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>清空</button>}
           </div>
-          <div style={{ fontSize: 13, color: C.placeholder, padding: "0 4px 16px" }}>
+          <div style={{ fontSize: 14, color: C.placeholder, padding: "0 4px 16px" }}>
             {info ? (info.ready ? `直接改代码并部署 · ${info.model}` : "⚠️ 还没配好 API 渠道") : "…"}
           </div>
 
-          {msgs.length === 0 && <div style={{ ...card, padding: 20, fontSize: 13.5, color: C.textSecondary, lineHeight: 1.75 }}>
+          {msgs.length === 0 && <div style={{ ...card, padding: 20, fontSize: 14.5, color: C.textSecondary, lineHeight: 1.75 }}>
             我现在跑在你的 VPS 上，能真的读写 Plutocael 的代码、跑命令、部署。<br />
             直接说要改什么就行，比如「日记的字再大一点」。<br />
             <span style={{ color: C.placeholder }}>前端改完我 push，Vercel 自动部署；后端要重启的话我会先跟你说一声。</span>
@@ -88,12 +88,12 @@ export default function Agent({ api, colors: C, dark }) {
 
           {msgs.map((m, i) => m.role === "user" ? (
             <div key={i} style={{ display: "flex", justifyContent: "flex-end", margin: "14px 0" }}>
-              <div style={{ maxWidth: "85%", padding: "10px 14px", borderRadius: 16, background: C.userBubble || C.accentLight, color: C.text, fontSize: 15, lineHeight: 1.6, overflowWrap: "anywhere" }}>{m.text}</div>
+              <div style={{ maxWidth: "85%", padding: "10px 14px", borderRadius: 16, background: C.userBubble || C.accentLight, color: C.text, fontSize: 16, lineHeight: 1.6, overflowWrap: "anywhere" }}>{m.text}</div>
             </div>
           ) : (
             <div key={i} style={{ margin: "14px 0" }}>
               {m.tools.map((t, j) => (
-                <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", marginBottom: 6, borderRadius: 10, background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)", fontSize: 12.5, color: C.textSecondary }}>
+                <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", marginBottom: 6, borderRadius: 10, background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)", fontSize: 13.5, color: C.textSecondary }}>
                   <span style={{ color: t.running ? C.placeholder : (t.ok === false ? "#C0392B" : "#3AAF6B"), display: "flex", flexShrink: 0 }}>
                     <Icon size={13}>{t.running ? <circle cx="12" cy="12" r="9" /> : t.ok === false ? <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></> : <polyline points="20 6 9 17 4 12" />}</Icon>
                   </span>
@@ -101,12 +101,12 @@ export default function Agent({ api, colors: C, dark }) {
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "ui-monospace, monospace", opacity: 0.8 }}>{t.brief}</span>
                 </div>
               ))}
-              {m.text && <div style={{ fontSize: 15, lineHeight: 1.75, color: C.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", padding: "0 2px" }}>{m.text}</div>}
-              {m.error && <div style={{ marginTop: 8, padding: "9px 12px", borderRadius: 10, background: "rgba(192,57,43,0.10)", color: "#C0392B", fontSize: 12.5, overflowWrap: "anywhere" }}>{m.error}</div>}
+              {m.text && <div style={{ fontSize: 16, lineHeight: 1.75, color: C.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", padding: "0 2px" }}>{m.text}</div>}
+              {m.error && <div style={{ marginTop: 8, padding: "9px 12px", borderRadius: 10, background: "rgba(192,57,43,0.10)", color: "#C0392B", fontSize: 13.5, overflowWrap: "anywhere" }}>{m.error}</div>}
             </div>
           ))}
 
-          {busy && <div style={{ padding: "4px 2px", color: C.placeholder, fontSize: 13 }}><span className="dot-typing"><span /><span /><span /></span></div>}
+          {busy && <div style={{ padding: "4px 2px", color: C.placeholder, fontSize: 14 }}><span className="dot-typing"><span /><span /><span /></span></div>}
           <div ref={endRef} />
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function Agent({ api, colors: C, dark }) {
             value={input} onChange={e => setInput(e.target.value)} rows={1}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={busy ? "干活中…" : "要改什么？"}
-            style={{ flex: 1, minWidth: 0, maxHeight: 140, padding: "11px 15px", borderRadius: 20, border: `1px solid ${C.divider}`, background: C.input, color: C.text, fontSize: 15, fontFamily: "inherit", resize: "none", outline: "none", lineHeight: 1.5, boxSizing: "border-box" }}
+            style={{ flex: 1, minWidth: 0, maxHeight: 140, padding: "11px 15px", borderRadius: 20, border: `1px solid ${C.divider}`, background: C.input, color: C.text, fontSize: 16, fontFamily: "inherit", resize: "none", outline: "none", lineHeight: 1.5, boxSizing: "border-box" }}
           />
           <button onClick={send} disabled={busy || !input.trim()}
             style={{ width: 40, height: 40, borderRadius: "50%", border: "none", flexShrink: 0, cursor: busy || !input.trim() ? "default" : "pointer", background: busy || !input.trim() ? C.divider : C.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>

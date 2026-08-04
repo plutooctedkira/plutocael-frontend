@@ -523,14 +523,14 @@ export default function PlutocaelChat() {
     }
     return <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "6px 0 4px", borderBottom: `1px solid ${COLORS.divider}` }}>
-        {["日", "一", "二", "三", "四", "五", "六"].map(w => <div key={w} style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder }}>{w}</div>)}
+        {["日", "一", "二", "三", "四", "五", "六"].map(w => <div key={w} style={{ textAlign: "center", fontSize: 13, color: COLORS.placeholder }}>{w}</div>)}
       </div>
       {months.map(({ y, m }) => {
         const first = new Date(y, m, 1).getDay();
         const days = new Date(y, m + 1, 0).getDate();
         const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
         return <div key={y + "-" + m} style={{ marginBottom: 6 }}>
-          <div style={{ fontSize: 14, color: COLORS.textSecondary, padding: "12px 2px 6px" }}>{y}年{m + 1}月</div>
+          <div style={{ fontSize: 15, color: COLORS.textSecondary, padding: "12px 2px 6px" }}>{y}年{m + 1}月</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4 }}>
             {cells.map((d, i) => {
               if (d === null) return <div key={"b" + i} />;
@@ -539,8 +539,8 @@ export default function PlutocaelChat() {
               const isToday = key === todayKey;
               const isSel = selectedSet ? selectedSet.has(key) : false;
               return <button key={key} className="flat ghost" disabled={!has} onClick={() => onDayTap(key)} style={{ border: "none", background: "transparent", padding: 0, height: isToday ? 52 : 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", cursor: has ? "pointer" : "default", fontFamily: "inherit" }}>
-                <span style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: isSel ? COLORS.accent : (isToday && !selectedSet) ? COLORS.accent : "transparent", border: isToday && selectedSet && !isSel ? `1.5px solid ${COLORS.accent}` : "none", color: (isSel || (isToday && !selectedSet)) ? "#fff" : has ? COLORS.text : COLORS.placeholder, fontWeight: has && !isToday ? 500 : 400, opacity: (!has && !isToday) ? 0.5 : 1, boxSizing: "border-box" }}>{d}</span>
-                {isToday && <span style={{ fontSize: 10, color: COLORS.accent, marginTop: 1 }}>今天</span>}
+                <span style={{ width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, background: isSel ? COLORS.accent : (isToday && !selectedSet) ? COLORS.accent : "transparent", border: isToday && selectedSet && !isSel ? `1.5px solid ${COLORS.accent}` : "none", color: (isSel || (isToday && !selectedSet)) ? "#fff" : has ? COLORS.text : COLORS.placeholder, fontWeight: has && !isToday ? 500 : 400, opacity: (!has && !isToday) ? 0.5 : 1, boxSizing: "border-box" }}>{d}</span>
+                {isToday && <span style={{ fontSize: 11, color: COLORS.accent, marginTop: 1 }}>今天</span>}
               </button>;
             })}
           </div>
@@ -974,7 +974,7 @@ export default function PlutocaelChat() {
   };
   const formatFullTime = (d) => { if (!d) return ""; const t = parseTime(d); return isNaN(t) ? "" : t.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
   const formatDate = (d) => { if (!d) return ""; return d.split(" ")[0] || d.split("T")[0] || ""; };
-  const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
+  const ifs = { width: "100%", border: `1px solid ${COLORS.inputBorder}`, borderRadius: 12, padding: "8px 12px", fontSize: 15, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: (wallpaper && currentPage === "chat") ? `${COLORS.bg} url(${wallpaper}) center/cover no-repeat fixed` : (theme === "custom" ? COLORS._solidBg : COLORS.bg), fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: COLORS.text, overflow: "hidden", overscrollBehavior: "none", overscrollBehaviorX: "none", touchAction: "none" }}>
@@ -984,12 +984,12 @@ export default function PlutocaelChat() {
       </div>}
       {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
       <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
-        <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 24, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
+        <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 26, lineHeight: 1.25, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
         <div style={{ padding: "0 12px 16px" }}>
-          <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><ChatIcon /> 聊天</button>
-          <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆库</button>
-          <button onClick={() => { setShowSettings(false); setShowDiary(true); setSidebarOpen(false); }} className={showDiary ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showDiary ? COLORS.sidebarActive : "transparent", color: showDiary ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></Icon> 日记</button>
-          <button onClick={() => { setShowSettings(false); setShowAgent(true); setSidebarOpen(false); }} className={showAgent ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showAgent ? COLORS.sidebarActive : "transparent", color: showAgent ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}><Icon size={18}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></Icon> 工作台</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><ChatIcon /> 聊天</button>
+          <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆库</button>
+          <button onClick={() => { setShowSettings(false); setShowDiary(true); setSidebarOpen(false); }} className={showDiary ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showDiary ? COLORS.sidebarActive : "transparent", color: showDiary ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></Icon> 日记</button>
+          <button onClick={() => { setShowSettings(false); setShowAgent(true); setSidebarOpen(false); }} className={showAgent ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showAgent ? COLORS.sidebarActive : "transparent", color: showAgent ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></Icon> 工作台</button>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
@@ -1011,13 +1011,13 @@ export default function PlutocaelChat() {
           {(() => {
             const inputBar = (
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-                {pendingQuote && <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 10, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)", fontSize: 13, color: COLORS.textSecondary }}>
+                {pendingQuote && <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 10, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)", fontSize: 14, color: COLORS.textSecondary }}>
                   <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingQuote.from}：{pendingQuote.text}</span>
-                  <button className="flat" onClick={() => setPendingQuote(null)} style={{ width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.30)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>✕</button>
+                  <button className="flat" onClick={() => setPendingQuote(null)} style={{ width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.30)", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>✕</button>
                 </div>}
                 {pendingImage && <div style={{ marginBottom: 8, position: "relative", display: "inline-block" }}>
                   <img src={pendingImage.dataUrl} style={{ height: 72, borderRadius: 10, display: "block", border: `1px solid ${COLORS.divider}` }} />
-                  <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                  <button onClick={() => setPendingImage(null)} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.65)", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 </div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   {/* iOS Safari 对可接受图片的 input 一定会弹「照片图库/拍照/选取文件」动作表，无法用属性跳过；只有 capture 能直达相机。photo 用 image/* 让动作表默认高亮照片图库 */}
@@ -1026,7 +1026,7 @@ export default function PlutocaelChat() {
                   <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handlePickImage} />
                   <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transform: showPlusPanel ? "rotate(45deg)" : "none", transition: "transform 0.2s ease", ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
-                    <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 15, lineHeight: 1.5, padding: "6px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
+                    <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 16, lineHeight: 1.5, padding: "6px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                   </div>
                   <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
@@ -1040,7 +1040,7 @@ export default function PlutocaelChat() {
                   ].map(it => (
                     <button key={it.l} className="flat ghost" onClick={() => { setShowPlusPanel(false); if (it.action) it.action(); else if (it.ref.current) it.ref.current.click(); }} style={{ border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 0, fontFamily: "inherit" }}>
                       <span style={{ width: 58, height: 58, borderRadius: 16, background: COLORS.cardBg, display: "flex", alignItems: "center", justifyContent: "center", color: COLORS.text, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}><Icon size={26}>{it.icon}</Icon></span>
-                      <span style={{ fontSize: 12, color: COLORS.textSecondary }}>{it.l}</span>
+                      <span style={{ fontSize: 13, color: COLORS.textSecondary }}>{it.l}</span>
                     </button>
                   ))}
                 </div>
@@ -1055,7 +1055,7 @@ export default function PlutocaelChat() {
                 const isUser = msg.role === "user";
                 const view = getMsgView(msg);
                 return (<div key={msg.id}>
-                  {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 12, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
+                  {showTime && msg.created_at && <div style={{ textAlign: "center", fontSize: 13, color: COLORS.placeholder, margin: "16px 0" }}>{formatTime(msg.created_at)}</div>}
                   <div className={isUser ? "msg-user" : "msg-ai"} style={{ marginBottom: 20, maxWidth: "84%", width: "fit-content", animation: `msgSlideIn 0.35s cubic-bezier(0.32, 0.72, 0, 1)` }}>
                     {editingMsgId !== msg.id && !isUser && (() => {
                       // 标题自适应：只有思考=thinking，只有工具=工具调用，都有=steps
@@ -1063,21 +1063,21 @@ export default function PlutocaelChat() {
                       const hasTools = filterToolLines(msg.tool_log).length > 0;
                       if (!hasThink && !hasTools) return null;
                       const label = hasThink && hasTools ? "steps" : hasThink ? "thinking" : "工具调用";
-                      return <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>{label}<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>;
+                      return <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>{label}<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>;
                     })()}
                     <div style={{ display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                       {(isUser ? avatarUser : avatarAi)
                         ? <img src={isUser ? avatarUser : avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                        : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 18, color: COLORS.accent }}>{isUser ? "J" : "C"}</span>}
+                        : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 19, color: COLORS.accent }}>{isUser ? "J" : "C"}</span>}
                     </div>
                     <div style={{ minWidth: 0, display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start" }}>
                     {editingMsgId === msg.id ? (
                       <div style={{ width: "100%" }}>
-                        <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 15, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                        <textarea value={editingMsgContent || msg.content} onChange={e => setEditingMsgContent(e.target.value)} onFocus={() => { if (!editingMsgContent) setEditingMsgContent(msg.content); }} rows={3} style={{ width: "100%", border: `1px solid ${COLORS.accent}`, borderRadius: 12, padding: "10px 12px", fontSize: 16, lineHeight: 1.7, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
-                          <button onClick={() => { setEditingMsgId(null); setEditingMsgContent(""); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 13, color: COLORS.textSecondary }}>取消</button>
-                          <button onClick={() => handleEditSend(msg)} style={{ padding: "6px 16px", borderRadius: 20, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>发送</button>
+                          <button onClick={() => { setEditingMsgId(null); setEditingMsgContent(""); }} style={{ padding: "6px 16px", borderRadius: 20, border: `1px solid ${COLORS.inputBorder}`, background: "transparent", cursor: "pointer", fontSize: 14, color: COLORS.textSecondary }}>取消</button>
+                          <button onClick={() => handleEditSend(msg)} style={{ padding: "6px 16px", borderRadius: 20, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>发送</button>
                         </div>
                       </div>
                     ) : (<>
@@ -1088,19 +1088,19 @@ export default function PlutocaelChat() {
                             onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
                             onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
                             onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
-                            style={{ padding: "4px 14px", borderRadius: 27, color: COLORS.text, fontSize: 15, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", overflow: "hidden", isolation: "isolate", WebkitMaskImage: "-webkit-radial-gradient(white, black)", ...bs }}>
+                            style={{ padding: "4px 14px", borderRadius: 27, color: COLORS.text, fontSize: 16, lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", overflow: "hidden", isolation: "isolate", WebkitMaskImage: "-webkit-radial-gradient(white, black)", ...bs }}>
                             {view.img && <img src={view.img} style={{ maxWidth: "100%", maxHeight: 320, borderRadius: 14, display: "block", marginBottom: view.text ? 8 : 0 }} />}
                             {(!view.text && !isUser) ? <span className="dot-typing"><span></span><span></span><span></span></span> : view.text}
                           </div>
                         </div>;
                       })()}
-                      {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 13, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
+                      {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 14, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
                       <div style={{ display: "flex", alignSelf: "stretch", marginTop: 4, alignItems: "center", gap: 8 }}>
-                        {msg.created_at && <span style={{ fontSize: 11, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px", ...(isUser ? { marginLeft: "auto" } : {}) }}>{formatFullTime(msg.created_at)}</span>}
+                        {msg.created_at && <span style={{ fontSize: 12, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px", ...(isUser ? { marginLeft: "auto" } : {}) }}>{formatFullTime(msg.created_at)}</span>}
                         {!isUser && (() => {
                           let u = null; try { u = msg.usage ? (typeof msg.usage === "string" ? JSON.parse(msg.usage) : msg.usage) : null; } catch (e) {}
                           if (!u || (!u.in && !u.out)) return null;
-                          return <span style={{ fontSize: 10.5, opacity: 0.85, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}（省钱）` : ""}${u.cw ? ` · 缓存写入 ${u.cw}（花钱）` : ""}`}>
+                          return <span style={{ fontSize: 11.5, opacity: 0.85, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}（省钱）` : ""}${u.cw ? ` · 缓存写入 ${u.cw}（花钱）` : ""}`}>
                             <span style={{ color: COLORS.placeholder }}>↑{u.in} ↓{u.out}</span>
                             {u.cr ? <span style={{ color: "#3AAF6B" }}> ⚡{u.cr}</span> : null}
                             {u.cw ? <span style={{ color: "#D9534F" }}> ✎{u.cw}</span> : null}
@@ -1137,15 +1137,15 @@ export default function PlutocaelChat() {
               onPointerUp={() => { sheetDrag.current = null; }} onPointerCancel={() => { sheetDrag.current = null; }}>
               <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "10px auto 0" }} />
               <div style={{ display: "flex", alignItems: "center", padding: "10px 20px 6px" }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>{sheetTitle}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.text }}>{sheetTitle}</div>
                 <span style={{ flex: 1 }} />
-                <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+                <button className="flat" onClick={() => setThinkingSheet(null)} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.07)", color: COLORS.textSecondary, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
               </div>
             </div>
             <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "2px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
               {(() => {
                 const steps = buildSteps(tMsg);
-                if (steps.length === 0) return <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "16px 0" }}>（暂无过程）</div>;
+                if (steps.length === 0) return <div style={{ fontSize: 14, color: COLORS.placeholder, padding: "16px 0" }}>（暂无过程）</div>;
                 return steps.map(st => {
                   const opened = !!openSteps[st.key];
                   return <div key={st.key} style={{ borderBottom: `1px solid ${COLORS.divider}` }}>
@@ -1155,10 +1155,10 @@ export default function PlutocaelChat() {
                           ? <Icon size={16}><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></Icon>
                           : <Icon size={16}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></Icon>}
                       </span>
-                      <span style={{ fontSize: 14.5, color: COLORS.text, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.title}</span>
+                      <span style={{ fontSize: 15.5, color: COLORS.text, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{st.title}</span>
                       <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={14}>{opened ? <polyline points="6 9 12 15 18 9" /> : <polyline points="9 18 15 12 9 6" />}</Icon></span>
                     </button>
-                    {opened && <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.7, color: COLORS.textSecondary, padding: "0 2px 14px 34px", overflowWrap: "anywhere" }}>{st.content || "（空）"}</div>}
+                    {opened && <div style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.7, color: COLORS.textSecondary, padding: "0 2px 14px 34px", overflowWrap: "anywhere" }}>{st.content || "（空）"}</div>}
                   </div>;
                 });
               })()}
@@ -1185,7 +1185,7 @@ export default function PlutocaelChat() {
         const panelBg = "rgba(64,64,64,0.97)";
         return <div onClick={() => setBubbleMenu(null)} onContextMenu={e => { e.preventDefault(); setBubbleMenu(null); }} style={{ position: "fixed", inset: 0, zIndex: 600, WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}>
           <div onClick={e => e.stopPropagation()} style={{ position: "absolute", left, top, width: panelW, height: panelH, background: panelBg, borderRadius: 14, padding: "8px", boxSizing: "border-box", display: "flex", alignItems: "center", boxShadow: "0 10px 32px rgba(0,0,0,0.32), 0 3px 10px rgba(0,0,0,0.2)", animation: "msgSlideIn 0.18s ease" }}>
-            {items.map(it => <button key={it.label} className="flat" onClick={it.onClick} style={{ flex: 1, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: 0, fontSize: 12, fontFamily: "inherit", lineHeight: 1 }}>{it.icon}<span>{it.label}</span></button>)}
+            {items.map(it => <button key={it.label} className="flat" onClick={it.onClick} style={{ flex: 1, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: 0, fontSize: 13, fontFamily: "inherit", lineHeight: 1 }}>{it.icon}<span>{it.label}</span></button>)}
             <span style={{ position: "absolute", left: arrowX - 7, width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", ...(above ? { bottom: -7, borderTop: `8px solid ${panelBg}` } : { top: -7, borderBottom: `8px solid ${panelBg}` }) }} />
           </div>
         </div>;
@@ -1193,60 +1193,60 @@ export default function PlutocaelChat() {
       {showStaging && <div style={{ position: "fixed", inset: 0, zIndex: 570, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 6px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={() => setShowStaging(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
-          <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>审阅导入（{stagingItems.length} 条）</span>
-          <button className="flat ghost" onClick={discardStaging} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13, padding: "6px 8px", fontFamily: "inherit" }}>放弃</button>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 600, color: COLORS.text }}>审阅导入（{stagingItems.length} 条）</span>
+          <button className="flat ghost" onClick={discardStaging} style={{ border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, padding: "6px 8px", fontFamily: "inherit" }}>放弃</button>
         </div>
-        <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 8, flexShrink: 0 }}>点消息可编辑，点角色标签可切换用户/Cael，✕ 删除</div>
+        <div style={{ fontSize: 13, color: COLORS.placeholder, textAlign: "center", paddingBottom: 8, flexShrink: 0 }}>点消息可编辑，点角色标签可切换用户/Cael，✕ 删除</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px 10px", flexShrink: 0 }}>
-          <span style={{ fontSize: 13, color: COLORS.textSecondary, flexShrink: 0 }}>这批对话的日期</span>
-          <input type="date" value={stageDate} onChange={e => setStageDate(e.target.value)} style={{ border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "6px 10px", fontSize: 13, fontFamily: "inherit", color: stageDate ? COLORS.text : COLORS.placeholder, background: COLORS.cardBg, outline: "none" }} />
-          {stageDate ? <button className="flat ghost" onClick={() => setStageDate("")} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "4px 6px" }}>清除</button>
-            : <span style={{ fontSize: 11, color: COLORS.placeholder }}>不选=用今天</span>}
+          <span style={{ fontSize: 14, color: COLORS.textSecondary, flexShrink: 0 }}>这批对话的日期</span>
+          <input type="date" value={stageDate} onChange={e => setStageDate(e.target.value)} style={{ border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "6px 10px", fontSize: 14, fontFamily: "inherit", color: stageDate ? COLORS.text : COLORS.placeholder, background: COLORS.cardBg, outline: "none" }} />
+          {stageDate ? <button className="flat ghost" onClick={() => setStageDate("")} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "4px 6px" }}>清除</button>
+            : <span style={{ fontSize: 12, color: COLORS.placeholder }}>不选=用今天</span>}
         </div>
         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px 12px" }}>
-          {stagingItems.length === 0 ? <div style={{ textAlign: "center", padding: "30px 0", fontSize: 13, color: COLORS.placeholder }}>暂存区空了</div> : stagingItems.map(m => (
+          {stagingItems.length === 0 ? <div style={{ textAlign: "center", padding: "30px 0", fontSize: 14, color: COLORS.placeholder }}>暂存区空了</div> : stagingItems.map(m => (
             <div key={m.id} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
-              <button className="flat ghost" onClick={() => toggleStageRole(m)} style={{ flexShrink: 0, marginTop: 2, padding: "3px 9px", borderRadius: 10, border: "none", background: m.role === "user" ? COLORS.accentLight : (theme === "dark" || (theme === "custom" && customTheme.dark) ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"), color: m.role === "user" ? COLORS.accent : COLORS.textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "inherit", width: 44, textAlign: "center" }}>{m.role === "user" ? "我" : "Cael"}</button>
+              <button className="flat ghost" onClick={() => toggleStageRole(m)} style={{ flexShrink: 0, marginTop: 2, padding: "3px 9px", borderRadius: 10, border: "none", background: m.role === "user" ? COLORS.accentLight : (theme === "dark" || (theme === "custom" && customTheme.dark) ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"), color: m.role === "user" ? COLORS.accent : COLORS.textSecondary, fontSize: 12, cursor: "pointer", fontFamily: "inherit", width: 44, textAlign: "center" }}>{m.role === "user" ? "我" : "Cael"}</button>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {editStageId === m.id ? (
                   <div>
-                    <textarea value={editStageText} onChange={e => setEditStageText(e.target.value)} rows={3} autoFocus style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.accent}`, borderRadius: 10, padding: "8px 10px", fontSize: 13.5, lineHeight: 1.6, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical" }} />
+                    <textarea value={editStageText} onChange={e => setEditStageText(e.target.value)} rows={3} autoFocus style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.accent}`, borderRadius: 10, padding: "8px 10px", fontSize: 14.5, lineHeight: 1.6, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", resize: "vertical" }} />
                     <div style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "flex-end" }}>
-                      <button className="ghost" onClick={() => { setEditStageId(null); setEditStageText(""); }} style={{ padding: "5px 14px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>取消</button>
-                      <button className="ghost" onClick={() => saveStageEdit(m.id)} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>保存</button>
+                      <button className="ghost" onClick={() => { setEditStageId(null); setEditStageText(""); }} style={{ padding: "5px 14px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>取消</button>
+                      <button className="ghost" onClick={() => saveStageEdit(m.id)} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>保存</button>
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => { setEditStageId(m.id); setEditStageText(m.content); }} style={{ padding: "9px 12px", borderRadius: 12, background: COLORS.cardBg, cursor: "text", fontSize: 13.5, lineHeight: 1.6, color: COLORS.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", ...skCard }}>{m.content}</div>
+                  <div onClick={() => { setEditStageId(m.id); setEditStageText(m.content); }} style={{ padding: "9px 12px", borderRadius: 12, background: COLORS.cardBg, cursor: "text", fontSize: 14.5, lineHeight: 1.6, color: COLORS.text, whiteSpace: "pre-wrap", overflowWrap: "anywhere", ...skCard }}>{m.content}</div>
                 )}
               </div>
-              <button className="flat ghost" onClick={() => delStageItem(m.id)} style={{ flexShrink: 0, marginTop: 4, width: 24, height: 24, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.06)", color: COLORS.danger, cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+              <button className="flat ghost" onClick={() => delStageItem(m.id)} style={{ flexShrink: 0, marginTop: 4, width: 24, height: 24, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.06)", color: COLORS.danger, cursor: "pointer", fontSize: 13, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
             </div>
           ))}
         </div>
         <div style={{ padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: `1px solid ${COLORS.divider}`, display: "flex", gap: 10 }}>
           <div style={{ display: "flex", gap: 6 }}>
-            <button className="ghost" onClick={() => exportStaging("json")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>备份.json</button>
-            <button className="ghost" onClick={() => exportStaging("md")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>.md</button>
+            <button className="ghost" onClick={() => exportStaging("json")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>备份.json</button>
+            <button className="ghost" onClick={() => exportStaging("md")} style={{ padding: "12px 14px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>.md</button>
           </div>
-          <button className="ghost" disabled={stagingItems.length === 0} onClick={commitStaging} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: stagingItems.length ? COLORS.accent : COLORS.divider, color: stagingItems.length ? "#fff" : COLORS.placeholder, cursor: stagingItems.length ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>上传到当前对话</button>
+          <button className="ghost" disabled={stagingItems.length === 0} onClick={commitStaging} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: stagingItems.length ? COLORS.accent : COLORS.divider, color: stagingItems.length ? "#fff" : COLORS.placeholder, cursor: stagingItems.length ? "pointer" : "default", fontSize: 15, fontWeight: 600, fontFamily: "inherit" }}>上传到当前对话</button>
         </div>
       </div>}
       {showSkillPicker && <div onClick={() => setShowSkillPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 560, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
         <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "70vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(20px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 6px", flexShrink: 0 }} />
           <div style={{ display: "flex", alignItems: "center", padding: "2px 18px 8px", flexShrink: 0 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, flex: 1 }}>选择 Skill</span>
-            <button className="flat ghost" onClick={() => { setShowSkillPicker(false); openSettingsPage("skill"); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", padding: "4px 6px" }}>去编辑</button>
+            <span style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, flex: 1 }}>选择 Skill</span>
+            <button className="flat ghost" onClick={() => { setShowSkillPicker(false); openSettingsPage("skill"); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 14, fontFamily: "inherit", padding: "4px 6px" }}>去编辑</button>
           </div>
           <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px" }}>
-            {skills.length === 0 ? <div style={{ fontSize: 13, color: COLORS.placeholder, textAlign: "center", padding: "20px 0" }}>还没有 Skill，去「去编辑」添加</div> : skills.map(s => (
+            {skills.length === 0 ? <div style={{ fontSize: 14, color: COLORS.placeholder, textAlign: "center", padding: "20px 0" }}>还没有 Skill，去「去编辑」添加</div> : skills.map(s => (
               <button key={s.id} className="flat ghost" onClick={() => toggleSkill(s)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 12, border: s.active ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: s.active ? COLORS.accentLight : "transparent", cursor: "pointer", fontFamily: "inherit", marginBottom: 8, textAlign: "left" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, color: COLORS.text, fontWeight: s.active ? 600 : 400 }}>{s.name}{s.grp ? <span style={{ fontSize: 11, color: COLORS.placeholder, marginLeft: 6 }}>{s.grp}</span> : null}</div>
-                  <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{(s.content || "（空）").slice(0, 44)}</div>
+                  <div style={{ fontSize: 15, color: COLORS.text, fontWeight: s.active ? 600 : 400 }}>{s.name}{s.grp ? <span style={{ fontSize: 12, color: COLORS.placeholder, marginLeft: 6 }}>{s.grp}</span> : null}</div>
+                  <div style={{ fontSize: 13, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{(s.content || "（空）").slice(0, 44)}</div>
                 </div>
-                {s.active && <span style={{ fontSize: 11, color: "#fff", background: COLORS.accent, padding: "1px 8px", borderRadius: 8, flexShrink: 0 }}>已启用</span>}
+                {s.active && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "1px 8px", borderRadius: 8, flexShrink: 0 }}>已启用</span>}
               </button>
             ))}
           </div>
@@ -1256,16 +1256,16 @@ export default function PlutocaelChat() {
         <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 8px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={closeChatMenu} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
           <span style={{ flex: 1 }} />
-          <span style={{ fontSize: 13, color: COLORS.textSecondary }}>更多</span>
+          <span style={{ fontSize: 14, color: COLORS.textSecondary }}>更多</span>
         </div>
         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "8px 16px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
           {(() => {
             const on = !!(settingsData && settingsData.enable_thinking);
             const card = { background: COLORS.cardBg, borderRadius: 14, overflow: "hidden", marginBottom: 16, ...skCard };
-            const rowBtn = (i, n) => ({ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 15px", border: "none", borderBottom: i < n - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", cursor: "pointer", fontSize: 14.5, fontFamily: "inherit", textAlign: "left" });
+            const rowBtn = (i, n) => ({ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 15px", border: "none", borderBottom: i < n - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", cursor: "pointer", fontSize: 15.5, fontFamily: "inherit", textAlign: "left" });
             const chev = <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={15}><polyline points="9 18 15 12 9 6" /></Icon></span>;
             return <>
-              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>开关</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>开关</div>
               <div style={card}>
                 <button className="flat ghost" onClick={() => saveSetting({ enable_thinking: on ? 0 : 1 })} style={{ ...rowBtn(0, 1), color: COLORS.text }}>
                   <span style={{ color: COLORS.textSecondary, display: "flex", flexShrink: 0 }}><Icon size={19}><path d="M9 18h6" /><path d="M10 22h4" /><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z" /></Icon></span>
@@ -1273,7 +1273,7 @@ export default function PlutocaelChat() {
                   <span style={{ width: 46, height: 28, borderRadius: 14, background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.18)" }}><span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} /></span>
                 </button>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>聊天记录</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>聊天记录</div>
               <div style={card}>
                 {[
                   { l: "搜索聊天记录", icon: <><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></>, act: () => { setShowChatMenu(false); setShowChatSearch(true); } },
@@ -1299,81 +1299,81 @@ export default function PlutocaelChat() {
       {showMoveDate && <div onClick={() => setShowMoveDate(false)} style={{ position: "fixed", inset: 0, zIndex: 560, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
         <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "80vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(20px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 6px", flexShrink: 0 }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, textAlign: "center", paddingBottom: 4 }}>按日期改期</div>
-          <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 10 }}>先选要挪走的那天，再选正确的日期</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, textAlign: "center", paddingBottom: 4 }}>按日期改期</div>
+          <div style={{ fontSize: 13, color: COLORS.placeholder, textAlign: "center", paddingBottom: 10 }}>先选要挪走的那天，再选正确的日期</div>
           <div className="panel-scroll" style={{ overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px", flex: 1, minHeight: 0 }}>
-            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "2px 2px 8px" }}>① 选要挪走的那天</div>
-            {dateCounts.length === 0 ? <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "10px 0" }}>没有消息</div> : dateCounts.map(d => (
-              <button key={d.d} className="flat ghost" onClick={() => setMoveFrom(d.d)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 10, border: moveFrom === d.d ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: moveFrom === d.d ? COLORS.accentLight : "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", marginBottom: 6 }}>
-                <span>{d.d}</span><span style={{ fontSize: 12, color: COLORS.textSecondary }}>{d.c} 条</span>
+            <div style={{ fontSize: 13, color: COLORS.textSecondary, padding: "2px 2px 8px" }}>① 选要挪走的那天</div>
+            {dateCounts.length === 0 ? <div style={{ fontSize: 14, color: COLORS.placeholder, padding: "10px 0" }}>没有消息</div> : dateCounts.map(d => (
+              <button key={d.d} className="flat ghost" onClick={() => setMoveFrom(d.d)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 10, border: moveFrom === d.d ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: moveFrom === d.d ? COLORS.accentLight : "transparent", color: COLORS.text, cursor: "pointer", fontSize: 15, fontFamily: "inherit", marginBottom: 6 }}>
+                <span>{d.d}</span><span style={{ fontSize: 13, color: COLORS.textSecondary }}>{d.c} 条</span>
               </button>
             ))}
-            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "12px 2px 8px" }}>② 挪到哪天</div>
-            <input type="date" value={moveTo} onChange={e => setMoveTo(e.target.value)} style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "10px 12px", fontSize: 14, fontFamily: "inherit", color: moveTo ? COLORS.text : COLORS.placeholder, background: COLORS.bg, outline: "none" }} />
+            <div style={{ fontSize: 13, color: COLORS.textSecondary, padding: "12px 2px 8px" }}>② 挪到哪天</div>
+            <input type="date" value={moveTo} onChange={e => setMoveTo(e.target.value)} style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "10px 12px", fontSize: 15, fontFamily: "inherit", color: moveTo ? COLORS.text : COLORS.placeholder, background: COLORS.bg, outline: "none" }} />
           </div>
           <div style={{ display: "flex", gap: 10, padding: "12px 16px 0", flexShrink: 0 }}>
-            <button className="ghost" onClick={() => setShowMoveDate(false)} style={{ flex: 1, padding: "12px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>取消</button>
-            <button className="ghost" disabled={!moveFrom || !moveTo} onClick={doMoveDate} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: (moveFrom && moveTo) ? COLORS.accent : COLORS.divider, color: (moveFrom && moveTo) ? "#fff" : COLORS.placeholder, cursor: (moveFrom && moveTo) ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>{moveFrom && moveTo ? `把 ${moveFrom} 挪到 ${moveTo}` : "改期"}</button>
+            <button className="ghost" onClick={() => setShowMoveDate(false)} style={{ flex: 1, padding: "12px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 15, fontFamily: "inherit" }}>取消</button>
+            <button className="ghost" disabled={!moveFrom || !moveTo} onClick={doMoveDate} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: (moveFrom && moveTo) ? COLORS.accent : COLORS.divider, color: (moveFrom && moveTo) ? "#fff" : COLORS.placeholder, cursor: (moveFrom && moveTo) ? "pointer" : "default", fontSize: 15, fontWeight: 600, fontFamily: "inherit" }}>{moveFrom && moveTo ? `把 ${moveFrom} 挪到 ${moveTo}` : "改期"}</button>
           </div>
         </div>
       </div>}
       {showDelCalendar && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 4px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={() => setShowDelCalendar(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
-          <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>按日期删除</span>
+          <span style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 600, color: COLORS.text }}>按日期删除</span>
           <span style={{ width: 36 }} />
         </div>
-        <div style={{ fontSize: 12, color: COLORS.placeholder, textAlign: "center", paddingBottom: 4, flexShrink: 0 }}>点选要删除的日子（可多选），黑字的才有记录</div>
+        <div style={{ fontSize: 13, color: COLORS.placeholder, textAlign: "center", paddingBottom: 4, flexShrink: 0 }}>点选要删除的日子（可多选），黑字的才有记录</div>
         <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px 10px" }}>
           {renderCalendarBody(key => setDelSelected(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; }), delSelected)}
         </div>
         <div style={{ padding: "10px 16px calc(14px + env(safe-area-inset-bottom, 0px))", flexShrink: 0, borderTop: `1px solid ${COLORS.divider}` }}>
-          <button className="ghost" disabled={delSelected.size === 0} onClick={doDeleteDates} style={{ width: "100%", padding: "12px", border: "none", borderRadius: 14, background: delSelected.size ? COLORS.danger : COLORS.divider, color: delSelected.size ? "#fff" : COLORS.placeholder, cursor: delSelected.size ? "pointer" : "default", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>{delSelected.size ? `删除选中的 ${delSelected.size} 天` : "还没有选中日期"}</button>
+          <button className="ghost" disabled={delSelected.size === 0} onClick={doDeleteDates} style={{ width: "100%", padding: "12px", border: "none", borderRadius: 14, background: delSelected.size ? COLORS.danger : COLORS.divider, color: delSelected.size ? "#fff" : COLORS.placeholder, cursor: delSelected.size ? "pointer" : "default", fontSize: 15, fontWeight: 600, fontFamily: "inherit" }}>{delSelected.size ? `删除选中的 ${delSelected.size} 天` : "还没有选中日期"}</button>
         </div>
       </div>}
       {showChatSearch && <div style={{ position: "fixed", inset: 0, zIndex: 550, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 14px 10px", flexShrink: 0 }}>
           <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, background: COLORS.cardBg, borderRadius: 10, padding: "9px 12px", ...skInset }}>
             <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={16}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></Icon></span>
-            <input autoFocus value={chatSearchQ} onChange={e => setChatSearchQ(e.target.value)} placeholder="搜索" style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, color: COLORS.text, fontFamily: "inherit" }} />
-            {chatSearchQ && <button className="flat ghost" onClick={() => setChatSearchQ("")} style={{ width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.25)", color: "#fff", cursor: "pointer", fontSize: 10, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 }}>✕</button>}
+            <input autoFocus value={chatSearchQ} onChange={e => setChatSearchQ(e.target.value)} placeholder="搜索" style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 16, color: COLORS.text, fontFamily: "inherit" }} />
+            {chatSearchQ && <button className="flat ghost" onClick={() => setChatSearchQ("")} style={{ width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.25)", color: "#fff", cursor: "pointer", fontSize: 11, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, flexShrink: 0 }}>✕</button>}
           </div>
-          <button className="flat ghost" onClick={closeChatSearch} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 15, padding: "6px 10px", fontFamily: "inherit", flexShrink: 0 }}>取消</button>
+          <button className="flat ghost" onClick={closeChatSearch} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 16, padding: "6px 10px", fontFamily: "inherit", flexShrink: 0 }}>取消</button>
         </div>
         {(chatSearchType || chatSearchDate) && !showCalendar && <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 16px 10px", flexShrink: 0 }}>
-          {chatSearchType && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchType === "image" ? "图片" : "链接"}</span>}
-          {chatSearchDate && <span style={{ fontSize: 12, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchDate}</span>}
-          <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
+          {chatSearchType && <span style={{ fontSize: 13, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchType === "image" ? "图片" : "链接"}</span>}
+          {chatSearchDate && <span style={{ fontSize: 13, color: "#fff", background: COLORS.accent, padding: "3px 12px", borderRadius: 12 }}>{chatSearchDate}</span>}
+          <button className="flat ghost" onClick={() => { setChatSearchType(""); setChatSearchDate(""); }} style={{ border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, padding: "3px 6px", fontFamily: "inherit" }}>清除筛选</button>
         </div>}
         {showCalendar ? (
           <div ref={calScrollRef} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
             <div style={{ display: "flex", alignItems: "center", padding: "2px 0 4px", position: "sticky", top: 0, background: theme === "custom" ? COLORS._solidBg : COLORS.bg, zIndex: 2 }}>
               <button className="flat ghost" onClick={() => setShowCalendar(false)} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19}><polyline points="15 18 9 12 15 6" /></Icon></button>
-              <span style={{ flex: 1, textAlign: "center", fontSize: 15, fontWeight: 600, color: COLORS.text }}>按日期查找</span>
+              <span style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 600, color: COLORS.text }}>按日期查找</span>
               <span style={{ width: 36 }} />
             </div>
             {renderCalendarBody(key => { setChatSearchDate(key); setShowCalendar(false); }, null)}
           </div>
         ) : chatSearchResults === null ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "14vh" }}>
-            <div style={{ fontSize: 14, color: COLORS.placeholder, marginBottom: 30 }}>快速搜索聊天内容</div>
+            <div style={{ fontSize: 15, color: COLORS.placeholder, marginBottom: 30 }}>快速搜索聊天内容</div>
             <div style={{ display: "flex", alignItems: "center" }}>
               {[{ k: "date", l: "日期" }, { k: "image", l: "图片" }, { k: "link", l: "链接" }].map((c, i) => (<span key={c.k} style={{ display: "flex", alignItems: "center" }}>
                 {i > 0 && <span style={{ width: 1, height: 17, background: COLORS.divider, margin: "0 26px" }} />}
-                <button className="flat ghost" onClick={() => { if (c.k === "date") openCalendar(); else setChatSearchType(c.k); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 16, padding: "4px 2px", fontFamily: "inherit" }}>{c.l}</button>
+                <button className="flat ghost" onClick={() => { if (c.k === "date") openCalendar(); else setChatSearchType(c.k); }} style={{ border: "none", background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 17, padding: "4px 2px", fontFamily: "inherit" }}>{c.l}</button>
               </span>))}
             </div>
           </div>
         ) : (
           <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
-            <div style={{ fontSize: 12, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>搜到 {chatSearchResults.length} 条{chatSearchResults.length >= 100 ? "（只显示最近100条）" : ""}</div>
-            {chatSearchResults.length === 0 ? <div style={{ padding: "20px 4px", fontSize: 13, color: COLORS.placeholder, textAlign: "center" }}>没有找到相关消息</div> : chatSearchResults.map(r => (
+            <div style={{ fontSize: 13, color: COLORS.textSecondary, padding: "2px 4px 8px" }}>搜到 {chatSearchResults.length} 条{chatSearchResults.length >= 100 ? "（只显示最近100条）" : ""}</div>
+            {chatSearchResults.length === 0 ? <div style={{ padding: "20px 4px", fontSize: 14, color: COLORS.placeholder, textAlign: "center" }}>没有找到相关消息</div> : chatSearchResults.map(r => (
               <div key={r.id} onClick={() => jumpToMsg(r)} style={{ padding: "10px 13px", borderRadius: 12, cursor: "pointer", background: COLORS.cardBg, marginBottom: 8, ...skCard }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
-                  <span style={{ fontSize: 12, color: COLORS.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{r.session_name || "对话" + r.session_id}</span>
-                  <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }}>{formatTime(r.created_at)}</span>
+                  <span style={{ fontSize: 13, color: COLORS.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{r.session_name || "对话" + r.session_id}</span>
+                  <span style={{ fontSize: 12, color: COLORS.placeholder, flexShrink: 0 }}>{formatTime(r.created_at)}</span>
                 </div>
-                <div style={{ fontSize: 13.5, color: COLORS.text, lineHeight: 1.55, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{r.msg_type === "image" ? "🖼 [图片消息]" : r.snippet}</div>
+                <div style={{ fontSize: 14.5, color: COLORS.text, lineHeight: 1.55, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{r.msg_type === "image" ? "🖼 [图片消息]" : r.snippet}</div>
               </div>
             ))}
           </div>
@@ -1396,7 +1396,7 @@ export default function PlutocaelChat() {
       {taskPicker && <div onClick={() => setTaskPicker(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
         <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "78vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(18px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
-          <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 15.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个渠道</div>
+          <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 16.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个渠道</div>
           <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px" }}>
             {[{ id: null, name: "跟随默认", model: "" }, ...channels].map(c => {
               const on = (taskModels.assigned[taskPicker.key] || null) === c.id;
@@ -1406,8 +1406,8 @@ export default function PlutocaelChat() {
                   {on && <Icon size={11}><polyline points="20 6 9 17 4 12" /></Icon>}
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 14.5, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
-                  {c.model && <span style={{ display: "block", fontSize: 11.5, color: COLORS.placeholder, marginTop: 2, fontFamily: "ui-monospace, monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.model}</span>}
+                  <span style={{ display: "block", fontSize: 15.5, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                  {c.model && <span style={{ display: "block", fontSize: 12.5, color: COLORS.placeholder, marginTop: 2, fontFamily: "ui-monospace, monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.model}</span>}
                 </span>
               </button>;
             })}
@@ -1429,12 +1429,12 @@ export default function PlutocaelChat() {
               <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{["today","month"].map(p => <button key={p} onClick={() => { setGatewayPeriod(p); loadGatewayStats(p); }} style={{ padding:"4px 12px", borderRadius:16, border:gatewayPeriod===p?"none":`1px solid ${COLORS.divider}`, background:gatewayPeriod===p?COLORS.accent:"transparent", color:gatewayPeriod===p?"#fff":COLORS.textSecondary, fontSize:12, cursor:"pointer" }}>{p==="today"?"今日":"本月"}</button>)}</div>
               {gatewayStats ? (<>
                 <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>总用量</div>
+                  <div style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>总用量</div>
                   <div style={{ display:"flex", gap: 16, flexWrap:"wrap" }}>
-                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>Input tokens</div><div style={{ fontSize: 20, fontWeight: 700 }}>{(gatewayStats.summary?.total_input||0).toLocaleString()}</div></div>
-                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>Output tokens</div><div style={{ fontSize: 20, fontWeight: 700 }}>{(gatewayStats.summary?.total_output||0).toLocaleString()}</div></div>
-                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>花费</div><div style={{ fontSize: 20, fontWeight: 700, color: COLORS.accent }}>${(gatewayStats.summary?.total_cost||0).toFixed(4)}</div></div>
-                    <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>请求数</div><div style={{ fontSize: 20, fontWeight: 700 }}>{gatewayStats.summary?.request_count||0}</div></div>
+                    <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>Input tokens</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700 }}>{(gatewayStats.summary?.total_input||0).toLocaleString()}</div></div>
+                    <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>Output tokens</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700 }}>{(gatewayStats.summary?.total_output||0).toLocaleString()}</div></div>
+                    <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>花费</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700, color: COLORS.accent }}>${(gatewayStats.summary?.total_cost||0).toFixed(4)}</div></div>
+                    <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>请求数</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700 }}>{gatewayStats.summary?.request_count||0}</div></div>
                   </div>
                 </div>
                 {(() => {
@@ -1442,47 +1442,47 @@ export default function PlutocaelChat() {
                   const read = s.total_cache_read || 0, write = s.total_cache_write || 0, fresh = s.total_input || 0;
                   const hitRate = (read + fresh) > 0 ? Math.round(read / (read + fresh) * 100) : 0;
                   return <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                    <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>Prompt 缓存</div>
+                    <div style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>Prompt 缓存</div>
                     <div style={{ display:"flex", gap: 16, flexWrap:"wrap", marginBottom: 10 }}>
-                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>缓存命中读取</div><div style={{ fontSize: 20, fontWeight: 700, color: "#3AAF6B" }}>{read.toLocaleString()}</div></div>
-                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>缓存写入</div><div style={{ fontSize: 20, fontWeight: 700 }}>{write.toLocaleString()}</div></div>
-                      <div><div style={{ fontSize: 12, color: COLORS.textSecondary }}>命中率</div><div style={{ fontSize: 20, fontWeight: 700, color: hitRate > 50 ? "#3AAF6B" : COLORS.text }}>{hitRate}%</div></div>
+                      <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>缓存命中读取</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700, color: "#3AAF6B" }}>{read.toLocaleString()}</div></div>
+                      <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>缓存写入</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700 }}>{write.toLocaleString()}</div></div>
+                      <div><div style={{ fontSize: 13, color: COLORS.textSecondary }}>命中率</div><div style={{ fontSize: 21, lineHeight: 1.25, fontWeight: 700, color: hitRate > 50 ? "#3AAF6B" : COLORS.text }}>{hitRate}%</div></div>
                     </div>
                     <div style={{ height: 8, borderRadius: 4, backgroundColor: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)", overflow: "hidden" }}>
                       <div style={{ width: `${hitRate}%`, height: "100%", background: "#3AAF6B", borderRadius: 4, transition: "width 0.4s ease" }} />
                     </div>
-                    <div style={{ fontSize: 11, color: COLORS.placeholder, marginTop: 8 }}>命中缓存的输入按约 1/10 计费；绿色越多越省钱</div>
+                    <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 8 }}>命中缓存的输入按约 1/10 计费；绿色越多越省钱</div>
                   </div>;
                 })()}
                 {gatewayStats.byModel?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按模型</div>
+                  <div style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>按模型</div>
                   {gatewayStats.byModel.map((m,i) => <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:i<gatewayStats.byModel.length-1?`1px solid ${COLORS.divider}`:"none" }}><span style={{ fontSize:13, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", marginRight: 8 }}>{m.model}</span><span style={{ fontSize:13, fontWeight:500, flexShrink:0 }}>${(m.cost||0).toFixed(4)}</span></div>)}
                 </div>}
                 {gatewayStats.byTask?.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>按任务（聊天以外的后台开销）</div>
+                  <div style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>按任务（聊天以外的后台开销）</div>
                   {gatewayStats.byTask.map((t, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: i < gatewayStats.byTask.length - 1 ? `1px solid ${COLORS.divider}` : "none" }}>
                       <span style={{ minWidth: 0, marginRight: 8 }}>
-                        <span style={{ display: "block", fontSize: 13, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.task}</span>
-                        <span style={{ display: "block", fontSize: 11, color: COLORS.placeholder, marginTop: 2 }}>{t.request_count} 次 · 入 {(t.input_tokens || 0).toLocaleString()} / 出 {(t.output_tokens || 0).toLocaleString()}</span>
+                        <span style={{ display: "block", fontSize: 14, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.task}</span>
+                        <span style={{ display: "block", fontSize: 12, color: COLORS.placeholder, marginTop: 2 }}>{t.request_count} 次 · 入 {(t.input_tokens || 0).toLocaleString()} / 出 {(t.output_tokens || 0).toLocaleString()}</span>
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 500, flexShrink: 0 }}>${(t.cost || 0).toFixed(4)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 500, flexShrink: 0 }}>${(t.cost || 0).toFixed(4)}</span>
                     </div>
                   ))}
                 </div>}
                 {gatewayLogs.length > 0 && <div style={{ background: COLORS.bg, borderRadius: 16, padding: 16 }}>
-                  <div style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>最近调用</div>
+                  <div style={{ fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 }}>最近调用</div>
                   {gatewayLogs.map((l, i) => {
                     const t = formatFullTime ? formatFullTime(l.created_at) : l.created_at;
                     const shortModel = String(l.model || "").replace(/^\[.*?\]/, "");
                     const isBg = l.session_id === "后台任务";
                     return <div key={l.id} style={{ padding: "7px 0", borderBottom: i < gatewayLogs.length-1 ? `1px solid ${COLORS.divider}` : "none" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 12.5, color: COLORS.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex: 1 }}>{shortModel}</span>
-                        {isBg && <span style={{ fontSize: 10, color: COLORS.accent, background: COLORS.accentLight, padding: "1px 6px", borderRadius: 6, flexShrink: 0 }}>后台</span>}
-                        <span style={{ fontSize: 11, color: COLORS.placeholder, flexShrink: 0 }}>{t}</span>
+                        <span style={{ fontSize: 13.5, color: COLORS.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex: 1 }}>{shortModel}</span>
+                        {isBg && <span style={{ fontSize: 11, color: COLORS.accent, background: COLORS.accentLight, padding: "1px 6px", borderRadius: 6, flexShrink: 0 }}>后台</span>}
+                        <span style={{ fontSize: 12, color: COLORS.placeholder, flexShrink: 0 }}>{t}</span>
                       </div>
-                      <div style={{ display: "flex", gap: 10, fontSize: 11, color: COLORS.textSecondary, marginTop: 2 }}>
+                      <div style={{ display: "flex", gap: 10, fontSize: 12, color: COLORS.textSecondary, marginTop: 2 }}>
                         <span>入 {(l.input_tokens||0).toLocaleString()}</span>
                         <span>出 {(l.output_tokens||0).toLocaleString()}</span>
                         {(l.cache_read_tokens||0) > 0 && <span style={{ color: "#3AAF6B" }}>⚡缓存 {(l.cache_read_tokens).toLocaleString()}</span>}
@@ -1495,14 +1495,14 @@ export default function PlutocaelChat() {
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
             {["", "appearance", "api", "taskmodels", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
-              const secTitle = { fontSize: 12, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
+              const secTitle = { fontSize: 13, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
               const rowLast = { ...row, borderBottom: "none" };
               const rowCol = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}` };
-              const lbl = { fontSize: 14, color: COLORS.text };
-              const hint = { fontSize: 12, color: COLORS.placeholder, marginTop: 2 };
-              const rowInput = { border: "none", outline: "none", background: "transparent", color: COLORS.text, fontSize: 14, textAlign: "right", flex: 1, minWidth: 0, fontFamily: "inherit" };
+              const lbl = { fontSize: 15, color: COLORS.text };
+              const hint = { fontSize: 13, color: COLORS.placeholder, marginTop: 2 };
+              const rowInput = { border: "none", outline: "none", background: "transparent", color: COLORS.text, fontSize: 15, textAlign: "right", flex: 1, minWidth: 0, fontFamily: "inherit" };
               const Toggle = ({ on, onChange }) => (
                 <button onClick={onChange} style={{ width: 46, height: 28, borderRadius: 14, border: "none", cursor: "pointer", background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.18)" }}>
                   <span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
@@ -1527,10 +1527,10 @@ export default function PlutocaelChat() {
                     ]},
                   ];
                   return MENU.map(grp => <div key={grp.group}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.textSecondary, padding: "6px 4px 8px" }}>{grp.group}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.textSecondary, padding: "6px 4px 8px" }}>{grp.group}</div>
                     <div style={listCard}>
                       {grp.items.map((it, i) => (
-                        <button key={it.key} className="flat ghost" onClick={() => openSettingsPage(it.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", border: "none", borderBottom: i < grp.items.length - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", textAlign: "left" }}>
+                        <button key={it.key} className="flat ghost" onClick={() => openSettingsPage(it.key)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", border: "none", borderBottom: i < grp.items.length - 1 ? `1px solid ${COLORS.divider}` : "none", background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 15, fontFamily: "inherit", textAlign: "left" }}>
                           <span style={{ color: COLORS.textSecondary, display: "flex", flexShrink: 0 }}><Icon size={18}>{it.icon}</Icon></span>
                           <span style={{ flex: 1 }}>{it.label}</span>
                           <span style={{ color: COLORS.placeholder, display: "flex", flexShrink: 0 }}><Icon size={15}><polyline points="9 18 15 12 9 6" /></Icon></span>
@@ -1548,39 +1548,39 @@ export default function PlutocaelChat() {
                       {Object.entries(THEMES).filter(([key]) => key !== "dark").map(([key, t]) => (
                         <button key={key} onClick={() => changeTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, ...skCard }}>
                           <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
-                          <span style={{ fontSize: 11, color: t.text }}>{t.label}</span>
+                          <span style={{ fontSize: 12, color: t.text }}>{t.label}</span>
                         </button>
                       ))}
                       <button onClick={() => changeTheme("custom")} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === "custom" ? `2px solid ${customTheme.accent}` : `1px solid ${COLORS.divider}`, background: customTheme.dark ? "#262624" : "#F5F4EE", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                         <span style={{ width: 22, height: 22, borderRadius: "50%", background: "conic-gradient(#D97757,#4A7FD4,#3AAF6B,#8A4AD4,#D97757)", display: "block" }} />
-                        <span style={{ fontSize: 11, color: customTheme.dark ? "#ECEAE5" : "#1F1E1D" }}>自定义</span>
+                        <span style={{ fontSize: 12, color: customTheme.dark ? "#ECEAE5" : "#1F1E1D" }}>自定义</span>
                       </button>
                     </div>
                   </div>
                   {theme === "custom" && (() => {
                     const ctrlRow = { display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${COLORS.divider}` };
                     const colorSwatch = (val, onCh) => <input type="color" value={val} onChange={e => onCh(e.target.value)} style={{ width: 34, height: 34, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />;
-                    const alphaSlider = (val, onCh) => <><input type="range" min="0" max="100" value={val} onChange={e => onCh(parseInt(e.target.value))} style={{ flex: 1, accentColor: customTheme.accent }} /><span style={{ fontSize: 12, color: COLORS.textSecondary, width: 38, textAlign: "right" }}>{val}%</span></>;
+                    const alphaSlider = (val, onCh) => <><input type="range" min="0" max="100" value={val} onChange={e => onCh(parseInt(e.target.value))} style={{ flex: 1, accentColor: customTheme.accent }} /><span style={{ fontSize: 13, color: COLORS.textSecondary, width: 38, textAlign: "right" }}>{val}%</span></>;
                     const section = (label, colorKey, alphaKey) => <div style={ctrlRow}>
                       {colorSwatch(customTheme[colorKey], v => saveCustom({ [colorKey]: v }))}
-                      <span style={{ fontSize: 13, color: COLORS.text, width: 64, flexShrink: 0 }}>{label}</span>
+                      <span style={{ fontSize: 14, color: COLORS.text, width: 64, flexShrink: 0 }}>{label}</span>
                       {alphaSlider(customTheme[alphaKey], v => saveCustom({ [alphaKey]: v }))}
                     </div>;
                     return <div style={{ ...rowCol, borderBottom: `1px solid ${COLORS.divider}` }}>
                       <div style={{ display: "flex", gap: 16, marginBottom: 4 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.dark} onChange={e => saveCustom({ dark: e.target.checked })} style={{ accentColor: customTheme.accent }} />暗色底</label>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.glass} onChange={e => saveCustom({ glass: e.target.checked })} style={{ accentColor: customTheme.accent }} />玻璃模糊</label>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.dark} onChange={e => saveCustom({ dark: e.target.checked })} style={{ accentColor: customTheme.accent }} />暗色底</label>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.glass} onChange={e => saveCustom({ glass: e.target.checked })} style={{ accentColor: customTheme.accent }} />玻璃模糊</label>
                       </div>
                       {section("主界面", "bg", "bgA")}
                       {section("侧边栏", "sidebar", "sidebarA")}
                       {section("用户气泡", "userBubble", "userBubbleA")}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0 2px" }}>
                         {colorSwatch(customTheme.accent, v => saveCustom({ accent: v }))}
-                        <span style={{ fontSize: 13, color: COLORS.text }}>强调色</span>
+                        <span style={{ fontSize: 14, color: COLORS.text }}>强调色</span>
                         <span style={{ flex: 1 }} />
-                        <button onClick={() => saveCustom({ ...DEFAULT_CUSTOM })} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12 }}>重置</button>
+                        <button onClick={() => saveCustom({ ...DEFAULT_CUSTOM })} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13 }}>重置</button>
                       </div>
-                      <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 6 }}>💡 透明度调低 + 开玻璃模糊 = 通透磨砂质感；配合壁纸更好看。</div>
+                      <div style={{ fontSize: 13, color: COLORS.placeholder, marginTop: 6 }}>💡 透明度调低 + 开玻璃模糊 = 通透磨砂质感；配合壁纸更好看。</div>
                     </div>;
                   })()}
                   <div style={rowCol}>
@@ -1588,8 +1588,8 @@ export default function PlutocaelChat() {
                       <div><div style={lbl}>背景壁纸</div><div style={hint}>只存在你的设备上，不会上传</div></div>
                       <input ref={wallpaperInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickWallpaper} />
                       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                        {wallpaper && <button onClick={() => { setWallpaper(""); fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: "" }) }).catch(() => {}); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13 }}>移除</button>}
-                        <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13 }}>{wallpaper ? "更换" : "上传"}</button>
+                        {wallpaper && <button onClick={() => { setWallpaper(""); fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: "" }) }).catch(() => {}); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14 }}>移除</button>}
+                        <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>{wallpaper ? "更换" : "上传"}</button>
                       </div>
                     </div>
                     {wallpaper && <img src={wallpaper} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 10 }} />}
@@ -1613,14 +1613,14 @@ export default function PlutocaelChat() {
                 </div>
                 {(() => {
                   const preview = (src, letter) => <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
-                    {src ? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 21, color: COLORS.accent }}>{letter}</span>}
+                    {src ? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 23, lineHeight: 1.25, color: COLORS.accent }}>{letter}</span>}
                   </div>;
                   const btns = (src, who, inputRef) => <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    {src && <button className="ghost" onClick={() => removeAvatar(who)} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>移除</button>}
-                    <button className="ghost" onClick={() => inputRef.current && inputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{src ? "更换" : "上传"}</button>
+                    {src && <button className="ghost" onClick={() => removeAvatar(who)} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>移除</button>}
+                    <button className="ghost" onClick={() => inputRef.current && inputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>{src ? "更换" : "上传"}</button>
                   </div>;
                   return <>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>头像</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>头像</div>
                     <input ref={avatarAiInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("ai")} />
                     <input ref={avatarUserInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("user")} />
                     <div style={listCard}>
@@ -1639,7 +1639,7 @@ export default function PlutocaelChat() {
                         {btns(avatarUser, "user", avatarUserInputRef)}
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。</div>
+                    <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。</div>
                   </>;
                 })()}
                 </>}
@@ -1647,25 +1647,25 @@ export default function PlutocaelChat() {
                 {settingsSection === "taskmodels" && (() => {
                   const chanOf = (task) => channels.find(c => c.id === taskModels.assigned[task]);
                   return <>
-                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", lineHeight: 1.7 }}>
+                    <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 12px", lineHeight: 1.7 }}>
                       给每类任务单独指定渠道。没指定的沿用原来的规则（后台任务走便宜渠道、聊天走主力），所以不配也不会有变化。
                     </div>
                     {taskModels.tasks.map(t => {
                       const c = chanOf(t.key);
                       return <div key={t.key} style={{ ...listCard, marginBottom: 10 }}>
                         <button className="flat ghost" onClick={() => setTaskPicker(t)} style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "13px 14px" }}>
-                          <div style={{ fontSize: 14.5, color: COLORS.text, fontWeight: 600 }}>{t.label}</div>
-                          <div style={{ fontSize: 12, color: COLORS.placeholder, marginTop: 3, lineHeight: 1.5 }}>{t.desc}</div>
+                          <div style={{ fontSize: 15.5, color: COLORS.text, fontWeight: 600 }}>{t.label}</div>
+                          <div style={{ fontSize: 13, color: COLORS.placeholder, marginTop: 3, lineHeight: 1.5 }}>{t.desc}</div>
                           <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 7, padding: "8px 11px", borderRadius: 10, background: barDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}>
-                            <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, background: c ? COLORS.accent : COLORS.divider, color: c ? "#fff" : COLORS.textSecondary }}>{c ? "指" : "默"}</span>
-                            <span style={{ fontSize: 13.5, color: c ? COLORS.text : COLORS.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, background: c ? COLORS.accent : COLORS.divider, color: c ? "#fff" : COLORS.textSecondary }}>{c ? "指" : "默"}</span>
+                            <span style={{ fontSize: 14.5, color: c ? COLORS.text : COLORS.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {c ? `${c.name}${c.model ? " · " + c.model : ""}` : "跟随默认"}
                             </span>
                           </div>
                         </button>
                       </div>;
                     })}
-                    {channels.length === 0 && <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
+                    {channels.length === 0 && <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
                   </>;
                 })()}
 
@@ -1675,37 +1675,37 @@ export default function PlutocaelChat() {
                   </button>;
                   const chanBtns = (ch) => (<>
                     <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                      <button className="ghost" onClick={() => saveApi(ch)} style={{ flex: 1, padding: "11px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>保存</button>
-                      <button className="ghost" disabled={apiTest[ch] && apiTest[ch].loading} onClick={() => testApi(ch)} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, ...skRaised }}>{apiTest[ch] && apiTest[ch].loading ? "测试中..." : "测试连接"}</button>
+                      <button className="ghost" onClick={() => saveApi(ch)} style={{ flex: 1, padding: "11px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 15, fontFamily: "inherit" }}>保存</button>
+                      <button className="ghost" disabled={apiTest[ch] && apiTest[ch].loading} onClick={() => testApi(ch)} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, ...skRaised }}>{apiTest[ch] && apiTest[ch].loading ? "测试中..." : "测试连接"}</button>
                     </div>
                     {apiTest[ch] && !apiTest[ch].loading && (
-                      <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, background: (apiTest[ch].ok || apiTest[ch].saved) ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: (apiTest[ch].ok || apiTest[ch].saved) ? "#2E8B57" : "#C0392B", ...skCard }}>
+                      <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12, fontSize: 14, lineHeight: 1.6, background: (apiTest[ch].ok || apiTest[ch].saved) ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: (apiTest[ch].ok || apiTest[ch].saved) ? "#2E8B57" : "#C0392B", ...skCard }}>
                         {apiTest[ch].saved ? "✓ 已保存" : apiTest[ch].ok ? <>✓ 连接成功！模型：{apiTest[ch].model}</> : <>✗ 没通过：{apiTest[ch].error}{apiTest[ch].model ? <><br />（测试的模型：{apiTest[ch].model}）</> : null}</>}
                         {(apiTest[ch].warnings || []).map((w, i) => <div key={i} style={{ color: "#B8860B", marginTop: 4 }}>⚠ {w}</div>)}
                       </div>
                     )}
                   </>);
                   const isActiveChan = (ch) => (ch.model || "") === (settingsData.model || "") && (ch.api_base_url || "") === (settingsData.api_base_url || "");
-                  const chanInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
+                  const chanInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 14.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
                   return <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>我的渠道（一键切换）</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>我的渠道（一键切换）</div>
                 <div style={listCard}>
-                  {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 13, color: COLORS.placeholder, textAlign: "center" }}>还没有保存的渠道，点下面「添加渠道」存几个，崩了一键切换</div>}
+                  {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 14, color: COLORS.placeholder, textAlign: "center" }}>还没有保存的渠道，点下面「添加渠道」存几个，崩了一键切换</div>}
                   {channels.map((ch, i) => {
                     const active = isActiveChan(ch);
                     const t = chTest && chTest.id === ch.id ? chTest : null;
                     return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 14, color: COLORS.text, fontWeight: active ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
-                          {active && <span style={{ fontSize: 10, color: "#fff", background: "#3AAF6B", padding: "1px 7px", borderRadius: 8, flexShrink: 0 }}>使用中</span>}
+                          <span style={{ fontSize: 15, color: COLORS.text, fontWeight: active ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
+                          {active && <span style={{ fontSize: 11, color: "#fff", background: "#3AAF6B", padding: "1px 7px", borderRadius: 8, flexShrink: 0 }}>使用中</span>}
                         </div>
-                        <div style={{ fontSize: 11, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{ch.model || "（默认模型）"}</div>
-                        {t && !t.loading && <div style={{ fontSize: 11, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
+                        <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{ch.model || "（默认模型）"}</div>
+                        {t && !t.loading && <div style={{ fontSize: 12, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
                       </div>
                       <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
-                        <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
-                        {!active && <button className="ghost" onClick={() => activateChannel(ch)} style={{ padding: "5px 12px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>使用</button>}
+                        <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
+                        {!active && <button className="ghost" onClick={() => activateChannel(ch)} style={{ padding: "5px 12px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>使用</button>}
                         <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, name: ch.name, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
                         <button className="flat ghost" onClick={() => delChannel(ch.id)} title="删除" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
                       </div>
@@ -1717,15 +1717,15 @@ export default function PlutocaelChat() {
                     <input value={chanForm.api_key} onChange={e => setChanForm({ ...chanForm, api_key: e.target.value })} placeholder="API Key（sk- 开头，留空=沿用当前）" style={chanInput} />
                     <input value={chanForm.model} onChange={e => setChanForm({ ...chanForm, model: e.target.value })} placeholder="模型名（如 [可颂-反重力-0.4]claude-opus-4-6-thinking）" style={{ ...chanInput, marginBottom: 10 }} />
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button className="ghost" onClick={() => setChanForm(null)} style={{ flex: 1, padding: "9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>取消</button>
-                      <button className="ghost" onClick={saveChannel} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{chanForm.id ? "保存修改" : "添加"}</button>
+                      <button className="ghost" onClick={() => setChanForm(null)} style={{ flex: 1, padding: "9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>取消</button>
+                      <button className="ghost" onClick={saveChannel} style={{ flex: 1, padding: "9px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>{chanForm.id ? "保存修改" : "添加"}</button>
                     </div>
                   </div>}
                 </div>
-                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit", marginBottom: 8 }}>+ 添加渠道</button>}
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 20px" }}>💡 同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
+                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 14, fontFamily: "inherit", marginBottom: 8 }}>+ 添加渠道</button>}
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 20px" }}>💡 同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
 
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
@@ -1741,13 +1741,13 @@ export default function PlutocaelChat() {
                     <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} style={rowInput} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩、自动记忆等后台任务用，省主力额度。留空=跟主力共用。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩、自动记忆等后台任务用，省主力额度。留空=跟主力共用。</div>
                 {chanBtns("cheap")}
                 <div style={{ height: 16 }} /></>;
                 })()}
 
                 {settingsSection === "behavior" && <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>模型参数</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>模型参数</div>
                 <div style={listCard}>
                   <div style={rowCol}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>模型温度</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.temperature}</span></div>
@@ -1762,27 +1762,27 @@ export default function PlutocaelChat() {
                     <input type="range" min="256" max="8192" step="128" value={settingsData.max_reply_tokens || 2000} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>System Prompt</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>System Prompt</div>
                 <div style={{ ...listCard, padding: "6px 10px", marginBottom: 10 }}>
-                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 14, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
+                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 15, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
                 </div>
-                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存"}</button>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div></>}
+                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存"}</button>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div></>}
 
                 {settingsSection === "skill" && (() => {
-                  const skInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
+                  const skInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 14.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
                   const groups = {};
                   for (const s of skills) { (groups[s.grp || "未分组"] = groups[s.grp || "未分组"] || []).push(s); }
                   return <>
-                    <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 10px" }}>💡 启用的 Skill 会追加到 Cael 人设末尾（不替换基础人设）。右上角 + 添加，左滑删除。</div>
-                    {Object.keys(groups).length === 0 && !skillForm && <div style={{ ...listCard, padding: 16, textAlign: "center", fontSize: 13, color: COLORS.placeholder }}>还没有 Skill，点右上角 + 添加</div>}
+                    <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 10px" }}>💡 启用的 Skill 会追加到 Cael 人设末尾（不替换基础人设）。右上角 + 添加，左滑删除。</div>
+                    {Object.keys(groups).length === 0 && !skillForm && <div style={{ ...listCard, padding: 16, textAlign: "center", fontSize: 14, color: COLORS.placeholder }}>还没有 Skill，点右上角 + 添加</div>}
                     {Object.entries(groups).map(([g, list]) => {
                       const collapsed = skillGroupCollapsed.has(g);
                       return <div key={g} style={{ marginBottom: 14 }}>
                         <button className="flat ghost" onClick={() => setSkillGroupCollapsed(prev => { const n = new Set(prev); if (n.has(g)) n.delete(g); else n.add(g); return n; })} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit" }}>
                           <span style={{ color: COLORS.placeholder, display: "flex", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform 0.2s" }}><Icon size={14}><polyline points="6 9 12 15 18 9" /></Icon></span>
-                          <span style={{ fontSize: 12.5, fontWeight: 600, color: COLORS.textSecondary }}>{g}</span>
-                          <span style={{ fontSize: 11, color: COLORS.placeholder }}>{list.length}</span>
+                          <span style={{ fontSize: 13.5, fontWeight: 600, color: COLORS.textSecondary }}>{g}</span>
+                          <span style={{ fontSize: 12, color: COLORS.placeholder }}>{list.length}</span>
                         </button>
                         {!collapsed && list.map(s => (
                           <div key={s.id} style={{ marginBottom: 9 }}>
@@ -1791,10 +1791,10 @@ export default function PlutocaelChat() {
                                 <span style={{ color: s.active ? COLORS.accent : COLORS.placeholder, display: "flex", flexShrink: 0, marginTop: 2 }}><Icon size={20}><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></Icon></span>
                                 <div style={{ flex: 1, minWidth: 0 }} onClick={() => setSkillForm({ id: s.id, name: s.name, content: s.content || "", grp: s.grp || "" })}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontSize: 15.5, color: COLORS.text, fontWeight: 600 }}>{s.name}</span>
-                                    {!!s.active && <span style={{ fontSize: 10, color: "#fff", background: COLORS.accent, padding: "1px 7px", borderRadius: 8 }}>启用中</span>}
+                                    <span style={{ fontSize: 16.5, color: COLORS.text, fontWeight: 600 }}>{s.name}</span>
+                                    {!!s.active && <span style={{ fontSize: 11, color: "#fff", background: COLORS.accent, padding: "1px 7px", borderRadius: 8 }}>启用中</span>}
                                   </div>
-                                  <div style={{ fontSize: 13, color: COLORS.textSecondary, lineHeight: 1.55, marginTop: 5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{s.content || "（空）"}</div>
+                                  <div style={{ fontSize: 14, color: COLORS.textSecondary, lineHeight: 1.55, marginTop: 5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{s.content || "（空）"}</div>
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
                                   <Toggle on={!!s.active} onChange={() => toggleSkill(s)} />
@@ -1810,21 +1810,21 @@ export default function PlutocaelChat() {
                       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "86vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(18px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
                         <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
                         <div style={{ display: "flex", alignItems: "center", padding: "4px 16px 10px", flexShrink: 0 }}>
-                          <button className="flat ghost" onClick={() => setSkillForm(null)} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
-                          <span style={{ flex: 1, textAlign: "center", fontSize: 15.5, fontWeight: 600, color: COLORS.text }}>{skillForm.id ? "编辑 Skill" : "添加 Skill"}</span>
+                          <button className="flat ghost" onClick={() => setSkillForm(null)} style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+                          <span style={{ flex: 1, textAlign: "center", fontSize: 16.5, fontWeight: 600, color: COLORS.text }}>{skillForm.id ? "编辑 Skill" : "添加 Skill"}</span>
                           <span style={{ width: 32 }} />
                         </div>
                         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "2px 18px 6px" }}>
-                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>名称</div>
+                          <div style={{ fontSize: 13.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>名称</div>
                           <input value={skillForm.name} onChange={e => setSkillForm({ ...skillForm, name: e.target.value })} placeholder="Skill 名字（如：翻译腔）" style={{ ...skInput, marginBottom: 14 }} />
-                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>分组（可选）</div>
+                          <div style={{ fontSize: 13.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>分组（可选）</div>
                           <input value={skillForm.grp} onChange={e => setSkillForm({ ...skillForm, grp: e.target.value })} placeholder="如：语气 / 角色" style={{ ...skInput, marginBottom: 14 }} />
-                          <div style={{ fontSize: 12.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>指令内容</div>
+                          <div style={{ fontSize: 13.5, color: COLORS.textSecondary, padding: "0 2px 6px" }}>指令内容</div>
                           <textarea value={skillForm.content} onChange={e => setSkillForm({ ...skillForm, content: e.target.value })} rows={6} placeholder="这条 Skill 的额外指令内容……启用后会追加到 Cael 人设末尾" style={{ ...skInput, minHeight: 130, resize: "vertical", lineHeight: 1.6, marginBottom: 4 }} />
                         </div>
                         <div style={{ display: "flex", gap: 10, padding: "10px 18px 0", flexShrink: 0 }}>
-                          <button className="ghost" onClick={() => setSkillForm(null)} style={{ padding: "12px 18px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>取消</button>
-                          <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>✓ {skillForm.id ? "保存修改" : "添加"}</button>
+                          <button className="ghost" onClick={() => setSkillForm(null)} style={{ padding: "12px 18px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 15, fontFamily: "inherit" }}>取消</button>
+                          <button className="ghost" onClick={saveSkill} style={{ flex: 1, padding: "12px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, fontFamily: "inherit" }}>✓ {skillForm.id ? "保存修改" : "添加"}</button>
                         </div>
                       </div>
                     </div>}
@@ -1832,58 +1832,58 @@ export default function PlutocaelChat() {
                 })()}
 
                 {settingsSection === "chatmgmt" && <>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>导入与导出</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>导入与导出</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div><div style={lbl}>导出聊天记录</div><div style={hint}>下载全部对话</div></div>
                     <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                      <button className="ghost" onClick={() => exportChat("json")} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>.json</button>
-                      <button className="ghost" onClick={() => exportChat("md")} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>.md</button>
+                      <button className="ghost" onClick={() => exportChat("json")} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>.json</button>
+                      <button className="ghost" onClick={() => exportChat("md")} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>.md</button>
                     </div>
                   </div>
                   <div style={rowLast}>
                     <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>导入聊天记录</div><div style={hint}>.json 或 .md 都行，DeepSeek 清洗后进入审阅区，你改删满意再上传到对话或备份</div></div>
                     <input ref={importInputRef} type="file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" style={{ display: "none" }} onChange={doImport} />
-                    <button className="ghost" onClick={() => importInputRef.current && importInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
+                    <button className="ghost" onClick={() => importInputRef.current && importInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>备份</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>备份</div>
                 <div style={listCard}>
                   <div style={row}>
                     <div><div style={lbl}>云端备份</div><div style={hint}>在服务器上给整个数据库拍个快照</div></div>
-                    <button className="ghost" onClick={doBackup} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>备份到云端</button>
+                    <button className="ghost" onClick={doBackup} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit", flexShrink: 0 }}>备份到云端</button>
                   </div>
                   <div style={rowLast}>
                     <div><div style={lbl}>本地备份</div><div style={hint}>把数据库下载到你的设备，自己保管</div></div>
-                    <button className="ghost" onClick={doLocalBackup} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>下载到本地</button>
+                    <button className="ghost" onClick={doLocalBackup} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", flexShrink: 0 }}>下载到本地</button>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>恢复</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>恢复</div>
                 <div style={listCard}>
                   <div style={manageBackups.length > 0 ? row : rowLast}>
                     <div><div style={lbl}>从本地文件恢复</div><div style={hint}>选择之前下载的 .db 备份文件</div></div>
                     <input ref={localRestoreRef} type="file" accept=".db,application/octet-stream" style={{ display: "none" }} onChange={doLocalRestore} />
-                    <button className="ghost" onClick={() => localRestoreRef.current && localRestoreRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
+                    <button className="ghost" onClick={() => localRestoreRef.current && localRestoreRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 14, fontFamily: "inherit", flexShrink: 0 }}>选择文件</button>
                   </div>
-                  {manageBackups.length === 0 ? null : <div style={{ ...rowCol, borderBottom: "none", paddingBottom: 4 }}><div style={{ fontSize: 11, color: COLORS.placeholder }}>云端备份</div></div>}
+                  {manageBackups.length === 0 ? null : <div style={{ ...rowCol, borderBottom: "none", paddingBottom: 4 }}><div style={{ fontSize: 12, color: COLORS.placeholder }}>云端备份</div></div>}
                   {manageBackups.map((b, i) => (
                     <div key={b.file} style={i < manageBackups.length - 1 ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 13, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.file.replace(/^plutocael-/, "").replace(/\.db$/, "")}</div>
+                        <div style={{ fontSize: 14, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.file.replace(/^plutocael-/, "").replace(/\.db$/, "")}</div>
                         <div style={hint}>{(b.size / 1024 / 1024).toFixed(1)} MB</div>
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                        <button className="ghost" onClick={() => doRestore(b.file)} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>恢复</button>
-                        <button className="ghost" onClick={() => doDeleteBackup(b.file)} title="删除备份" style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(0,0,0,0.05)", color: COLORS.danger, cursor: "pointer", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
+                        <button className="ghost" onClick={() => doRestore(b.file)} style={{ padding: "5px 12px", borderRadius: 14, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>恢复</button>
+                        <button className="ghost" onClick={() => doDeleteBackup(b.file)} title="删除备份" style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(0,0,0,0.05)", color: COLORS.danger, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
                       </div>
                     </div>
                   ))}
                 </div>
-                {manageMsg && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 13, lineHeight: 1.6, marginBottom: 12, background: manageMsg.startsWith("✓") ? "rgba(58,175,107,0.12)" : "rgba(0,0,0,0.05)", color: manageMsg.startsWith("✓") ? "#2E8B57" : COLORS.textSecondary, display: "flex", alignItems: "center", gap: 10, ...skCard }}>
+                {manageMsg && <div style={{ padding: "10px 14px", borderRadius: 12, fontSize: 14, lineHeight: 1.6, marginBottom: 12, background: manageMsg.startsWith("✓") ? "rgba(58,175,107,0.12)" : "rgba(0,0,0,0.05)", color: manageMsg.startsWith("✓") ? "#2E8B57" : COLORS.textSecondary, display: "flex", alignItems: "center", gap: 10, ...skCard }}>
                   <span style={{ flex: 1, minWidth: 0 }}>{manageMsg}</span>
-                  {importRunning && <button className="ghost" onClick={cancelImport} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.danger, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "inherit", flexShrink: 0 }}>中断</button>}
+                  {importRunning && <button className="ghost" onClick={cancelImport} style={{ padding: "5px 14px", borderRadius: 14, border: "none", background: COLORS.danger, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit", flexShrink: 0 }}>中断</button>}
                 </div>}
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 恢复会把当前数据先自动快照一份再覆盖，不怕手滑。导入不覆盖现有对话，只追加。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 恢复会把当前数据先自动快照一份再覆盖，不怕手滑。导入不覆盖现有对话，只追加。</div>
                 </>}
 
                 {settingsSection === "memoryopts" && <>
@@ -1901,9 +1901,9 @@ export default function PlutocaelChat() {
                     <Toggle on={settingsData.date_mark !== 0} onChange={() => saveSetting({ date_mark: settingsData.date_mark === 0 ? 1 : 0 })} />
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 12px" }}>💡 这三个开关影响的是发给 Cael 的上下文，改动即刻生效。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 12px" }}>💡 这三个开关影响的是发给 Cael 的上下文，改动即刻生效。</div>
 
-                <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>滚动上下文管理</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>滚动上下文管理</div>
                 <div style={listCard}>
                   <div style={settingsData.ctx_manage !== 0 ? row : rowLast}>
                     <div style={{ flex: 1, minWidth: 0 }}><div style={lbl}>启用滚动管理</div><div style={hint}>把对话分成"摘要区+冻结区+活跃区"，控制体积、稳定请求前缀以吃满缓存省钱；聊得越久越明显</div></div>
@@ -1922,7 +1922,7 @@ export default function PlutocaelChat() {
                   </div>
                   </>}
                 </div>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 摘要用便宜渠道后台生成，不占聊天额度。原始消息不会被删，聊天界面照常能看到全部。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 摘要用便宜渠道后台生成，不占聊天额度。原始消息不会被删，聊天界面照常能看到全部。</div>
                 </>}
               </>;
             })()}
@@ -1934,13 +1934,13 @@ export default function PlutocaelChat() {
       {showSearch && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowSearch(false)}>
         <div style={{ background: COLORS.cardBg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "70vh", display: "flex", flexDirection: "column", padding: "20px 24px 32px" }} onClick={e => e.stopPropagation()}>
           <div style={{ marginBottom: 16 }}>
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSearch(); }} placeholder="搜索记忆和对话..." style={{ width: "100%", border: `1px solid ${COLORS.divider}`, borderRadius: 20, padding: "10px 16px", fontSize: 14, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" }} autoFocus />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSearch(); }} placeholder="搜索记忆和对话..." style={{ width: "100%", border: `1px solid ${COLORS.divider}`, borderRadius: 20, padding: "10px 16px", fontSize: 15, outline: "none", background: COLORS.bg, color: COLORS.text, boxSizing: "border-box", fontFamily: "inherit" }} autoFocus />
           </div>
           <div style={{ flex: 1, overflow: "auto", maxHeight: "50vh" }}>
-            {searchResults.length === 0 ? <div style={{ textAlign: "center", color: COLORS.placeholder, fontSize: 13, padding: "20px 0" }}>输入关键词搜索</div> : searchResults.map((r, i) => (
+            {searchResults.length === 0 ? <div style={{ textAlign: "center", color: COLORS.placeholder, fontSize: 14, padding: "20px 0" }}>输入关键词搜索</div> : searchResults.map((r, i) => (
               <div key={i} style={{ background: r.type === "post" ? COLORS.cardBg : COLORS.bg, borderRadius: 12, padding: 12, marginBottom: 8, border: `1px solid ${COLORS.divider}` }}>
-                <div style={{ fontSize: 12, color: COLORS.placeholder, marginBottom: 4 }}>{r.type === "post" ? "记忆" : "对话"}{r.viaGraph && <span style={{ color: COLORS.accent, marginLeft: 6 }}>· 图谱关联</span>}</div>
-                <div style={{ fontSize: 13, lineHeight: 1.7, color: COLORS.text }}>{r.content}</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, marginBottom: 4 }}>{r.type === "post" ? "记忆" : "对话"}{r.viaGraph && <span style={{ color: COLORS.accent, marginLeft: 6 }}>· 图谱关联</span>}</div>
+                <div style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text }}>{r.content}</div>
               </div>
             ))}
           </div>

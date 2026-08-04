@@ -50,6 +50,20 @@
   }
 }
 
+/* ── 排版总调节 ──
+   字重和行距在这里改，全局生效（字号是各组件的行内 fontSize，改那个）
+   觉得不够/过头，直接调下面两个数就行 */
+body {
+  font-weight: 500;   /* 默认 400，500 稍粗一档 */
+  line-height: 1.7;   /* 原来 145%，放宽一点 */
+}
+/* 按钮/输入框默认不继承 body 的字体设置（浏览器自带样式会盖掉），
+   而侧栏、设置项、菜单这些大量文字都在 button 里，必须显式继承才能一起变粗变宽松 */
+button, input, textarea, select { font-weight: inherit; font-family: inherit; }
+button { line-height: inherit; }
+/* 输入框是固定高度的，跟着放大行距会被撑变形 */
+input, textarea { line-height: normal; }
+
 html {
   height: 100vh;
   overflow: hidden;
