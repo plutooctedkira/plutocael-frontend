@@ -351,14 +351,15 @@ export default function PlutocaelChat() {
     // 凸起感靠 backgroundImage 渐变高光罩在纯色 backgroundColor 上（尾巴取纯色，能对上）
     const dark = theme === "dark" || (theme === "custom" && customTheme.dark);
     const blur = (glassMode || wallpaper) ? "blur(10px)" : "none";
-    // 只留极淡的顶部提亮，去掉底部暗带——暗带在圆角边缘看起来像脏阴影
+    // 果冻质感：上半强高光、中段收、底部压暗，鼓起感明显（iMessage 那种胶质感）
     const gloss = dark
-      ? "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 55%)"
-      : "linear-gradient(180deg, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%)";
-    // 单层极柔投影：内嵌高光线在圆角处会断裂、半透明底会透出多层阴影导致角落发灰
+      ? "linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.07) 42%, rgba(0,0,0,0.16) 100%)"
+      : "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.30) 42%, rgba(0,0,0,0.11) 100%)";
+    // 顶沿高光 + 底部内阴影做体积，外面再叠紧实+扩散两层投影把气泡"抬"起来
+    // （气泡本体有 overflow:hidden + radial mask，内阴影不会在圆角处断裂）
     const raised = dark
-      ? "0 1px 4px rgba(0,0,0,0.26)"
-      : "0 1px 4px rgba(0,0,0,0.06)";
+      ? "inset 0 1.5px 0 rgba(255,255,255,0.26), inset 0 -10px 16px -8px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.38), 0 9px 20px -6px rgba(0,0,0,0.40)"
+      : "inset 0 1.5px 0 rgba(255,255,255,1), inset 0 -10px 16px -8px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.14), 0 9px 20px -6px rgba(0,0,0,0.20)";
     if (isUser) {
       const bg = bubbleColor || (theme === "custom" ? COLORS.userBubble : (wallpaper ? (dark ? "rgba(74,58,50,0.86)" : "rgba(245,228,232,0.9)") : COLORS.accentLight));
       return { backgroundColor: bg, backgroundImage: gloss, border: glassMode ? `1px solid ${frostBorder}` : "none", backdropFilter: blur, WebkitBackdropFilter: blur, boxShadow: raised };
@@ -1096,14 +1097,14 @@ export default function PlutocaelChat() {
                       })()}
                       {view.quote && <div style={{ marginTop: 5, marginLeft: isUser ? "auto" : 0, width: "fit-content", maxWidth: "100%", padding: "6px 11px", borderRadius: 9, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(255,255,255,0.10)" : (wallpaper ? "rgba(238,238,236,0.85)" : "rgba(0,0,0,0.06)"), ...(wallpaper ? { backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" } : {}), color: COLORS.textSecondary, fontSize: 14, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflowWrap: "anywhere", boxSizing: "border-box" }}>{view.quote.from}：{view.quote.text}</div>}
                       <div style={{ display: "flex", alignSelf: "stretch", marginTop: 4, alignItems: "center", gap: 8 }}>
-                        {msg.created_at && <span style={{ fontSize: 12, color: COLORS.placeholder, opacity: 0.8, padding: "0 6px", ...(isUser ? { marginLeft: "auto" } : {}) }}>{formatFullTime(msg.created_at)}</span>}
+                        {msg.created_at && <span style={{ fontSize: 12, color: COLORS.textSecondary, padding: "0 6px", ...(isUser ? { marginLeft: "auto" } : {}) }}>{formatFullTime(msg.created_at)}</span>}
                         {!isUser && (() => {
                           let u = null; try { u = msg.usage ? (typeof msg.usage === "string" ? JSON.parse(msg.usage) : msg.usage) : null; } catch (e) {}
                           if (!u || (!u.in && !u.out)) return null;
-                          return <span style={{ fontSize: 11.5, opacity: 0.85, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}（省钱）` : ""}${u.cw ? ` · 缓存写入 ${u.cw}（花钱）` : ""}`}>
-                            <span style={{ color: COLORS.placeholder }}>↑{u.in} ↓{u.out}</span>
-                            {u.cr ? <span style={{ color: "#3AAF6B" }}> ⚡{u.cr}</span> : null}
-                            {u.cw ? <span style={{ color: "#D9534F" }}> ✎{u.cw}</span> : null}
+                          return <span style={{ fontSize: 12, padding: "0 6px", whiteSpace: "nowrap", marginLeft: "auto" }} title={`输入 ${u.in} · 输出 ${u.out}${u.cr ? ` · 缓存命中 ${u.cr}（省钱）` : ""}${u.cw ? ` · 缓存写入 ${u.cw}（花钱）` : ""}`}>
+                            <span style={{ color: COLORS.textSecondary }}>↑{u.in} ↓{u.out}</span>
+                            {u.cr ? <span style={{ color: barDark ? "#5BC98A" : "#2E8B57", fontWeight: 600 }}> ⚡{u.cr}</span> : null}
+                            {u.cw ? <span style={{ color: barDark ? "#E8736E" : "#C0392B", fontWeight: 600 }}> ✎{u.cw}</span> : null}
                           </span>;
                         })()}
                       </div>
