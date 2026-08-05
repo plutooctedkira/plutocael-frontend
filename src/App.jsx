@@ -136,10 +136,16 @@ export default function PlutocaelChat() {
   const [taskModels, setTaskModels] = useState({ tasks: [], assigned: {} });
   const [taskPicker, setTaskPicker] = useState(null); // 正在选渠道的任务 {key,label}
   const loadTaskModels = async () => {
+    setTaskModels(p => ({ ...p, err: null }));
     try {
-      const [tm] = await Promise.all([fetch(API + "/settings/task-models").then(x => x.json()), loadChannels()]);
-      setTaskModels({ tasks: tm.tasks || [], assigned: tm.assigned || {} });
-    } catch (e) {}
+      const r = await fetch(API + "/settings/task-models");
+      if (!r.ok) throw new Error(r.status === 404 ? "后端还没更新到最新版" : `服务器返回 ${r.status}`);
+      const tm = await r.json();
+      await loadChannels();
+      setTaskModels({ tasks: tm.tasks || [], assigned: tm.assigned || {}, err: null });
+    } catch (e) {
+      setTaskModels({ tasks: [], assigned: {}, err: e.message || "连不上后端" });
+    }
   };
   const assignTask = async (task, channel_id) => {
     setTaskModels(p => ({ ...p, assigned: { ...p.assigned, [task]: channel_id || undefined } }));
@@ -1666,7 +1672,12 @@ export default function PlutocaelChat() {
                         </button>
                       </div>;
                     })}
-                    {channels.length === 0 && <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
+                    {taskModels.err && <div style={{ ...listCard, padding: 16, fontSize: 13.5, lineHeight: 1.75, color: COLORS.textSecondary }}>
+                      读不到任务列表：{taskModels.err}。<br />
+                      这个功能需要后端一起更新，在 VPS 上跑一次：<br />
+                      <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5, color: COLORS.text, display: "inline-block", marginTop: 6, overflowWrap: "anywhere" }}>cd /opt/plutocael-backend && git fetch origin && git reset --hard origin/main && pm2 restart plutocael</span>
+                    </div>}
+                    {!taskModels.err && channels.length === 0 && <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
                   </>;
                 })()}
 
