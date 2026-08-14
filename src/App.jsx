@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import McpManager from './McpManager';
 import OmbreMemories from './OmbreMemories';
-import Diary from './Diary';
+import Home from './Home';
 import Agent from './Agent';
 import PullRefresh from './PullRefresh';
 import Icon from "./Icon";
@@ -84,7 +84,7 @@ export default function PlutocaelChat() {
   const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单（整屏页）
   const [chatMenuClosing, setChatMenuClosing] = useState(false);
   const closeChatMenu = () => { setChatMenuClosing(true); setTimeout(() => { setShowChatMenu(false); setChatMenuClosing(false); }, 260); };
-  const [showDiary, setShowDiary] = useState(false); // 日记（整屏页，可滑出）
+  const [showDiary, setShowDiary] = useState(false); // 首页（Done List + 日记板块，整屏页）
   const [diaryClosing, setDiaryClosing] = useState(false);
   const closeDiary = () => { setDiaryClosing(true); setTimeout(() => { setShowDiary(false); setDiaryClosing(false); }, 270); };
   const [showAgent, setShowAgent] = useState(false); // 工作台（编码 agent，整屏页）
@@ -1378,7 +1378,7 @@ export default function PlutocaelChat() {
         )}
       </div>}
       {showDiary && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${diaryClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
-        <Diary api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
+        <Home api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
       </div>}
       {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${agentClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <Agent api={API} colors={COLORS} dark={barDark} />

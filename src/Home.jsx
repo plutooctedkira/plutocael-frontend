@@ -5,14 +5,16 @@ import Icon from "./Icon";
 // 2026-07-24 → 2026-7-24
 const fmtDate = (d) => { if (!d) return ""; const p = String(d).split("-"); return p.length === 3 ? `${p[0]}-${Number(p[1])}-${Number(p[2])}` : d; };
 const firstLine = (c) => String(c || "").split("\n").map(s => s.trim()).find(Boolean) || "无更多文本";
+// 8月15日 星期六（zh-CN 的 long 格式会挤成"8月15日星期六"，自己拼一下）
+const today = () => { const t = new Date(); return `${t.getMonth() + 1}月${t.getDate()}日 星期${"日一二三四五六"[t.getDay()]}`; };
 
-// 日记：Apple 备忘录风格，每条标题+日期+首行预览，点开整篇
-export default function Diary({ api, colors: C, dark, readerRef }) {
+// 首页：按板块排（Done List / 日记），日记点开整篇
+export default function Home({ api, colors: C, dark, readerRef }) {
   const [entries, setEntries] = useState(null);
-  const [open, setOpen] = useState(null); // 打开的整篇
+  const [open, setOpen] = useState(null); // 打开的整篇日记
   const [closing, setClosing] = useState(false); // 详情页滑出中
   const closeReader = () => { setClosing(true); setTimeout(() => { setOpen(null); setClosing(false); }, 260); };
-  // 把详情页开关暴露给父级返回手势：详情页打开时优先关它（回到列表），而不是整个日记
+  // 把详情页开关暴露给父级返回手势：详情页打开时优先关它（回到首页），而不是整个首页
   if (readerRef) readerRef.current = { isOpen: () => !!open, close: closeReader };
 
   const load = async () => {
@@ -20,16 +22,38 @@ export default function Diary({ api, colors: C, dark, readerRef }) {
   };
   useEffect(() => { load(); }, []);
 
+  const card = { background: C.cardBg, borderRadius: 16, boxShadow: "0 1px 2px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.07)" };
+  // 板块小标题：左边名字，右边一句灰字（条数之类）
+  const secHead = (title, right) => (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "22px 4px 9px" }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, letterSpacing: "0.3px" }}>{title}</div>
+      {right && <div style={{ marginLeft: "auto", fontSize: 13.5, color: C.placeholder }}>{right}</div>}
+    </div>
+  );
+  const empty = (icon, line, sub) => (
+    <div style={{ ...card, padding: "26px 22px", display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+      <span style={{ color: C.placeholder, opacity: 0.65, display: "flex" }}><Icon size={26}>{icon}</Icon></span>
+      <div style={{ fontSize: 14.5, color: C.textSecondary }}>{line}</div>
+      {sub && <div style={{ fontSize: 13, color: C.placeholder, textAlign: "center", lineHeight: 1.6 }}>{sub}</div>}
+    </div>
+  );
+
   return (
     <>
       <PullRefresh onRefresh={load} color={C.accent} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
         <div style={{ maxWidth: 620, margin: "0 auto" }}>
-          <div style={{ fontSize: 32, lineHeight: 1.25, fontWeight: 800, color: C.text, padding: "6px 4px 2px", letterSpacing: "0.5px" }}>日记</div>
-          <div style={{ fontSize: 14, color: C.placeholder, padding: "0 4px 16px" }}>{entries === null ? "加载中…" : `${entries.length} 篇日记`}</div>
+          <div style={{ fontSize: 32, lineHeight: 1.25, fontWeight: 800, color: C.text, padding: "6px 4px 2px", letterSpacing: "0.5px" }}>首页</div>
+          <div style={{ fontSize: 14, color: C.placeholder, padding: "0 4px" }}>{today()}</div>
 
-          {entries !== null && entries.length === 0 && <div style={{ background: C.cardBg, borderRadius: 16, padding: 22, textAlign: "center", fontSize: 14, color: C.placeholder, boxShadow: "0 1px 2px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.07)" }}>还没有日记。Cael 用 OB 的 letter_write 写的信件会出现在这里。</div>}
+          {/* Done List 板块：先只做外观，还没接内容 */}
+          {secHead("Done List", "0 项")}
+          {empty(<><circle cx="12" cy="12" r="9" /><polyline points="8.5 12.2 11 14.7 15.8 9.6" /></>, "今天还没有完成的事", "做完的事会记在这里")}
 
-          {entries !== null && entries.length > 0 && <div style={{ background: C.cardBg, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.07)" }}>
+          {/* 日记板块 */}
+          {secHead("日记", entries === null ? "加载中…" : `${entries.length} 篇`)}
+          {entries !== null && entries.length === 0 && empty(<><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></>, "还没有日记", "Cael 用 OB 的 letter_write 写的信件会出现在这里")}
+
+          {entries !== null && entries.length > 0 && <div style={{ ...card, overflow: "hidden" }}>
             {entries.map((e, i) => (
               <button key={e.id || i} className="flat ghost" onClick={() => setOpen(e)} style={{ width: "100%", display: "block", textAlign: "left", border: "none", borderTop: i > 0 ? `1px solid ${C.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "14px 16px" }}>
                 <div style={{ fontSize: 17, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title || "无标题"}</div>
@@ -44,7 +68,7 @@ export default function Diary({ api, colors: C, dark, readerRef }) {
 
       {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${closing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
-          <button className="flat ghost" onClick={closeReader} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 16, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>日记</button>
+          <button className="flat ghost" onClick={closeReader} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 16, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>首页</button>
           <span style={{ flex: 1 }} />
         </div>
         <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "4px 22px calc(30px + env(safe-area-inset-bottom, 0px))" }}>
