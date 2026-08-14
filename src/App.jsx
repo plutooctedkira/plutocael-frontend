@@ -13,8 +13,7 @@ import SwipeRow from './SwipeRow';
 const API = import.meta.env.VITE_API_BASE || "/api";
 
 // 多主题系统：claude（Claude官方米白）/ dark（夜间）/ rose（玫瑰）
-function ChatIcon() { return <Icon size={18}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>; }
-function MenuIcon() { return <Icon size={20}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></Icon>; }
+const NAV_H = 50; // 底部导航栏高度（不含安全区），浮层页要留出这么多底部空间
 function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
 
 
@@ -28,7 +27,6 @@ export default function PlutocaelChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState("chat");
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingName, setEditingName] = useState("");
@@ -378,18 +376,15 @@ export default function PlutocaelChat() {
   const barBg = (wallpaper || glassMode)
     ? { background: barDark ? "rgba(40,40,38,0.80)" : "rgba(237,237,234,0.80)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
     : { background: barDark ? "#2A2A28" : "#EDEDEA" };
-  // 顶栏：主题色实底（不透壁纸），只有菜单键（+ 可选的右侧内容）
+  // 顶栏：主题色实底（不透壁纸），左边留空，只有可选的右侧内容（导航走底栏）
   const caelHeader = (right) => (
-    <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
-      <button className="flat" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><MenuIcon /></button>
+    <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, minHeight: 38, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
       <span style={{ flex: 1 }} />
       {right}
     </div>
   );
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
-  const [dragOffset, setDragOffset] = useState(0); // 侧边栏跟手拖拽偏移(0~280)
-  const dragging = useRef(false);
   // steps 底部弹层（thinking+工具调用合并）：存消息id，流式时内容跟着长；高度可上拉（默认约半屏，最高距顶20px）
   const [thinkingSheet, setThinkingSheet] = useState(null);
   const [sheetH, setSheetH] = useState(360);
@@ -508,7 +503,7 @@ export default function PlutocaelChat() {
     }, 300);
     return () => clearTimeout(t);
   }, [chatSearchQ, chatSearchType, chatSearchDate]);
-  const jumpToMsg = (r) => { setShowSettings(false); setShowChatSearch(false); setCurrentPage("chat"); setActiveSessionId(r.session_id); setJumpMsgId(r.id); setSidebarOpen(false); };
+  const jumpToMsg = (r) => { setShowSettings(false); setShowChatSearch(false); setCurrentPage("chat"); setActiveSessionId(r.session_id); setJumpMsgId(r.id); };
   const closeChatSearch = () => { setShowChatSearch(false); setShowCalendar(false); setChatSearchQ(""); setChatSearchType(""); setChatSearchDate(""); };
   const openCalendar = async () => {
     try { const r = await fetch(API + "/messages/dates/all").then(x => x.json()); setChatDates(new Set((r.dates || []).map(x => x.d))); } catch (e) { setChatDates(new Set()); }
@@ -606,7 +601,7 @@ export default function PlutocaelChat() {
     return () => document.removeEventListener("pointerdown", onDown);
   }, []);
 
-  // 边缘右滑：主界面=开侧边栏；其它页面/浮层=返回上一级
+  // 右滑：其它页面/浮层=返回上一级；主界面没有上一级，不响应
   const navRef = useRef({ isChatRoot: () => true, goBack: () => {} });
   navRef.current = {
     isChatRoot: () => currentPage === "chat" && !showSettings && !showDiary && !showAgent && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
@@ -625,15 +620,11 @@ export default function PlutocaelChat() {
     },
   };
   useEffect(() => {
-    let startX = 0, startY = 0, lastDx = 0, tracking = false, dir = null, root = true;
+    let startX = 0, startY = 0, lastDx = 0, tracking = false, dir = null;
     const onStart = (e) => {
-      if (sidebarOpen) return;
-      const x0 = e.touches[0].clientX;
-      root = navRef.current.isChatRoot();
-      // 聊天主界面仍从左边缘起手开侧边栏（避免和内容/输入冲突）；其它页面右滑返回可在屏幕任意处起手
-      if (root && x0 > 30) return;
+      if (navRef.current.isChatRoot()) return;
       tracking = true; dir = null; lastDx = 0;
-      startX = x0; startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     };
     const onMove = (e) => {
       if (!tracking) return;
@@ -644,36 +635,32 @@ export default function PlutocaelChat() {
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
         dir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
         if (dir === 'v') { tracking = false; return; }
-        if (root) dragging.current = true;
       }
-      if (dir === 'h' && dx > 0 && root) { e.preventDefault(); setDragOffset(Math.min(280, dx)); }
     };
     const onEnd = () => {
       if (!tracking) return;
-      tracking = false; dragging.current = false;
-      if (root) { setDragOffset(prev => { if (prev > 90) setSidebarOpen(true); return 0; }); }
-      else if (dir === 'h' && lastDx > 60) { navRef.current.goBack(); }
+      tracking = false;
+      if (dir === 'h' && lastDx > 60) navRef.current.goBack();
     };
     document.addEventListener("touchstart", onStart, { passive: true });
-    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchmove", onMove, { passive: true });
     document.addEventListener("touchend", onEnd);
     return () => {
       document.removeEventListener("touchstart", onStart);
       document.removeEventListener("touchmove", onMove);
       document.removeEventListener("touchend", onEnd);
     };
-  }, [sidebarOpen]);
+  }, []);
 
-  const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); setSidebarOpen(false); } catch (err) { console.error("创建会话失败:", err); } };
+  const handleNewSession = async () => { try { const res = await fetch(API + "/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "新对话" }) }); const s = await res.json(); setSessions(prev => [s, ...prev]); setActiveSessionId(s.id); setMessages([]); setCurrentPage("chat"); } catch (err) { console.error("创建会话失败:", err); } };
   const handleDeleteSession = async (e, sid) => { e.stopPropagation(); if (!confirm("确定删除这个对话吗？")) return; try { await fetch(API + "/sessions/" + sid, { method: "DELETE" }); setSessions(prev => prev.filter(s => s.id !== sid)); if (activeSessionId === sid) { const r = sessions.filter(s => s.id !== sid); setActiveSessionId(r.length > 0 ? r[0].id : null); if (r.length === 0) setMessages([]); } } catch (err) { console.error("删除会话失败:", err); } };
   const handleStartRename = (e, s) => { e.stopPropagation(); setEditingSessionId(s.id); setEditingName(s.name); };
   const handleSaveRename = async () => { if (!editingName.trim() || !editingSessionId) { setEditingSessionId(null); return; } try { await fetch(API + "/sessions/" + editingSessionId, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: editingName.trim() }) }); setSessions(prev => prev.map(s => s.id === editingSessionId ? { ...s, name: editingName.trim() } : s)); } catch (err) { console.error("重命名失败:", err); } setEditingSessionId(null); };
   const handleAddMemory = async () => { if (!newMemory.content.trim()) return; try { await fetch(API + "/memories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: newMemory.content, category: newMemory.layer || "episodic", importance: newMemory.importance }) }); setNewMemory({ title: "", content: "", layer: "episodic", importance: 3 }); setShowAddMemory(false); loadMemories(); } catch (err) { console.error("添加记忆失败:", err); } };
   const handleUpdateMemory = async () => { if (!editingMemory || !editingMemory.content.trim()) return; try { await fetch(API + "/memories/" + editingMemory.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: editingMemory.content, category: editingMemory.layer, importance: editingMemory.importance }) }); setEditingMemory(null); loadMemories(); } catch (err) { console.error("更新记忆失败:", err); } };
   const handleDeleteMemory = async (id) => { if (!confirm("确定删除这条记忆吗？")) return; try { await fetch(API + "/memories/" + id, { method: "DELETE" }); loadMemories(); } catch (err) { console.error("删除记忆失败:", err); } };
-  // 从侧边栏打开某个设置分区（全页显示）
+  // 打开某个设置分区（全页显示）
   const openSettingsPage = async (key) => {
-    setSidebarOpen(false);
     setSettingsSection(key);
     setSectionAnimKey(k => k + 1);
     setShowSettings(true);
@@ -989,23 +976,6 @@ export default function PlutocaelChat() {
         <div style={{ fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic", fontSize: "min(19vw, 92px)", color: COLORS.accent, animation: "splashRise 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) forwards", textShadow: `0 2px 30px ${COLORS.accent}55`, lineHeight: 1 }}>Plutocael</div>
         <div style={{ height: 1.5, width: 0, background: `linear-gradient(90deg, transparent, ${COLORS.accent}, transparent)`, marginTop: 18, animation: "splashLine 1.1s ease 0.6s forwards", opacity: 0.7 }} />
       </div>}
-      {(sidebarOpen || dragOffset > 0) && <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: `rgba(0,0,0,${(sidebarOpen ? 280 : dragOffset) / 280 * 0.25})`, zIndex: 999, transition: dragOffset > 0 ? "none" : "background 0.25s ease" }} />}
-      <div style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 280, zIndex: 1000, borderRight: `1px solid ${COLORS.sidebarBorder}`, display: "flex", flexDirection: "column", transform: dragOffset > 0 ? `translateX(${dragOffset - 280}px)` : sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: dragOffset > 0 ? "none" : "transform 0.25s ease", borderRadius: "0 16px 16px 0", boxShadow: (sidebarOpen || dragOffset > 0) ? "4px 0 24px rgba(0,0,0,0.08)" : "none", ...glassify(COLORS.sidebar) }}>
-        <div style={{ padding: "58px 20px 20px" }}><div style={{ fontSize: 26, lineHeight: 1.25, fontWeight: 400, color: COLORS.text, fontFamily: "'Snell Roundhand', 'Savoye LET', 'Brush Script MT', 'Segoe Script', 'Lucida Handwriting', cursive", fontStyle: "italic" }}>Plutocael</div></div>
-        <div style={{ padding: "0 12px 16px" }}>
-          <button onClick={() => { setShowSettings(false); setCurrentPage("chat"); setSidebarOpen(false); }} className={!showSettings && currentPage === "chat" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", background: !showSettings && currentPage === "chat" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "chat" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><ChatIcon /> 聊天</button>
-          <button onClick={() => { setShowSettings(false); setCurrentPage("obmem"); setSidebarOpen(false); }} className={!showSettings && currentPage === "obmem" ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: !showSettings && currentPage === "obmem" ? COLORS.sidebarActive : "transparent", color: !showSettings && currentPage === "obmem" ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></Icon> 记忆库</button>
-          <button onClick={() => { setShowSettings(false); setShowDiary(true); setSidebarOpen(false); }} className={showDiary ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showDiary ? COLORS.sidebarActive : "transparent", color: showDiary ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></Icon> 日记</button>
-          <button onClick={() => { setShowSettings(false); setShowAgent(true); setSidebarOpen(false); }} className={showAgent ? "ghost" : "flat ghost"} style={{ width: "100%", padding: "10px 16px", border: "none", borderRadius: 12, cursor: "pointer", marginTop: 2, background: showAgent ? COLORS.sidebarActive : "transparent", color: showAgent ? COLORS.sidebarActiveText : COLORS.text, display: "flex", alignItems: "center", gap: 10, fontSize: 15 }}><Icon size={18}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></Icon> 工作台</button>
-        </div>
-        <div style={{ flex: 1 }} />
-        <div style={{ paddingBottom: `calc(env(safe-area-inset-bottom) + 12px)` }}>
-          <div style={{ padding: "4px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <button className="flat ghost" onClick={() => openSettingsPage("")} title="设置" style={{ width: 45, height: 45, borderRadius: "50%", border: "none", background: "transparent", color: (showSettings ? COLORS.accent : COLORS.textSecondary), cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={22}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Icon></button>
-          </div>
-        </div>
-      </div>
-
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, width: "100%" }}>
         {currentPage === "mcp" ? (<>
           {caelHeader()}
@@ -1123,7 +1093,7 @@ export default function PlutocaelChat() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: "8px 18px calc(8px + env(safe-area-inset-bottom, 0px))", ...barBg, borderTop: `1px solid ${COLORS.divider}` }}>
+          <div style={{ padding: "8px 18px", ...barBg, borderTop: `1px solid ${COLORS.divider}` }}>
             {inputBar}
           </div>
             </>;
@@ -1131,6 +1101,22 @@ export default function PlutocaelChat() {
         </>)}
       </div>
 
+      {/* 底部导航栏：五个页面入口，取代原来的侧边栏。常驻不隐藏，浮层页(zIndex>=545)会盖住它 */}
+      <div style={{ position: "relative", zIndex: 520, flexShrink: 0, display: "flex", borderTop: `1px solid ${COLORS.divider}`, paddingBottom: "env(safe-area-inset-bottom, 0px)", ...glassify(COLORS.sidebar) }}>
+        {[
+          { key: "diary", label: "首页", on: !showSettings && showDiary, go: () => setShowDiary(true), icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></> },
+          { key: "obmem", label: "记忆库", on: !showSettings && !showDiary && !showAgent && currentPage === "obmem", go: () => setCurrentPage("obmem"), icon: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></> },
+          { key: "chat", label: "聊天", on: !showSettings && !showDiary && !showAgent && currentPage === "chat", go: () => setCurrentPage("chat"), icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
+          { key: "agent", label: "工作台", on: !showSettings && showAgent, go: () => setShowAgent(true), icon: <><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></> },
+          { key: "settings", label: "设置", on: showSettings, go: () => openSettingsPage(""), icon: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></> },
+        ].map(t => (
+          <button key={t.key} className="flat ghost" onClick={() => { setShowSettings(false); setShowDiary(false); setShowAgent(false); t.go(); }}
+            style={{ flex: 1, height: NAV_H, boxSizing: "border-box", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "6px 0 5px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, color: t.on ? COLORS.accent : COLORS.placeholder }}>
+            <Icon size={21}>{t.icon}</Icon>
+            <span style={{ fontSize: 11, fontWeight: t.on ? 600 : 500 }}>{t.label}</span>
+          </button>
+        ))}
+      </div>
 
       {thinkingSheet != null && (() => {
         const tMsg = messages.find(m => m.id === thinkingSheet);
@@ -1386,18 +1372,10 @@ export default function PlutocaelChat() {
           </div>
         )}
       </div>}
-      {showDiary && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${diaryClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
-        <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 4px", flexShrink: 0 }}>
-          <button className="flat ghost" onClick={closeDiary} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><polyline points="15 18 9 12 15 6" /></Icon></button>
-          <span style={{ flex: 1 }} />
-        </div>
+      {showDiary && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${diaryClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <Diary api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
       </div>}
-      {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", animation: `${agentClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
-        <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 4px", flexShrink: 0 }}>
-          <button className="flat ghost" onClick={closeAgent} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><polyline points="15 18 9 12 15 6" /></Icon></button>
-          <span style={{ flex: 1 }} />
-        </div>
+      {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${agentClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <Agent api={API} colors={COLORS} dark={barDark} />
       </div>}
       {taskPicker && <div onClick={() => setTaskPicker(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -1421,10 +1399,11 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
-      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: "env(safe-area-inset-bottom, 0px)", animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
+      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
-            <button className="flat ghost" onClick={() => { if (settingsSection !== "") { setSettingsSection(""); setSectionAnimKey(k => k + 1); } else closeSettings(); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
+          <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, minHeight: 38, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
+            {/* 设置本身是底栏的一个 tab，只有进了分区才需要返回键 */}
+            {settingsSection !== "" && <button className="flat ghost" onClick={() => { setSettingsSection(""); setSectionAnimKey(k => k + 1); }} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>}
             <span style={{ flex: 1 }} />
             {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
@@ -1579,7 +1558,7 @@ export default function PlutocaelChat() {
                         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: COLORS.text, cursor: "pointer" }}><input type="checkbox" checked={customTheme.glass} onChange={e => saveCustom({ glass: e.target.checked })} style={{ accentColor: customTheme.accent }} />玻璃模糊</label>
                       </div>
                       {section("主界面", "bg", "bgA")}
-                      {section("侧边栏", "sidebar", "sidebarA")}
+                      {section("底栏", "sidebar", "sidebarA")}
                       {section("用户气泡", "userBubble", "userBubbleA")}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0 2px" }}>
                         {colorSwatch(customTheme.accent, v => saveCustom({ accent: v }))}
