@@ -226,6 +226,7 @@ export default function PlutocaelChat() {
   const [avatarUser, setAvatarUser] = useState(() => localStorage.getItem("pluto_avatar_user") || "");
   const [avatarAi, setAvatarAi] = useState(() => localStorage.getItem("pluto_avatar_ai") || "");
   const [transparentBubble, setTransparentBubble] = useState(() => localStorage.getItem("pluto_transparent_bubble") === "1");
+  const [showAgentTab, setShowAgentTab] = useState(() => localStorage.getItem("pluto_show_agent_tab") !== "0"); // 底栏要不要露出工作台，默认露
 
   // 主题切换：持久化 + 同步页面底色和状态栏颜色
   useEffect(() => {
@@ -243,12 +244,14 @@ export default function PlutocaelChat() {
   }, [theme, customTheme]);
   // 外观云同步：改动推到服务器，任何设备打开都一致（localStorage仅作秒开缓存）
   const pushAppearance = (over = {}) => {
-    const payload = { theme, customTheme, transparentBubble, bubbleColor, ...over };
+    const payload = { theme, customTheme, transparentBubble, bubbleColor, showAgentTab, ...over };
     fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appearance: JSON.stringify(payload) }) }).catch(() => {});
   };
   const changeTheme = (key) => { setTheme(key); pushAppearance({ theme: key }); };
   const saveCustom = (patch) => setCustomTheme(prev => { const next = { ...prev, ...patch }; localStorage.setItem("pluto_custom_theme", JSON.stringify(next)); pushAppearance({ customTheme: next }); return next; });
   const toggleBubble = () => setTransparentBubble(v => { const next = !v; pushAppearance({ transparentBubble: next }); return next; });
+  // 关掉工作台时顺手把已经打开的工作台页收起来，不然会留在屏幕上但底栏没入口
+  const toggleAgentTab = () => setShowAgentTab(v => { const next = !v; if (!next) setShowAgent(false); pushAppearance({ showAgentTab: next }); return next; });
 
   // 启动时从服务器拉外观配置（覆盖本地缓存）
   useEffect(() => {
@@ -262,6 +265,7 @@ export default function PlutocaelChat() {
           if (a.customTheme) setCustomTheme(prev => ({ ...prev, ...a.customTheme }));
           if (a.transparentBubble !== undefined) setTransparentBubble(!!a.transparentBubble);
           if (a.bubbleColor !== undefined) setBubbleColor(a.bubbleColor || "");
+          if (a.showAgentTab !== undefined) setShowAgentTab(!!a.showAgentTab);
         } catch (e) {}
       }
       if (s.wallpaper !== undefined && s.wallpaper !== null) setWallpaper(s.wallpaper || "");
@@ -276,6 +280,7 @@ export default function PlutocaelChat() {
     else localStorage.removeItem("pluto_wallpaper");
   }, [wallpaper]);
   useEffect(() => { localStorage.setItem("pluto_transparent_bubble", transparentBubble ? "1" : "0"); }, [transparentBubble]);
+  useEffect(() => { localStorage.setItem("pluto_show_agent_tab", showAgentTab ? "1" : "0"); }, [showAgentTab]);
   useEffect(() => { if (bubbleColor) localStorage.setItem("pluto_bubble_color", bubbleColor); else localStorage.removeItem("pluto_bubble_color"); }, [bubbleColor]);
   useEffect(() => { if (avatarUser) localStorage.setItem("pluto_avatar_user", avatarUser); else localStorage.removeItem("pluto_avatar_user"); }, [avatarUser]);
   useEffect(() => { if (avatarAi) localStorage.setItem("pluto_avatar_ai", avatarAi); else localStorage.removeItem("pluto_avatar_ai"); }, [avatarAi]);
@@ -1109,7 +1114,7 @@ export default function PlutocaelChat() {
           { key: "chat", label: "聊天", on: !showSettings && !showDiary && !showAgent && currentPage === "chat", go: () => setCurrentPage("chat"), icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
           { key: "agent", label: "工作台", on: !showSettings && showAgent, go: () => setShowAgent(true), icon: <><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></> },
           { key: "settings", label: "设置", on: showSettings, go: () => openSettingsPage(""), icon: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></> },
-        ].map(t => (
+        ].filter(t => t.key !== "agent" || showAgentTab).map(t => (
           <button key={t.key} className="flat ghost" onClick={() => { setShowSettings(false); setShowDiary(false); setShowAgent(false); t.go(); }}
             style={{ flex: 1, height: NAV_H, boxSizing: "border-box", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "6px 0 5px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, color: t.on ? COLORS.accent : COLORS.placeholder }}>
             <Icon size={21}>{t.icon}</Icon>
@@ -1583,6 +1588,10 @@ export default function PlutocaelChat() {
                   <div style={row}>
                     <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
                     <Toggle on={transparentBubble} onChange={toggleBubble} />
+                  </div>
+                  <div style={row}>
+                    <div><div style={lbl}>工作台</div><div style={hint}>关掉后底栏就不显示工作台入口了，随时能开回来</div></div>
+                    <Toggle on={showAgentTab} onChange={toggleAgentTab} />
                   </div>
                   <div style={rowLast}>
                     <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
