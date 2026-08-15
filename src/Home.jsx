@@ -10,6 +10,16 @@ const today = () => { const t = new Date(); return `${t.getMonth() + 1}月${t.ge
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const fmtK = (n) => n >= 1000 ? `${Math.round(n / 100) / 10}K`.replace(".0K", "K") : String(n);
 
+// 占位图标：折角信纸的像素画。等有素材了把这里换成 <img src=…> 就行
+const FileIcon = () => (
+  <svg width="46" height="52" viewBox="0 0 23 26" shapeRendering="crispEdges" aria-hidden="true">
+    <path d="M1 1h14l6 6v18H1z" fill="#FDFBF0" stroke="#000" strokeWidth="1" />
+    <path d="M15 1v6h6" fill="#DCD8C4" stroke="#000" strokeWidth="1" />
+    {[11, 14, 17, 20].map(y => <rect key={y} x="4" y={y} width="15" height="1" fill="#7A7668" />)}
+    <rect x="4" y="9" width="9" height="1" fill="#7A7668" />
+  </svg>
+);
+
 // 首页：日历 / Todo / Done List / 日记 / 用量图表
 export default function Home({ api, colors: C, dark, readerRef }) {
   const [entries, setEntries] = useState(null);   // 日记
@@ -18,10 +28,14 @@ export default function Home({ api, colors: C, dark, readerRef }) {
   const [month, setMonth] = useState(() => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), 1); });
   const [adding, setAdding] = useState("");
   const [open, setOpen] = useState(null);         // 打开的整篇日记
+  const [panel, setPanel] = useState(null);       // 点开的图标：todo / done / diary
   const [closing, setClosing] = useState(false);
   const closeReader = () => { setClosing(true); setTimeout(() => { setOpen(null); setClosing(false); }, 260); };
-  // 把详情页开关暴露给父级返回手势：详情页打开时优先关它（回到首页），而不是整个首页
-  if (readerRef) readerRef.current = { isOpen: () => !!open, close: closeReader };
+  // 返回手势的层级：整篇日记 → 图标面板 → 首页，一层层退
+  if (readerRef) readerRef.current = {
+    isOpen: () => !!open || !!panel,
+    close: () => { if (open) return closeReader(); setPanel(null); },
+  };
 
   // 三份数据各拉各的：后端还没部署新接口时，各自退成空态，不影响别的板块
   const load = async () => {
@@ -215,43 +229,72 @@ export default function Home({ api, colors: C, dark, readerRef }) {
 
           {calendar}
 
-          {/* Todo */}
-          {secHead("Todo", undone.length ? `${undone.length} 项待办` : null)}
-          <div style={{ ...card, overflow: "hidden" }}>
-            {undone.map(todoRow)}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderTop: undone.length ? `1px solid ${C.divider}` : "none" }}>
-              <span style={{ width: 21, height: 21, borderRadius: "50%", flexShrink: 0, border: `1.5px dashed ${C.divider}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.placeholder, fontSize: 13 }}>+</span>
-              <input value={adding} onChange={e => setAdding(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addTodo(); }} placeholder="加一件要做的事"
-                style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15.5, fontFamily: "inherit", color: C.text, padding: 0 }} />
-              {adding.trim() && <button className="flat" onClick={addTodo} style={{ border: "none", background: C.accent, color: "#fff", borderRadius: 14, padding: "4px 14px", fontSize: 14, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>添加</button>}
-            </div>
-          </div>
-
-          {/* Done List */}
-          {secHead("Done List", done.length ? `${done.length} 项完成` : null)}
-          {done.length === 0
-            ? empty(<><circle cx="12" cy="12" r="9" /><polyline points="8.5 12.2 11 14.7 15.8 9.6" /></>, "今天还没有完成的事", "勾掉的待办会落到这里")
-            : <div style={{ ...card, overflow: "hidden" }}>{done.map(todoRow)}</div>}
-
-          {/* 日记 */}
-          {secHead("日记", entries === null ? "加载中…" : `${entries.length} 篇`)}
-          {entries !== null && entries.length === 0 && empty(<><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></>, "还没有日记", "Cael 用 OB 的 letter_write 写的信件会出现在这里")}
-          {entries !== null && entries.length > 0 && <div style={{ ...card, overflow: "hidden" }}>
-            {entries.map((e, i) => (
-              <button key={e.id || i} className="flat ghost" onClick={() => setOpen(e)} style={{ width: "100%", display: "block", textAlign: "left", border: "none", borderTop: i > 0 ? `1px solid ${C.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "14px 16px" }}>
-                <div style={{ fontSize: 17, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title || "无标题"}</div>
-                <div style={{ fontSize: 14.5, color: C.placeholder, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <span style={{ color: C.textSecondary }}>{fmtDate(e.date)}</span>　{firstLine(e.content)}
-                </div>
+          {/* 三个桌面图标：点开各自的面板 */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, padding: "20px 0 4px" }}>
+            {[
+              { key: "todo", label: "Todo", n: undone.length },
+              { key: "done", label: "Done List", n: done.length },
+              { key: "diary", label: "日记", n: (entries || []).length },
+            ].map(it => (
+              <button key={it.key} className="flat" onClick={() => setPanel(it.key)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "6px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                <span style={{ position: "relative", display: "flex" }}>
+                  <FileIcon />
+                  {it.n > 0 && <span style={{ position: "absolute", top: -4, right: -6, minWidth: 17, height: 17, padding: "0 4px", borderRadius: 9, background: C.accent, color: "#fff", fontSize: 11, lineHeight: "17px", textAlign: "center", boxSizing: "border-box" }}>{it.n}</span>}
+                </span>
+                <span style={{ fontSize: 13, color: C.text, textAlign: "center", lineHeight: 1.3 }}>{it.label}</span>
               </button>
             ))}
-          </div>}
+          </div>
 
           {/* 用量图表 */}
           {secHead("用量")}
           {chart}
         </div>
       </PullRefresh>
+
+      {/* 图标点开的面板：Todo / Done List / 日记 各一屏 */}
+      {panel && <div style={{ position: "fixed", inset: 0, zIndex: 555, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: "slideRightIn 0.26s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
+          <button className="flat ghost" onClick={() => setPanel(null)} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 16, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>首页</button>
+          <span style={{ flex: 1 }} />
+        </div>
+        <PullRefresh onRefresh={load} color={C.accent} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+          <div style={{ maxWidth: 620, margin: "0 auto" }}>
+            <div style={{ fontSize: 28, lineHeight: 1.25, fontWeight: 800, color: C.text, padding: "2px 4px 14px", letterSpacing: "0.5px" }}>
+              {panel === "todo" ? "Todo" : panel === "done" ? "Done List" : "日记"}
+            </div>
+
+            {panel === "todo" && <div style={{ ...card, overflow: "hidden" }}>
+              {undone.map(todoRow)}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderTop: undone.length ? `1px solid ${C.divider}` : "none" }}>
+                <span style={{ width: 21, height: 21, borderRadius: "50%", flexShrink: 0, border: `1.5px dashed ${C.divider}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.placeholder, fontSize: 13 }}>+</span>
+                <input value={adding} onChange={e => setAdding(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addTodo(); }} placeholder="加一件要做的事"
+                  style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15.5, fontFamily: "inherit", color: C.text, padding: 0 }} />
+                {adding.trim() && <button className="flat" onClick={addTodo} style={{ border: "none", background: C.accent, color: "#fff", borderRadius: 14, padding: "4px 14px", fontSize: 14, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>添加</button>}
+              </div>
+            </div>}
+
+            {panel === "done" && (done.length === 0
+              ? empty(<><circle cx="12" cy="12" r="9" /><polyline points="8.5 12.2 11 14.7 15.8 9.6" /></>, "还没有完成的事", "勾掉的待办会落到这里")
+              : <div style={{ ...card, overflow: "hidden" }}>{done.map(todoRow)}</div>)}
+
+            {panel === "diary" && <>
+              {entries !== null && entries.length === 0 && empty(<><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" /></>, "还没有日记", "Cael 用 OB 的 letter_write 写的信件会出现在这里")}
+              {entries !== null && entries.length > 0 && <div style={{ ...card, overflow: "hidden" }}>
+                {entries.map((e, i) => (
+                  <button key={e.id || i} className="flat ghost" onClick={() => setOpen(e)} style={{ width: "100%", display: "block", textAlign: "left", border: "none", borderTop: i > 0 ? `1px solid ${C.divider}` : "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "14px 16px" }}>
+                    <div style={{ fontSize: 17, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.title || "无标题"}</div>
+                    <div style={{ fontSize: 14.5, color: C.placeholder, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ color: C.textSecondary }}>{fmtDate(e.date)}</span>　{firstLine(e.content)}
+                    </div>
+                  </button>
+                ))}
+              </div>}
+            </>}
+          </div>
+        </PullRefresh>
+      </div>}
 
       {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${closing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
