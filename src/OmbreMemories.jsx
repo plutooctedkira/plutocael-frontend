@@ -125,16 +125,15 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   // 像素风：天蓝搜索条 + 淡蓝底文件图标网格（筛选收进 ⋮ 菜单，点开还是同一个详情面板）
   const pixelView = (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#A8D6EE" }}>
-      <div style={{ background: "#87CEEB", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000", position: "relative", zIndex: 20 }}>
+      <div style={{ background: "#A8D6EE", padding: "10px 12px", flexShrink: 0, position: "relative", zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid", borderColor: "#404040 #FFF #FFF #404040", padding: "5px 8px" }}>
-          <svg width="16" height="16" viewBox="0 0 8 8" shapeRendering="crispEdges" style={{ flexShrink: 0 }} aria-hidden="true">
-            <circle cx="3" cy="3" r="2.5" fill="none" stroke="#000" strokeWidth="1" /><rect x="5" y="5" width="3" height="1.4" fill="#000" transform="rotate(45 5 5)" />
-          </svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..."
+          {/* 正在筛选时把类别写进 placeholder，省掉一个状态角标 */}
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={filter === "all" ? "Search files..." : `${(FILTERS.find(f => f.key === filter) || {}).label} · Search files...`}
             style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, fontFamily: "inherit", color: "#000", padding: 0 }} />
-          {/* ⋮＝筛选菜单。筛选中时按钮反白，不然收起来之后看不出正在筛 */}
-          <button className="flat" onClick={() => setMenuOpen(v => !v)} title="筛选"
-            style={{ border: "none", background: filter === "all" ? "transparent" : "#000080", color: filter === "all" ? "#000" : "#FFF", cursor: "pointer", fontSize: 15, padding: "0 5px", lineHeight: 1.2 }}>⋮</button>
+          {/* ⋮＝筛选菜单，nobevel 让它在像素主题下不套按钮边框，只是三个点 */}
+          <button className="flat nobevel" onClick={() => setMenuOpen(v => !v)} title="筛选"
+            style={{ border: "none", background: "transparent", color: "#000", cursor: "pointer", fontSize: 15, padding: "0 4px", lineHeight: 1.2 }}>⋮</button>
         </div>
         {menuOpen && <>
           <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1 }} />

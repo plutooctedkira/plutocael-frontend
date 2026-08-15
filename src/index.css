@@ -352,6 +352,12 @@ body[data-theme="pixel"] button {
   border-color: #FFFFFF #404040 #404040 #FFFFFF !important;
   padding-top: 3px; padding-bottom: 3px;
 }
+/* 光秃秃的图标键（如记忆库搜索框里的 ⋮）：不要按钮边框，就是个图标 */
+body[data-theme="pixel"] button.nobevel {
+  border: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 /* 按下＝翻转成凹陷，不缩放不变淡 */
 body[data-theme="pixel"] button:active:not(:disabled) {
   border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
