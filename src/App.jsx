@@ -241,6 +241,8 @@ export default function PlutocaelChat() {
     if (meta) meta.setAttribute("content", theme === "custom" ? COLORS._solidBg : COLORS.bg);
     // 拟物阴影的深浅色开关（CSS 按 body[data-sk] 切换按钮光影强度）
     document.body.dataset.sk = (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "dark" : "light";
+    // 像素主题的方角/凸起边框/像素字体全在 index.css 的 body[data-theme="pixel"] 里
+    document.body.dataset.theme = theme;
   }, [theme, customTheme]);
   // 外观云同步：改动推到服务器，任何设备打开都一致（localStorage仅作秒开缓存）
   const pushAppearance = (over = {}) => {
@@ -335,6 +337,7 @@ export default function PlutocaelChat() {
     img.src = url;
   };
 
+  const pixel = theme === "pixel"; // Win95 像素风：换掉几处结构（Start 键、发送键、记忆库文件网格）
   // 气泡样式：透明模式=磨砂玻璃（半透明+细边框+模糊，透出壁纸又有轮廓）
   const frostBg = theme === "dark" ? "rgba(70,70,68,0.32)" : "rgba(255,255,255,0.22)";
   const frostBorder = theme === "dark" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
@@ -378,12 +381,14 @@ export default function PlutocaelChat() {
   };
   // 微信式浅灰刘海/底栏：顶部和底部用浅灰条增加层次感（深色模式用深灰，壁纸下半透明磨砂）
   const barDark = theme === "dark" || (theme === "custom" && customTheme.dark);
-  const barBg = (wallpaper || glassMode)
+  const barBg = theme === "pixel"
+    ? { background: "#C6CDBE" }
+    : (wallpaper || glassMode)
     ? { background: barDark ? "rgba(40,40,38,0.80)" : "rgba(237,237,234,0.80)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
     : { background: barDark ? "#2A2A28" : "#EDEDEA" };
   // 顶栏：主题色实底（不透壁纸），左边留空，只有可选的右侧内容（导航走底栏）
   const caelHeader = (right) => (
-    <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, minHeight: 38, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
+    <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 11, flexShrink: 0, position: "relative", zIndex: 5, minHeight: 38, background: theme === "pixel" ? COLORS.sidebar : theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
       <span style={{ flex: 1 }} />
       {right}
     </div>
@@ -987,7 +992,7 @@ export default function PlutocaelChat() {
           <McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} />
         </>) : currentPage === "obmem" ? (<div key="obmem" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)", willChange: "transform" }}>
           {caelHeader()}
-          <OmbreMemories api={API} colors={COLORS} dark={barDark} />
+          <OmbreMemories api={API} colors={COLORS} dark={barDark} pixel={pixel} />
         </div>) : (<>
           {caelHeader(<button className="flat ghost" onClick={() => setShowChatMenu(true)} title="更多" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></Icon></button>)}
           {(() => {
@@ -1006,11 +1011,22 @@ export default function PlutocaelChat() {
                   <input ref={fileInputRef} type="file" accept=".json,.md,.markdown,.csv,.log,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.txt,text/plain,text/markdown,application/json" style={{ display: "none" }} onChange={handlePickImage} />
                   <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickImage} />
                   <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handlePickImage} />
-                  <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transform: showPlusPanel ? "rotate(45deg)" : "none", transition: "transform 0.2s ease", ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
-                  <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
+                  {pixel ? (
+                    /* 像素风：加号变成 Win95 的 Start 键（四色小窗旗 + Start 字样） */
+                    <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ height: 40, padding: "0 10px", border: "none", background: COLORS.sidebar, color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0, fontSize: 15, fontWeight: 700 }}>
+                      <svg width="17" height="17" viewBox="0 0 8 8" style={{ flexShrink: 0, imageRendering: "pixelated" }} aria-hidden="true">
+                        <rect x="0" y="0" width="3" height="3" fill="#E23B2E" /><rect x="4" y="0" width="4" height="3" fill="#3FA34A" />
+                        <rect x="0" y="4" width="3" height="4" fill="#2B6FD4" /><rect x="4" y="4" width="4" height="4" fill="#F2C230" />
+                      </svg>
+                      Start
+                    </button>
+                  ) : (
+                    <button onClick={() => setShowPlusPanel(v => !v)} title="更多" style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: COLORS.cardBg, color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transform: showPlusPanel ? "rotate(45deg)" : "none", transition: "transform 0.2s ease", ...skRaised }}><Icon size={21}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>
+                  )}
+                  <div className="input-slot" style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", borderRadius: 20, background: (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "rgba(48,48,46,0.85)" : "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", padding: "2px 14px", minHeight: 40, maxHeight: 300, boxSizing: "border-box", ...skInset }}>
                     <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} rows={1} style={{ flex: 1, border: "none", outline: "none", resize: "none", fontSize: 16, lineHeight: 1.5, padding: "6px 0", background: "transparent", color: COLORS.text, fontFamily: "inherit", alignSelf: "center" }} />
                   </div>
-                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? COLORS.accent : COLORS.accentLight, color: (input.trim() || pendingImage) && !loading ? "#fff" : COLORS.placeholder, cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...skRaised }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
+                  <button onClick={handleSend} disabled={(!input.trim() && !pendingImage) || loading} style={{ width: pixel ? 46 : 40, height: 40, borderRadius: "50%", border: "none", background: (input.trim() || pendingImage) && !loading ? (pixel ? "#2B4FC8" : COLORS.accent) : (pixel ? "#8894B8" : COLORS.accentLight), color: (input.trim() || pendingImage) && !loading ? "#fff" : (pixel ? "#DDE2EE" : COLORS.placeholder), cursor: (input.trim() || pendingImage) && !loading ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...(pixel ? {} : skRaised) }}><Icon size={19}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></Icon></button>
                 </div>
                 <div style={{ overflow: "hidden", maxHeight: showPlusPanel ? 140 : 0, opacity: showPlusPanel ? 1 : 0, transform: showPlusPanel ? "translateY(0)" : "translateY(14px)", transition: "max-height 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease, transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, padding: "18px 6px 8px" }}>
@@ -1066,7 +1082,7 @@ export default function PlutocaelChat() {
                       {(() => {
                         const bs = bubbleStyle(isUser);
                         return <div style={{ position: "relative", maxWidth: "100%", width: "fit-content" }}>
-                          <div
+                          <div className="bubble"
                             onContextMenu={e => { e.preventDefault(); openBubbleMenu(msg, isUser, view.text, e.currentTarget.getBoundingClientRect()); }}
                             onTouchStart={e => { const r = e.currentTarget.getBoundingClientRect(); cancelLongPress(); lpTimer.current = setTimeout(() => openBubbleMenu(msg, isUser, view.text, r), 450); }}
                             onTouchMove={cancelLongPress} onTouchEnd={cancelLongPress} onTouchCancel={cancelLongPress}
@@ -1115,7 +1131,7 @@ export default function PlutocaelChat() {
           { key: "agent", label: "工作台", on: !showSettings && showAgent, go: () => setShowAgent(true), icon: <><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></> },
           { key: "settings", label: "设置", on: showSettings, go: () => openSettingsPage(""), icon: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></> },
         ].filter(t => t.key !== "agent" || showAgentTab).map(t => (
-          <button key={t.key} className="flat ghost" onClick={() => { setShowSettings(false); setShowDiary(false); setShowAgent(false); t.go(); }}
+          <button key={t.key} className="flat ghost" data-navtab={t.on ? "on" : "off"} onClick={() => { setShowSettings(false); setShowDiary(false); setShowAgent(false); t.go(); }}
             style={{ flex: 1, height: NAV_H, boxSizing: "border-box", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "6px 0 5px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, color: t.on ? COLORS.accent : COLORS.placeholder }}>
             <Icon size={21}>{t.icon}</Icon>
             <span style={{ fontSize: 11, fontWeight: t.on ? 600 : 500 }}>{t.label}</span>

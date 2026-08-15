@@ -55,9 +55,22 @@ const THEMES = {
     buttonHover: "#D6E8F6", danger: "#C0392B", divider: "#C9E1F2", cardBg: "#FFFFFF",
     glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
   },
+  // Win95 像素风：方角、凸起/凹陷边框、像素字体。视觉细节在 index.css 的 body[data-theme="pixel"] 块里
+  pixel: {
+    label: "像素",
+    bg: "#AEB8CC", sidebar: "#C6CDBE", sidebarBorder: "#000000", sidebarHover: "#B6BFAD",
+    sidebarActive: "#000080", sidebarActiveText: "#FFFFFF",
+    input: "#FFFFFF", inputBorder: "#404040",
+    userBubble: "#FFFFFF", userBubbleText: "#000000",
+    text: "#000000", textSecondary: "#2A2A33", placeholder: "#55555F",
+    accent: "#000080", accentHover: "#1B1BA0", accentLight: "#C6CDBE",
+    buttonHover: "#B6BFAD", danger: "#AA0000", divider: "#808080", cardBg: "#FFFFFF",
+    glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
+    _pixel: true,
+  },
 };
 
-const DEFAULT_CUSTOM = { dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
+const DEFAULT_CUSTOM ={ dark: false, glass: false, accent: "#D97757", bg: "#F5F4EE", bgA: 100, sidebar: "#F0EEE6", sidebarA: 100, userBubble: "#F0EEE6", userBubbleA: 100 };
 // hex + 透明度百分比 → rgba
 function hexToRgba(hex, alphaPct) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");

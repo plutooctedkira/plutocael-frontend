@@ -317,3 +317,81 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   像素主题（Win95 风）：只在 body[data-theme="pixel"] 下生效
+   全站是行内样式，所以这里基本都得 !important 才盖得住
+   ══════════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: "ArkPixel";
+  /* 方舟像素字体 12px 比例版，MIT/OFL，见 public/fonts/OFL.txt */
+  src: url("/fonts/ark-pixel-12px.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body[data-theme="pixel"], body[data-theme="pixel"] * {
+  font-family: "ArkPixel", "Courier New", monospace !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  /* 像素字要关掉抗锯齿才够硬；圆角、模糊、柔和阴影全部去掉 */
+  -webkit-font-smoothing: none !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: none !important;
+  transition: none !important;
+}
+
+/* 凸起：按钮＝左上白高光 + 右下深灰阴影（Win95 的 outset） */
+body[data-theme="pixel"] button {
+  border: 2px solid !important;
+  border-color: #FFFFFF #404040 #404040 #FFFFFF !important;
+  padding-top: 3px; padding-bottom: 3px;
+}
+/* 按下＝翻转成凹陷，不缩放不变淡 */
+body[data-theme="pixel"] button:active:not(:disabled) {
+  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  transform: none !important;
+  opacity: 1 !important;
+}
+/* 凹陷：输入框＝反过来的边框 + 纯白底 */
+body[data-theme="pixel"] input,
+body[data-theme="pixel"] textarea {
+  border: 2px solid !important;
+  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+/* 消息气泡：不要果冻，要 2px 黑框的方盒子 */
+body[data-theme="pixel"] .bubble {
+  border: 2px solid #000000 !important;
+  background-image: none !important;
+  padding: 5px 9px !important;
+}
+/* 底栏 tab：方块按钮，选中那个是凹进去的 */
+body[data-theme="pixel"] [data-navtab] {
+  border: 2px solid !important;
+  border-color: #FFFFFF #404040 #404040 #FFFFFF !important;
+  margin: 2px 1px !important;
+}
+body[data-theme="pixel"] [data-navtab="on"] {
+  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  background: #B6BFAD !important;
+}
+/* 头像：像素风不要圆角，方的更对味 */
+body[data-theme="pixel"] .msg-scroll img { image-rendering: pixelated; }
+/* 分隔线、细边框统一成硬灰线 */
+body[data-theme="pixel"] hr { border-color: #808080 !important; }
+/* 输入槽：凹陷的白盒子由外层承担，里面的 textarea 不要再套一层边框 */
+body[data-theme="pixel"] .input-slot {
+  background: #FFFFFF !important;
+  border: 2px solid !important;
+  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+}
+body[data-theme="pixel"] .input-slot textarea { border: none !important; }
+/* 底栏文字 11px 比字体设计尺寸还小会糊，锁到 12px */
+body[data-theme="pixel"] [data-navtab] span { font-size: 12px !important; }

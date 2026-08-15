@@ -27,7 +27,22 @@ const impDots = (v) => {
   return "●".repeat(n) + "○".repeat(10 - n);
 };
 
-export default function OmbreMemories({ api, colors: C, dark }) {
+// 像素风的文件图标：折角信纸 + 几行字，crispEdges 保证边缘不糊
+const FileIcon = () => (
+  <svg width="46" height="52" viewBox="0 0 23 26" shapeRendering="crispEdges" aria-hidden="true">
+    <path d="M1 1h14l6 6v18H1z" fill="#FDFBF0" stroke="#000" strokeWidth="1" />
+    <path d="M15 1v6h6" fill="#DCD8C4" stroke="#000" strokeWidth="1" />
+    {[11, 14, 17, 20].map(y => <rect key={y} x="4" y={y} width="15" height="1" fill="#7A7668" />)}
+    <rect x="4" y="9" width="9" height="1" fill="#7A7668" />
+  </svg>
+);
+// "早餐的约定" → "早餐的约定.txt"；空格换下划线，太长的截断
+const fileName = (n) => {
+  const base = String(n || "untitled").trim().replace(/\s+/g, "_");
+  return (base.length > 16 ? base.slice(0, 16) : base) + ".txt";
+};
+
+export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   const [status, setStatus] = useState(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("all");
@@ -106,8 +121,51 @@ export default function OmbreMemories({ api, colors: C, dark }) {
   });
   const infoRow = { display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${C.divider}`, fontSize: 14 };
 
+  // 像素风：粉色搜索条 + 蓝底文件图标网格（点开还是同一个详情面板）
+  const pixelView = (
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#A8D6EE" }}>
+      <div style={{ background: "#F5A8C6", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid", borderColor: "#404040 #FFF #FFF #404040", padding: "5px 8px" }}>
+          <svg width="16" height="16" viewBox="0 0 8 8" shapeRendering="crispEdges" style={{ flexShrink: 0 }} aria-hidden="true">
+            <circle cx="3" cy="3" r="2.5" fill="none" stroke="#000" strokeWidth="1" /><rect x="5" y="5" width="3" height="1.4" fill="#000" transform="rotate(45 5 5)" />
+          </svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..."
+            style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, fontFamily: "inherit", color: "#000", padding: 0 }} />
+          <button className="flat" onClick={load} title="刷新" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#000", fontSize: 15, padding: "0 4px", lineHeight: 1 }}>⋮</button>
+        </div>
+        <div style={{ display: "flex", gap: 5, marginTop: 8, overflowX: "auto" }}>
+          {FILTERS.map(f => (
+            <button key={f.key} className="flat" onClick={() => setFilter(f.key)}
+              style={{ padding: "2px 9px", border: "none", background: filter === f.key ? "#000080" : "#C6CDBE", color: filter === f.key ? "#FFF" : "#000", fontSize: 13, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{f.label}</button>
+          ))}
+        </div>
+      </div>
+      <PullRefresh onRefresh={load} color="#000080" className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "14px 8px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
+        {loading ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>Loading...</div>
+          : error ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33", lineHeight: 2 }}>
+              <div>Ombre 在睡觉。</div><div>记忆都还安全地存着。</div>
+              <button className="flat" onClick={load} style={{ marginTop: 12, padding: "5px 20px", border: "none", background: "#C6CDBE", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>重试</button>
+            </div>
+          : items.length === 0 ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>{debounced ? "No files found" : "This folder is empty"}</div>
+          : <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px 4px" }}>
+              {items.map(m => (
+                <button key={m.id} className="flat" onClick={() => openDetail(m)}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "2px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span style={{ position: "relative", display: "flex" }}>
+                    <FileIcon />
+                    {m.pinned && <span style={{ position: "absolute", top: -2, right: -2, fontSize: 12 }}>📌</span>}
+                  </span>
+                  <span style={{ fontSize: 12, lineHeight: 1.25, color: "#000", textAlign: "center", wordBreak: "break-all", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{fileName(m.name)}</span>
+                </button>
+              ))}
+            </div>}
+      </PullRefresh>
+    </div>
+  );
+
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      {pixel ? pixelView : (
       <div style={{ width: "100%", maxWidth: 620, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", padding: "6px 16px 0", boxSizing: "border-box" }}>
 
         {/* 状态栏 */}
@@ -165,6 +223,8 @@ export default function OmbreMemories({ api, colors: C, dark }) {
           ))}
         </PullRefresh>
       </div>
+
+      )}
 
       {/* 详情：底部上弹卡片，可拖高 */}
       {selected && (
