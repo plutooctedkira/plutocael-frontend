@@ -56,15 +56,16 @@ const THEMES = {
     glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
   },
   // Win95 像素风：方角、凸起/凹陷边框、像素字体。视觉细节在 index.css 的 body[data-theme="pixel"] 块里
+  // 配色＝粉蓝：内容区淡蓝(bg)，顶栏/底栏/输入栏粉色(sidebar)，强调色留 Win95 藏青
   pixel: {
     label: "像素",
-    bg: "#AEB8CC", sidebar: "#C6CDBE", sidebarBorder: "#000000", sidebarHover: "#B6BFAD",
+    bg: "#A8D6EE", sidebar: "#F5A8C6", sidebarBorder: "#000000", sidebarHover: "#EE93B7",
     sidebarActive: "#000080", sidebarActiveText: "#FFFFFF",
     input: "#FFFFFF", inputBorder: "#404040",
     userBubble: "#FFFFFF", userBubbleText: "#000000",
     text: "#000000", textSecondary: "#2A2A33", placeholder: "#55555F",
-    accent: "#000080", accentHover: "#1B1BA0", accentLight: "#C6CDBE",
-    buttonHover: "#B6BFAD", danger: "#AA0000", divider: "#808080", cardBg: "#FFFFFF",
+    accent: "#000080", accentHover: "#1B1BA0", accentLight: "#F7C6DA",
+    buttonHover: "#EE93B7", danger: "#AA0000", divider: "#808080", cardBg: "#FFFFFF",
     glass: "rgba(255,255,255,0.4)", glassHover: "rgba(255,255,255,0.75)",
     _pixel: true,
   },

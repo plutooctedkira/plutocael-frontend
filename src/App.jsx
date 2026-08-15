@@ -238,7 +238,8 @@ export default function PlutocaelChat() {
     const rootEl = document.getElementById("root");
     if (rootEl) rootEl.style.background = docBg;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "custom" ? COLORS._solidBg : COLORS.bg);
+    // 刘海/状态栏那条要跟顶栏同色，否则像素主题下顶部会露出一条没盖上的底色
+    if (meta) meta.setAttribute("content", theme === "pixel" ? COLORS.sidebar : theme === "custom" ? COLORS._solidBg : COLORS.bg);
     // 拟物阴影的深浅色开关（CSS 按 body[data-sk] 切换按钮光影强度）
     document.body.dataset.sk = (theme === "dark" || (theme === "custom" && customTheme.dark)) ? "dark" : "light";
     // 像素主题的方角/凸起边框/像素字体全在 index.css 的 body[data-theme="pixel"] 里
@@ -382,7 +383,7 @@ export default function PlutocaelChat() {
   // 微信式浅灰刘海/底栏：顶部和底部用浅灰条增加层次感（深色模式用深灰，壁纸下半透明磨砂）
   const barDark = theme === "dark" || (theme === "custom" && customTheme.dark);
   const barBg = theme === "pixel"
-    ? { background: "#C6CDBE" }
+    ? { background: COLORS.sidebar }
     : (wallpaper || glassMode)
     ? { background: barDark ? "rgba(40,40,38,0.80)" : "rgba(237,237,234,0.80)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }
     : { background: barDark ? "#2A2A28" : "#EDEDEA" };

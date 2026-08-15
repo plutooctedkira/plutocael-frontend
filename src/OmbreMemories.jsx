@@ -121,10 +121,10 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   });
   const infoRow = { display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${C.divider}`, fontSize: 14 };
 
-  // 像素风：粉色搜索条 + 蓝底文件图标网格（点开还是同一个详情面板）
+  // 像素风：蓝色搜索条 + 淡蓝底文件图标网格（点开还是同一个详情面板）
   const pixelView = (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#A8D6EE" }}>
-      <div style={{ background: "#F5A8C6", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000" }}>
+      <div style={{ background: "#3A6EA5", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid", borderColor: "#404040 #FFF #FFF #404040", padding: "5px 8px" }}>
           <svg width="16" height="16" viewBox="0 0 8 8" shapeRendering="crispEdges" style={{ flexShrink: 0 }} aria-hidden="true">
             <circle cx="3" cy="3" r="2.5" fill="none" stroke="#000" strokeWidth="1" /><rect x="5" y="5" width="3" height="1.4" fill="#000" transform="rotate(45 5 5)" />
@@ -136,7 +136,7 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
         <div style={{ display: "flex", gap: 5, marginTop: 8, overflowX: "auto" }}>
           {FILTERS.map(f => (
             <button key={f.key} className="flat" onClick={() => setFilter(f.key)}
-              style={{ padding: "2px 9px", border: "none", background: filter === f.key ? "#000080" : "#C6CDBE", color: filter === f.key ? "#FFF" : "#000", fontSize: 13, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{f.label}</button>
+              style={{ padding: "2px 9px", border: "none", background: filter === f.key ? "#000080" : "#C0C0C0", color: filter === f.key ? "#FFF" : "#000", fontSize: 13, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{f.label}</button>
           ))}
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
         {loading ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>Loading...</div>
           : error ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33", lineHeight: 2 }}>
               <div>Ombre 在睡觉。</div><div>记忆都还安全地存着。</div>
-              <button className="flat" onClick={load} style={{ marginTop: 12, padding: "5px 20px", border: "none", background: "#C6CDBE", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>重试</button>
+              <button className="flat" onClick={load} style={{ marginTop: 12, padding: "5px 20px", border: "none", background: "#C0C0C0", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>重试</button>
             </div>
           : items.length === 0 ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>{debounced ? "No files found" : "This folder is empty"}</div>
           : <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px 4px" }}>

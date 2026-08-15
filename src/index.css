@@ -380,7 +380,7 @@ body[data-theme="pixel"] [data-navtab] {
 }
 body[data-theme="pixel"] [data-navtab="on"] {
   border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
-  background: #B6BFAD !important;
+  background: #EE93B7 !important;
 }
 /* 头像：像素风不要圆角，方的更对味 */
 body[data-theme="pixel"] .msg-scroll img { image-rendering: pixelated; }
