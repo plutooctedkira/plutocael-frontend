@@ -1502,7 +1502,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["", "appearance", "api", "taskmodels", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
+            {["", "appearance", "personal", "api", "taskmodels", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 13, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -1521,6 +1521,7 @@ export default function PlutocaelChat() {
                   // 设置根菜单：功能 / 通用 两组
                   const MENU = [
                     { group: "通用", items: [
+                      { key: "personal", label: "个人设置", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
                       { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
                       { key: "behavior", label: "profile", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
                       { key: "memoryopts", label: "记忆", icon: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></> },
@@ -1549,23 +1550,35 @@ export default function PlutocaelChat() {
                 })()}
 
                 {settingsSection === "appearance" && <>
-                <div style={listCard}>
-                  <div style={rowCol}>
-                    <div style={{ ...lbl, marginBottom: 10 }}>主题</div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {Object.entries(THEMES).filter(([key]) => key !== "dark").map(([key, t]) => (
-                        <button key={key} onClick={() => changeTheme(key)} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === key ? `2px solid ${t.accent}` : `1px solid ${COLORS.divider}`, background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, ...skCard }}>
-                          <span style={{ width: 22, height: 22, borderRadius: "50%", background: t.accent, display: "block" }} />
-                          <span style={{ fontSize: 12, color: t.text }}>{t.label}</span>
-                        </button>
-                      ))}
-                      <button onClick={() => changeTheme("custom")} style={{ width: 68, padding: "10px 0 8px", borderRadius: 12, cursor: "pointer", border: theme === "custom" ? `2px solid ${customTheme.accent}` : `1px solid ${COLORS.divider}`, background: customTheme.dark ? "#262624" : "#F5F4EE", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                        <span style={{ width: 22, height: 22, borderRadius: "50%", background: "conic-gradient(#D97757,#4A7FD4,#3AAF6B,#8A4AD4,#D97757)", display: "block" }} />
-                        <span style={{ fontSize: 12, color: customTheme.dark ? "#ECEAE5" : "#1F1E1D" }}>自定义</span>
-                      </button>
-                    </div>
-                  </div>
-                  {theme === "custom" && (() => {
+                {/* 主题＝瀑布流：每张卡是这套主题的迷你预览（顶栏+几条气泡），高度错落着排两列 */}
+                {(() => {
+                  const card = (key, label, t, accentDot, textColor) => {
+                    const on = theme === key;
+                    const sq = !!t._pixel; // 像素主题的卡片也得是方角方气泡
+                    const rows = [3, 4, 3, 5, 4, 3, 4][Object.keys(THEMES).indexOf(key) + 1] || 4;
+                    return <button key={key} onClick={() => changeTheme(key)}
+                      style={{ breakInside: "avoid", width: "100%", marginBottom: 10, padding: 0, overflow: "hidden", display: "block", textAlign: "left", cursor: "pointer", borderRadius: sq ? 0 : 14, border: on ? `2px solid ${accentDot}` : `1px solid ${COLORS.divider}`, background: t.bg, ...skCard }}>
+                      <div style={{ height: 20, background: t.sidebar, borderBottom: `1px solid ${t.sidebarBorder}` }} />
+                      <div style={{ padding: "9px 9px 4px", display: "flex", flexDirection: "column", gap: 5 }}>
+                        {Array.from({ length: rows }).map((_, i) => {
+                          const mine = i % 2 === 1;
+                          return <span key={i} style={{ alignSelf: mine ? "flex-end" : "flex-start", width: `${52 + ((i * 17) % 34)}%`, height: 9, borderRadius: sq ? 0 : 5, background: mine ? t.userBubble : (t.cardBg === "#FFFFFF" ? "#E4E2DD" : t.cardBg), border: sq ? "1px solid #000" : "none", boxSizing: "border-box" }} />;
+                        })}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px 9px" }}>
+                        <span style={{ width: 12, height: 12, borderRadius: sq ? 0 : "50%", background: accentDot, flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: textColor }}>{label}</span>
+                        {on && <span style={{ marginLeft: "auto", fontSize: 12, color: accentDot }}>✓</span>}
+                      </div>
+                    </button>;
+                  };
+                  return <div style={{ columns: 2, columnGap: 10, marginBottom: 20 }}>
+                    {Object.entries(THEMES).filter(([key]) => key !== "dark").map(([key, t]) => card(key, t.label, t, t.accent, t.text))}
+                    {card("custom", "自定义", { ...(customTheme.dark ? THEMES.dark : THEMES.claude), bg: customTheme.dark ? "#262624" : "#F5F4EE" }, customTheme.accent, customTheme.dark ? "#ECEAE5" : "#1F1E1D")}
+                  </div>;
+                })()}
+                {theme === "custom" && <div style={listCard}>
+                  {(() => {
                     const ctrlRow = { display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${COLORS.divider}` };
                     const colorSwatch = (val, onCh) => <input type="color" value={val} onChange={e => onCh(e.target.value)} style={{ width: 34, height: 34, border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }} />;
                     const alphaSlider = (val, onCh) => <><input type="range" min="0" max="100" value={val} onChange={e => onCh(parseInt(e.target.value))} style={{ flex: 1, accentColor: customTheme.accent }} /><span style={{ fontSize: 13, color: COLORS.textSecondary, width: 38, textAlign: "right" }}>{val}%</span></>;
@@ -1591,38 +1604,11 @@ export default function PlutocaelChat() {
                       <div style={{ fontSize: 13, color: COLORS.placeholder, marginTop: 6 }}>💡 透明度调低 + 开玻璃模糊 = 通透磨砂质感；配合壁纸更好看。</div>
                     </div>;
                   })()}
-                  <div style={rowCol}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: wallpaper ? 10 : 0 }}>
-                      <div><div style={lbl}>背景壁纸</div><div style={hint}>只存在你的设备上，不会上传</div></div>
-                      <input ref={wallpaperInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickWallpaper} />
-                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                        {wallpaper && <button onClick={() => { setWallpaper(""); fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: "" }) }).catch(() => {}); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14 }}>移除</button>}
-                        <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>{wallpaper ? "更换" : "上传"}</button>
-                      </div>
-                    </div>
-                    {wallpaper && <img src={wallpaper} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 10 }} />}
-                  </div>
-                  <div style={row}>
-                    <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
-                    <Toggle on={transparentBubble} onChange={toggleBubble} />
-                  </div>
-                  <div style={row}>
-                    <div><div style={lbl}>工作台</div><div style={hint}>关掉后底栏就不显示工作台入口了，随时能开回来</div></div>
-                    <Toggle on={showAgentTab} onChange={toggleAgentTab} />
-                  </div>
-                  <div style={rowLast}>
-                    <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
-                    <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      {["#F8E1E7", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
-                        <button key={c} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c, cursor: "pointer", padding: 0, flexShrink: 0 }} />
-                      ))}
-                      <label title="自定义颜色" style={{ position: "relative", width: 26, height: 26, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "conic-gradient(#F8E1E7,#FBF3D8,#F2FCE5,#ECF5FC,#EFE3F9,#F8E1E7)", border: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ width: 11, height: 11, borderRadius: "50%", background: COLORS.cardBg }} />
-                        <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%", padding: 0, border: "none" }} />
-                      </label>
-                    </div>
-                  </div>
-                </div>
+                </div>}
+                </>}
+
+                {/* 个人设置：微信式三栏——头像 / 壁纸 / 聊天外观开关 */}
+                {settingsSection === "personal" && <>
                 {(() => {
                   const preview = (src, letter) => <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
                     {src ? <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /> : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 23, lineHeight: 1.25, color: COLORS.accent }}>{letter}</span>}
@@ -1654,6 +1640,43 @@ export default function PlutocaelChat() {
                     <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px", marginTop: -12 }}>💡 上传后自动裁成正方形并云同步，另一台设备打开也一样。</div>
                   </>;
                 })()}
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>背景壁纸</div>
+                <div style={listCard}>
+                  <div style={{ ...rowCol, borderBottom: "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: wallpaper ? 10 : 0 }}>
+                      <div><div style={lbl}>壁纸图片</div><div style={hint}>只在聊天界面显示，云同步到你的其它设备</div></div>
+                      <input ref={wallpaperInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickWallpaper} />
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        {wallpaper && <button onClick={() => { setWallpaper(""); fetch(API + "/settings/1", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallpaper: "" }) }).catch(() => {}); }} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14 }}>移除</button>}
+                        <button onClick={() => wallpaperInputRef.current && wallpaperInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14 }}>{wallpaper ? "更换" : "上传"}</button>
+                      </div>
+                    </div>
+                    {wallpaper && <img src={wallpaper} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 10 }} />}
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>聊天外观</div>
+                <div style={listCard}>
+                  <div style={row}>
+                    <div><div style={lbl}>磨砂气泡</div><div style={hint}>半透明磨砂玻璃质感，透出壁纸又有细边框</div></div>
+                    <Toggle on={transparentBubble} onChange={toggleBubble} />
+                  </div>
+                  <div style={row}>
+                    <div><div style={lbl}>工作台</div><div style={hint}>关掉后底栏就不显示工作台入口了，随时能开回来</div></div>
+                    <Toggle on={showAgentTab} onChange={toggleAgentTab} />
+                  </div>
+                  <div style={rowLast}>
+                    <div style={{ flexShrink: 0 }}><div style={lbl}>气泡选择</div><div style={hint}>你的消息气泡底色</div></div>
+                    <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      {["#F8E1E7", "#EFE3F9", "#FBF3D8", "#F2FCE5", "#ECF5FC"].map(c => (
+                        <button key={c} className="flat ghost" onClick={() => { setBubbleColor(c); pushAppearance({ bubbleColor: c }); }} title={c} style={{ width: 26, height: 26, borderRadius: "50%", border: bubbleColor === c ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.divider}`, background: c, cursor: "pointer", padding: 0, flexShrink: 0 }} />
+                      ))}
+                      <label title="自定义颜色" style={{ position: "relative", width: 26, height: 26, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: "conic-gradient(#F8E1E7,#FBF3D8,#F2FCE5,#ECF5FC,#EFE3F9,#F8E1E7)", border: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ width: 11, height: 11, borderRadius: "50%", background: COLORS.cardBg }} />
+                        <input type="color" value={bubbleColor || "#F8E1E7"} onChange={e => { setBubbleColor(e.target.value); pushAppearance({ bubbleColor: e.target.value }); }} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%", padding: 0, border: "none" }} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 </>}
 
                 {settingsSection === "taskmodels" && (() => {
