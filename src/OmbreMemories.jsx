@@ -51,6 +51,7 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false); // 像素风搜索条右边 ⋮ 的筛选菜单
   const [detailLoading, setDetailLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [sheetH, setSheetH] = useState(420);
@@ -121,24 +122,34 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   });
   const infoRow = { display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${C.divider}`, fontSize: 14 };
 
-  // 像素风：蓝色搜索条 + 淡蓝底文件图标网格（点开还是同一个详情面板）
+  // 像素风：天蓝搜索条 + 淡蓝底文件图标网格（筛选收进 ⋮ 菜单，点开还是同一个详情面板）
   const pixelView = (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#A8D6EE" }}>
-      <div style={{ background: "#3A6EA5", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000" }}>
+      <div style={{ background: "#87CEEB", padding: "10px 12px", flexShrink: 0, borderBottom: "2px solid #000", position: "relative", zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid", borderColor: "#404040 #FFF #FFF #404040", padding: "5px 8px" }}>
           <svg width="16" height="16" viewBox="0 0 8 8" shapeRendering="crispEdges" style={{ flexShrink: 0 }} aria-hidden="true">
             <circle cx="3" cy="3" r="2.5" fill="none" stroke="#000" strokeWidth="1" /><rect x="5" y="5" width="3" height="1.4" fill="#000" transform="rotate(45 5 5)" />
           </svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..."
             style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, fontFamily: "inherit", color: "#000", padding: 0 }} />
-          <button className="flat" onClick={load} title="刷新" style={{ border: "none", background: "transparent", cursor: "pointer", color: "#000", fontSize: 15, padding: "0 4px", lineHeight: 1 }}>⋮</button>
+          {/* ⋮＝筛选菜单。筛选中时按钮反白，不然收起来之后看不出正在筛 */}
+          <button className="flat" onClick={() => setMenuOpen(v => !v)} title="筛选"
+            style={{ border: "none", background: filter === "all" ? "transparent" : "#000080", color: filter === "all" ? "#000" : "#FFF", cursor: "pointer", fontSize: 15, padding: "0 5px", lineHeight: 1.2 }}>⋮</button>
         </div>
-        <div style={{ display: "flex", gap: 5, marginTop: 8, overflowX: "auto" }}>
-          {FILTERS.map(f => (
-            <button key={f.key} className="flat" onClick={() => setFilter(f.key)}
-              style={{ padding: "2px 9px", border: "none", background: filter === f.key ? "#000080" : "#C0C0C0", color: filter === f.key ? "#FFF" : "#000", fontSize: 13, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{f.label}</button>
-          ))}
-        </div>
+        {menuOpen && <>
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1 }} />
+          <div style={{ position: "absolute", top: "100%", right: 12, marginTop: -2, zIndex: 2, minWidth: 116, background: "#C0C0C0", border: "2px solid", borderColor: "#FFF #404040 #404040 #FFF", padding: 2 }}>
+            {FILTERS.map(f => (
+              <button key={f.key} className="flat" onClick={() => { setFilter(f.key); setMenuOpen(false); }}
+                style={{ display: "block", width: "100%", textAlign: "left", border: "none", padding: "5px 9px", background: filter === f.key ? "#000080" : "transparent", color: filter === f.key ? "#FFF" : "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                {filter === f.key ? "· " : "  "}{f.label}
+              </button>
+            ))}
+            <div style={{ height: 2, background: "#808080", borderBottom: "1px solid #FFF", margin: "3px 2px" }} />
+            <button className="flat" onClick={() => { load(); setMenuOpen(false); }}
+              style={{ display: "block", width: "100%", textAlign: "left", border: "none", padding: "5px 9px", background: "transparent", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>&nbsp;&nbsp;刷新</button>
+          </div>
+        </>}
       </div>
       <PullRefresh onRefresh={load} color="#000080" className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "14px 8px calc(20px + env(safe-area-inset-bottom, 0px))" }}>
         {loading ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>Loading...</div>
