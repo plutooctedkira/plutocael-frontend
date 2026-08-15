@@ -349,7 +349,7 @@ body[data-theme="pixel"], body[data-theme="pixel"] * {
 /* 凸起：按钮＝左上白高光 + 右下深灰阴影（Win95 的 outset） */
 body[data-theme="pixel"] button {
   border: 2px solid !important;
-  border-color: #FFFFFF #404040 #404040 #FFFFFF !important;
+  border-color: #FFFFFF #3A6EA5 #3A6EA5 #FFFFFF !important;
   padding-top: 3px; padding-bottom: 3px;
 }
 /* 光秃秃的图标键（如记忆库搜索框里的 ⋮）：不要按钮边框，就是个图标 */
@@ -358,9 +358,13 @@ body[data-theme="pixel"] button.nobevel {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
+/* 已经套在蓝框里的输入框：自己那圈边刷白，跟白底连成一片（外框由父元素画） */
+body[data-theme="pixel"] input.plainfield {
+  border-color: #FFFFFF !important;
+}
 /* 按下＝翻转成凹陷，不缩放不变淡 */
 body[data-theme="pixel"] button:active:not(:disabled) {
-  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  border-color: #3A6EA5 #FFFFFF #FFFFFF #3A6EA5 !important;
   transform: none !important;
   opacity: 1 !important;
 }
@@ -368,7 +372,7 @@ body[data-theme="pixel"] button:active:not(:disabled) {
 body[data-theme="pixel"] input,
 body[data-theme="pixel"] textarea {
   border: 2px solid !important;
-  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  border-color: #3A6EA5 #FFFFFF #FFFFFF #3A6EA5 !important;
   background-color: #FFFFFF !important;
   color: #000000 !important;
 }
@@ -381,11 +385,11 @@ body[data-theme="pixel"] .bubble {
 /* 底栏 tab：方块按钮，选中那个是凹进去的 */
 body[data-theme="pixel"] [data-navtab] {
   border: 2px solid !important;
-  border-color: #FFFFFF #404040 #404040 #FFFFFF !important;
+  border-color: #FFFFFF #3A6EA5 #3A6EA5 #FFFFFF !important;
   margin: 2px 1px !important;
 }
 body[data-theme="pixel"] [data-navtab="on"] {
-  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  border-color: #3A6EA5 #FFFFFF #FFFFFF #3A6EA5 !important;
   background: #EE93B7 !important;
 }
 /* 头像：像素风不要圆角，方的更对味 */
@@ -396,7 +400,7 @@ body[data-theme="pixel"] hr { border-color: #808080 !important; }
 body[data-theme="pixel"] .input-slot {
   background: #FFFFFF !important;
   border: 2px solid !important;
-  border-color: #404040 #FFFFFF #FFFFFF #404040 !important;
+  border-color: #3A6EA5 #FFFFFF #FFFFFF #3A6EA5 !important;
 }
 body[data-theme="pixel"] .input-slot textarea { border: none !important; }
 /* 底栏文字 11px 比字体设计尺寸还小会糊，锁到 12px */

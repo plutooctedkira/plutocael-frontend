@@ -126,9 +126,13 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
   const pixelView = (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#A8D6EE" }}>
       <div style={{ background: "#A8D6EE", padding: "10px 12px", flexShrink: 0, position: "relative", zIndex: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid", borderColor: "#404040 #FFF #FFF #404040", padding: "5px 8px" }}>
+        {/* 外框蓝、内框白：外面这层 2px 蓝边是"外框"，里面 input 自己的边框刷成白的，跟白底连成一片 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: "2px solid #3A6EA5", padding: "5px 8px" }}>
+          <svg width="16" height="16" viewBox="0 0 8 8" shapeRendering="crispEdges" style={{ flexShrink: 0 }} aria-hidden="true">
+            <circle cx="3" cy="3" r="2.5" fill="none" stroke="#000" strokeWidth="1" /><rect x="5" y="5" width="3" height="1.4" fill="#000" transform="rotate(45 5 5)" />
+          </svg>
           {/* 正在筛选时把类别写进 placeholder，省掉一个状态角标 */}
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <input className="plainfield" value={search} onChange={e => setSearch(e.target.value)}
             placeholder={filter === "all" ? "Search files..." : `${(FILTERS.find(f => f.key === filter) || {}).label} · Search files...`}
             style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", fontSize: 15, fontFamily: "inherit", color: "#000", padding: 0 }} />
           {/* ⋮＝筛选菜单，nobevel 让它在像素主题下不套按钮边框，只是三个点 */}
@@ -137,14 +141,14 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
         </div>
         {menuOpen && <>
           <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1 }} />
-          <div style={{ position: "absolute", top: "100%", right: 12, marginTop: -2, zIndex: 2, minWidth: 116, background: "#C0C0C0", border: "2px solid", borderColor: "#FFF #404040 #404040 #FFF", padding: 2 }}>
+          <div style={{ position: "absolute", top: "100%", right: 12, marginTop: -2, zIndex: 2, minWidth: 116, background: "#F5A8C6", border: "2px solid", borderColor: "#FFF #3A6EA5 #3A6EA5 #FFF", padding: 2 }}>
             {FILTERS.map(f => (
               <button key={f.key} className="flat" onClick={() => { setFilter(f.key); setMenuOpen(false); }}
                 style={{ display: "block", width: "100%", textAlign: "left", border: "none", padding: "5px 9px", background: filter === f.key ? "#000080" : "transparent", color: filter === f.key ? "#FFF" : "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
                 {filter === f.key ? "· " : "  "}{f.label}
               </button>
             ))}
-            <div style={{ height: 2, background: "#808080", borderBottom: "1px solid #FFF", margin: "3px 2px" }} />
+            <div style={{ height: 2, background: "#3A6EA5", borderBottom: "1px solid #FFF", margin: "3px 2px" }} />
             <button className="flat" onClick={() => { load(); setMenuOpen(false); }}
               style={{ display: "block", width: "100%", textAlign: "left", border: "none", padding: "5px 9px", background: "transparent", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>&nbsp;&nbsp;刷新</button>
           </div>
@@ -154,7 +158,7 @@ export default function OmbreMemories({ api, colors: C, dark, pixel }) {
         {loading ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>Loading...</div>
           : error ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33", lineHeight: 2 }}>
               <div>Ombre 在睡觉。</div><div>记忆都还安全地存着。</div>
-              <button className="flat" onClick={load} style={{ marginTop: 12, padding: "5px 20px", border: "none", background: "#C0C0C0", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>重试</button>
+              <button className="flat" onClick={load} style={{ marginTop: 12, padding: "5px 20px", border: "none", background: "#F5A8C6", color: "#000", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>重试</button>
             </div>
           : items.length === 0 ? <div style={{ textAlign: "center", padding: "40px 0", fontSize: 14, color: "#2A2A33" }}>{debounced ? "No files found" : "This folder is empty"}</div>
           : <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px 4px" }}>
