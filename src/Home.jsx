@@ -29,8 +29,7 @@ export default function Home({ api, colors: C, dark, readerRef }) {
   const [adding, setAdding] = useState("");
   const [open, setOpen] = useState(null);         // 打开的整篇日记
   const [panel, setPanel] = useState(null);       // 点开的图标：todo / done / diary
-  const [closing, setClosing] = useState(false);
-  const closeReader = () => { setClosing(true); setTimeout(() => { setOpen(null); setClosing(false); }, 260); };
+  const closeReader = () => setOpen(null);
   // 返回手势的层级：整篇日记 → 图标面板 → 首页，一层层退
   if (readerRef) readerRef.current = {
     isOpen: () => !!open || !!panel,
@@ -254,7 +253,7 @@ export default function Home({ api, colors: C, dark, readerRef }) {
       </PullRefresh>
 
       {/* 图标点开的面板：Todo / Done List / 日记 各一屏 */}
-      {panel && <div style={{ position: "fixed", inset: 0, zIndex: 555, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: "slideRightIn 0.26s cubic-bezier(0.32, 0.72, 0, 1)", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
+      {panel && <div style={{ position: "fixed", inset: 0, zIndex: 555, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={() => setPanel(null)} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 16, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>首页</button>
           <span style={{ flex: 1 }} />
@@ -296,7 +295,7 @@ export default function Home({ api, colors: C, dark, readerRef }) {
         </PullRefresh>
       </div>}
 
-      {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${closing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
+      {open && <div style={{ position: "fixed", inset: 0, zIndex: 560, display: "flex", flexDirection: "column", backgroundColor: C.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 12px 6px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={closeReader} style={{ display: "flex", alignItems: "center", gap: 3, border: "none", background: "transparent", color: C.accent, cursor: "pointer", fontSize: 16, fontFamily: "inherit", padding: "6px 8px" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon>首页</button>
           <span style={{ flex: 1 }} />

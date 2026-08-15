@@ -62,8 +62,7 @@ export default function PlutocaelChat() {
   const [showSkillPicker, setShowSkillPicker] = useState(false); // 工具栏的技能选择底部弹层
   const [skillGroupCollapsed, setSkillGroupCollapsed] = useState(new Set()); // 折叠的skill分组
   const [mcpAddSignal, setMcpAddSignal] = useState(0); // 顶部+触发MCP新增
-  const [settingsClosing, setSettingsClosing] = useState(false);
-  const closeSettings = () => { setSettingsClosing(true); setTimeout(() => { setShowSettings(false); setSettingsClosing(false); }, 270); };
+  const closeSettings = () => setShowSettings(false);
   const [sectionAnimKey, setSectionAnimKey] = useState(0); // 分区切换的翻页动画key
   const loadSkills = async () => { try { const r = await fetch(API + "/settings/skills").then(x => x.json()); setSkills(r.skills || []); } catch (e) {} };
   const saveSkill = async () => {
@@ -82,14 +81,11 @@ export default function PlutocaelChat() {
   };
   // 聊天记录搜索（关键词/图片/链接/日期）
   const [showChatMenu, setShowChatMenu] = useState(false); // 右上角…菜单（整屏页）
-  const [chatMenuClosing, setChatMenuClosing] = useState(false);
-  const closeChatMenu = () => { setChatMenuClosing(true); setTimeout(() => { setShowChatMenu(false); setChatMenuClosing(false); }, 260); };
+  const closeChatMenu = () => setShowChatMenu(false);
   const [showDiary, setShowDiary] = useState(false); // 首页（Done List + 日记板块，整屏页）
-  const [diaryClosing, setDiaryClosing] = useState(false);
-  const closeDiary = () => { setDiaryClosing(true); setTimeout(() => { setShowDiary(false); setDiaryClosing(false); }, 270); };
+  const closeDiary = () => setShowDiary(false);
   const [showAgent, setShowAgent] = useState(false); // 工作台（编码 agent，整屏页）
-  const [agentClosing, setAgentClosing] = useState(false);
-  const closeAgent = () => { setAgentClosing(true); setTimeout(() => { setShowAgent(false); setAgentClosing(false); }, 270); };
+  const closeAgent = () => setShowAgent(false);
   const diaryReaderRef = useRef({ isOpen: () => false, close: () => {} }); // 日记详情页打开状态，供返回手势优先关它
   const [showPlusPanel, setShowPlusPanel] = useState(false); // +号弹出的底部扩展面板
   const photoInputRef = useRef(null);
@@ -991,7 +987,7 @@ export default function PlutocaelChat() {
         {currentPage === "mcp" ? (<>
           {caelHeader()}
           <McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} />
-        </>) : currentPage === "obmem" ? (<div key="obmem" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "slideRightIn 0.27s cubic-bezier(0.32, 0.72, 0, 1)", willChange: "transform" }}>
+        </>) : currentPage === "obmem" ? (<div key="obmem" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column",  }}>
           {caelHeader()}
           <OmbreMemories api={API} colors={COLORS} dark={barDark} pixel={pixel} />
         </div>) : (<>
@@ -1267,7 +1263,7 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
-      {showChatMenu && <div style={{ position: "fixed", inset: 0, zIndex: 545, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", animation: `${chatMenuClosing ? "slideRightOut" : "slideRightIn"} 0.26s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
+      {showChatMenu && <div style={{ position: "fixed", inset: 0, zIndex: 545, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(10px + env(safe-area-inset-top, 0px))", boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ display: "flex", alignItems: "center", padding: "2px 14px 8px", flexShrink: 0 }}>
           <button className="flat ghost" onClick={closeChatMenu} style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
           <span style={{ flex: 1 }} />
@@ -1394,10 +1390,10 @@ export default function PlutocaelChat() {
           </div>
         )}
       </div>}
-      {showDiary && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${diaryClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
+      {showDiary && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <Home api={API} colors={COLORS} dark={barDark} readerRef={diaryReaderRef} />
       </div>}
-      {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${agentClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
+      {showAgent && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingTop: "calc(8px + env(safe-area-inset-top, 0px))", paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <Agent api={API} colors={COLORS} dark={barDark} />
       </div>}
       {taskPicker && <div onClick={() => setTaskPicker(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -1421,7 +1417,7 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
-      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, animation: `${settingsClosing ? "slideRightOut" : "slideRightIn"} 0.27s cubic-bezier(0.32, 0.72, 0, 1) forwards`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)", willChange: "transform" }}>
+      {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, minHeight: 38, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
             {/* 设置本身是底栏的一个 tab，只有进了分区才需要返回键 */}
