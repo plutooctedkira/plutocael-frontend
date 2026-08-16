@@ -119,9 +119,7 @@ export default function PlutocaelChat() {
   const [mcpToolResult, setMcpToolResult] = useState("");
   const [pendingImage, setPendingImage] = useState(null);
   const [copiedMsgId, setCopiedMsgId] = useState(null); // 复制成功的瞬时反馈
-  const [showKey, setShowKey] = useState(false);
-  const [showCheapKey, setShowCheapKey] = useState(false);
-  // API 渠道预设（存多个一键切换）
+  // API 模型列表（存多个一键切换）
   const [channels, setChannels] = useState([]);
   const [chanForm, setChanForm] = useState(null); // null | {id?, name, api_base_url, api_key, model}
   const [chTest, setChTest] = useState(null); // {id, loading|ok|error}
@@ -147,10 +145,20 @@ export default function PlutocaelChat() {
     try { await fetch(API + "/settings/task-models/" + task, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel_id: channel_id || null }) }); } catch (e) {}
     loadTaskModels();
   };
+  // 常见的填错：把模型名贴进 Key 框
+  const chanFormError = (f) => {
+    const bad = (v) => v && /[^\x21-\x7E]/.test(v.trim());
+    if (!f.name.trim()) return "给这个模型起个名字吧";
+    if (bad(f.api_key)) return "API Key 里有中文或空格——Key 应该是 sk- 开头的英文串，模型名请填在「模型」框";
+    if (f.api_key && /claude|gpt|\[/i.test(f.api_key)) return "Key 看起来像模型名——模型名请填在「模型」框";
+    if (bad(f.api_base_url)) return "API 地址里有非法字符";
+    return null;
+  };
   const saveChannel = async () => {
     const f = chanForm;
     if (!f) return;
-    if (!f.name.trim()) { alert("给渠道起个名字吧"); return; }
+    const err = chanFormError(f);
+    if (err) { alert(err); return; }
     try {
       const r = f.id
         ? await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(x => x.json())
@@ -159,59 +167,13 @@ export default function PlutocaelChat() {
       setChanForm(null); await loadChannels();
     } catch (e) { alert("保存失败：" + e.message); }
   };
-  const delChannel = async (id) => { if (!confirm("删除这个渠道？")) return; try { await fetch(API + "/settings/channels/" + id, { method: "DELETE" }); loadChannels(); } catch (e) {} };
-  const activateChannel = async (ch) => {
-    try {
-      await fetch(API + "/settings/channels/" + ch.id + "/activate", { method: "POST" });
-      setSettingsData(prev => ({ ...prev, api_base_url: ch.api_base_url, api_key: ch.api_key, model: ch.model }));
-    } catch (e) {}
-  };
+  const delChannel = async (id) => { if (!confirm("删除这个模型？")) return; try { await fetch(API + "/settings/channels/" + id, { method: "DELETE" }); loadChannels(); } catch (e) {} };
   const testChannel = async (ch) => {
     setChTest({ id: ch.id, loading: true });
     try {
       const r = await fetch(API + "/settings/test-api", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel: "main", api_base_url: ch.api_base_url, api_key: ch.api_key, model: ch.model }) }).then(x => x.json());
       setChTest({ id: ch.id, ...r });
     } catch (e) { setChTest({ id: ch.id, ok: false, error: e.message }); }
-  };
-  const [apiTest, setApiTest] = useState({}); // {main|cheap: null|{loading}|{saved}|{ok,model,error,warnings}}
-  const setChanTest = (ch, v) => setApiTest(prev => ({ ...prev, [ch]: v }));
-
-  // 主力/便宜渠道各自独立的本地校验
-  const validateChan = (ch) => {
-    const bad = (v) => v && /[^\x21-\x7E]/.test(v.trim());
-    const key = ch === "main" ? settingsData.api_key : settingsData.cheap_api_key;
-    const base = ch === "main" ? settingsData.api_base_url : settingsData.cheap_api_base_url;
-    const errs = [];
-    if (bad(key)) errs.push("API Key 里有中文或空格——你可能把模型名贴错框了，Key 应该是 sk- 开头的英文串");
-    if (key && /claude|gpt|\[/i.test(key)) errs.push("Key 看起来像模型名——模型名请填在「模型」框");
-    if (bad(base)) errs.push("API 地址里有非法字符");
-    return errs;
-  };
-  // 保存：只保存这个渠道的三个字段
-  const saveApi = async (ch) => {
-    const errs = validateChan(ch);
-    if (errs.length) { setChanTest(ch, { ok: false, error: errs.join("；") }); return; }
-    const fields = ch === "main"
-      ? { api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "" }
-      : { cheap_api_base_url: settingsData.cheap_api_base_url || "", cheap_api_key: settingsData.cheap_api_key || "", cheap_model: settingsData.cheap_model || "" };
-    try {
-      await fetch(API + "/settings/" + (settingsData.id || 1), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fields) });
-      setChanTest(ch, { saved: true });
-      setTimeout(() => setApiTest(prev => (prev[ch] && prev[ch].saved ? { ...prev, [ch]: null } : prev)), 2500);
-    } catch (e) { setChanTest(ch, { ok: false, error: e.message }); }
-  };
-  // 测试：拿输入框里的当前值实测（不保存），便宜渠道留空的字段服务端会回退主力
-  const testApi = async (ch) => {
-    const errs = validateChan(ch);
-    if (errs.length) { setChanTest(ch, { ok: false, error: errs.join("；") }); return; }
-    setChanTest(ch, { loading: true });
-    const payload = ch === "main"
-      ? { channel: "main", api_base_url: settingsData.api_base_url || "", api_key: settingsData.api_key || "", model: settingsData.model || "" }
-      : { channel: "cheap", api_base_url: settingsData.cheap_api_base_url || "", api_key: settingsData.cheap_api_key || "", model: settingsData.cheap_model || "" };
-    try {
-      const r = await fetch(API + "/settings/test-api", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(x => x.json());
-      setChanTest(ch, r);
-    } catch (e) { setChanTest(ch, { ok: false, error: e.message }); }
   };
   const fileInputRef = useRef(null);
   const wallpaperInputRef = useRef(null);
@@ -1399,7 +1361,7 @@ export default function PlutocaelChat() {
       {taskPicker && <div onClick={() => setTaskPicker(null)} style={{ position: "fixed", inset: 0, zIndex: 620, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
         <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 520, background: COLORS.cardBg, borderRadius: "20px 20px 0 0", maxHeight: "78vh", display: "flex", flexDirection: "column", padding: "6px 0 calc(18px + env(safe-area-inset-bottom, 0px))", animation: "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
-          <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 16.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个渠道</div>
+          <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 16.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个模型</div>
           <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px" }}>
             {[{ id: null, name: "跟随默认", model: "" }, ...channels].map(c => {
               const on = (taskModels.assigned[taskPicker.key] || null) === c.id;
@@ -1425,7 +1387,7 @@ export default function PlutocaelChat() {
             <span style={{ flex: 1 }} />
             {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
-            {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ name: "", api_base_url: "", api_key: "", model: "" })} title="添加渠道" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
+            {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} title="添加模型" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
           </div>
           <div key={sectionAnimKey} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "pageTurnIn 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} addSignal={mcpAddSignal} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
@@ -1506,7 +1468,6 @@ export default function PlutocaelChat() {
               const rowCol = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}` };
               const lbl = { fontSize: 15, color: COLORS.text };
               const hint = { fontSize: 13, color: COLORS.placeholder, marginTop: 2 };
-              const rowInput = { border: "none", outline: "none", background: "transparent", color: COLORS.text, fontSize: 15, textAlign: "right", flex: 1, minWidth: 0, fontFamily: "inherit" };
               const Toggle = ({ on, onChange }) => (
                 <button onClick={onChange} style={{ width: 46, height: 28, borderRadius: 14, border: "none", cursor: "pointer", background: on ? COLORS.accent : COLORS.divider, position: "relative", flexShrink: 0, transition: "background 0.2s", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.18)" }}>
                   <span style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
@@ -1679,7 +1640,7 @@ export default function PlutocaelChat() {
                   const chanOf = (task) => channels.find(c => c.id === taskModels.assigned[task]);
                   return <>
                     <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 12px", lineHeight: 1.7 }}>
-                      给每类任务单独指定渠道。没指定的沿用原来的规则（后台任务走便宜渠道、聊天走主力），所以不配也不会有变化。
+                      给每类任务挑一个模型 —— 模型在「API 连接」里添加，这里只负责选。没挑的沿用服务器默认。
                     </div>
                     {taskModels.tasks.map(t => {
                       const c = chanOf(t.key);
@@ -1701,54 +1662,33 @@ export default function PlutocaelChat() {
                       这个功能需要后端一起更新，在 VPS 上跑一次：<br />
                       <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12.5, color: COLORS.text, display: "inline-block", marginTop: 6, overflowWrap: "anywhere" }}>cd /opt/plutocael-backend && git fetch origin && git reset --hard origin/main && pm2 restart plutocael</span>
                     </div>}
-                    {!taskModels.err && channels.length === 0 && <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有渠道可选，先去「API 连接」加几个。</div>}
+                    {!taskModels.err && channels.length === 0 && <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "4px 4px 0" }}>💡 还没有模型可选，先去「API 连接」加几个。</div>}
                   </>;
                 })()}
 
                 {settingsSection === "api" && (() => {
-                  const eyeBtn = (shown, toggle) => <button className="flat" onClick={toggle} title={shown ? "隐藏" : "显示"} style={{ border: "none", background: "transparent", cursor: "pointer", color: COLORS.textSecondary, padding: 4, display: "flex", flexShrink: 0 }}>
-                    <Icon size={17}>{shown ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}</Icon>
-                  </button>;
-                  const chanBtns = (ch) => (<>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                      <button className="ghost" onClick={() => saveApi(ch)} style={{ flex: 1, padding: "11px", border: `1px solid ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 15, fontFamily: "inherit" }}>保存</button>
-                      <button className="ghost" disabled={apiTest[ch] && apiTest[ch].loading} onClick={() => testApi(ch)} style={{ flex: 1, padding: "11px", border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, ...skRaised }}>{apiTest[ch] && apiTest[ch].loading ? "测试中..." : "测试连接"}</button>
-                    </div>
-                    {apiTest[ch] && !apiTest[ch].loading && (
-                      <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12, fontSize: 14, lineHeight: 1.6, background: (apiTest[ch].ok || apiTest[ch].saved) ? "rgba(58,175,107,0.12)" : "rgba(192,57,43,0.10)", color: (apiTest[ch].ok || apiTest[ch].saved) ? "#2E8B57" : "#C0392B", ...skCard }}>
-                        {apiTest[ch].saved ? "✓ 已保存" : apiTest[ch].ok ? <>✓ 连接成功！模型：{apiTest[ch].model}</> : <>✗ 没通过：{apiTest[ch].error}{apiTest[ch].model ? <><br />（测试的模型：{apiTest[ch].model}）</> : null}</>}
-                        {(apiTest[ch].warnings || []).map((w, i) => <div key={i} style={{ color: "#B8860B", marginTop: 4 }}>⚠ {w}</div>)}
-                      </div>
-                    )}
-                  </>);
-                  const isActiveChan = (ch) => (ch.model || "") === (settingsData.model || "") && (ch.api_base_url || "") === (settingsData.api_base_url || "");
                   const chanInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 14.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
                   return <>
-                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>我的渠道（一键切换）</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 10px", lineHeight: 1.7 }}>💡 这里只管添加预设模型，右上角 + 新增。加好之后去「默认模型」挑哪个任务用哪个。<br />同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
                 <div style={listCard}>
-                  {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 14, color: COLORS.placeholder, textAlign: "center" }}>还没有保存的渠道，点下面「添加渠道」存几个，崩了一键切换</div>}
+                  {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 14, color: COLORS.placeholder, textAlign: "center" }}>还没有模型，点右上角 + 添加</div>}
                   {channels.map((ch, i) => {
-                    const active = isActiveChan(ch);
                     const t = chTest && chTest.id === ch.id ? chTest : null;
                     return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 15, color: COLORS.text, fontWeight: active ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
-                          {active && <span style={{ fontSize: 11, color: "#fff", background: "#3AAF6B", padding: "1px 7px", borderRadius: 8, flexShrink: 0 }}>使用中</span>}
-                        </div>
+                        <div style={{ fontSize: 15, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</div>
                         <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{ch.model || "（默认模型）"}</div>
                         {t && !t.loading && <div style={{ fontSize: 12, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
                       </div>
                       <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
                         <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
-                        {!active && <button className="ghost" onClick={() => activateChannel(ch)} style={{ padding: "5px 12px", borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>使用</button>}
                         <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, name: ch.name, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
                         <button className="flat ghost" onClick={() => delChannel(ch.id)} title="删除" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
                       </div>
                     </div>;
                   })}
                   {chanForm && <div style={{ ...rowCol, borderBottom: "none" }}>
-                    <input value={chanForm.name} onChange={e => setChanForm({ ...chanForm, name: e.target.value })} placeholder="渠道名字（如：酒酿opus）" style={chanInput} />
+                    <input value={chanForm.name} onChange={e => setChanForm({ ...chanForm, name: e.target.value })} placeholder="名字（如：酒酿opus）" style={chanInput} />
                     <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（留空=服务器默认）" style={chanInput} />
                     <input value={chanForm.api_key} onChange={e => setChanForm({ ...chanForm, api_key: e.target.value })} placeholder="API Key（sk- 开头，留空=沿用当前）" style={chanInput} />
                     <input value={chanForm.model} onChange={e => setChanForm({ ...chanForm, model: e.target.value })} placeholder="模型名（如 [可颂-反重力-0.4]claude-opus-4-6-thinking）" style={{ ...chanInput, marginBottom: 10 }} />
@@ -1758,27 +1698,6 @@ export default function PlutocaelChat() {
                     </div>
                   </div>}
                 </div>
-                {!chanForm && <button className="ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} style={{ width: "100%", padding: "11px", border: `1px dashed ${COLORS.divider}`, borderRadius: 14, background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 14, fontFamily: "inherit", marginBottom: 8 }}>+ 添加渠道</button>}
-                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 20px" }}>💡 同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
-
-                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "8px 4px 8px" }}>便宜渠道（后台任务）</div>
-                <div style={listCard}>
-                  <div style={row}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>API 地址</div>
-                    <input type="text" value={settingsData.cheap_api_base_url || ""} placeholder="留空=同主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_base_url: e.target.value })} style={rowInput} />
-                  </div>
-                  <div style={row}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>API Key</div>
-                    <input type={showCheapKey ? "text" : "password"} value={settingsData.cheap_api_key || ""} placeholder="sk- 开头，留空=用主力" onChange={e => setSettingsData({ ...settingsData, cheap_api_key: e.target.value })} style={rowInput} />
-                    {eyeBtn(showCheapKey, () => setShowCheapKey(v => !v))}
-                  </div>
-                  <div style={rowLast}>
-                    <div style={{ ...lbl, flexShrink: 0 }}>模型</div>
-                    <input type="text" value={settingsData.cheap_model || ""} placeholder="如 claude-sonnet-4-6" onChange={e => setSettingsData({ ...settingsData, cheap_model: e.target.value })} style={rowInput} />
-                  </div>
-                </div>
-                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 12px", marginTop: -12 }}>💡 摘要压缩、自动记忆等后台任务用，省主力额度。留空=跟主力共用。</div>
-                {chanBtns("cheap")}
                 <div style={{ height: 16 }} /></>;
                 })()}
 
@@ -1958,7 +1877,7 @@ export default function PlutocaelChat() {
                   </div>
                   </>}
                 </div>
-                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 摘要用便宜渠道后台生成，不占聊天额度。原始消息不会被删，聊天界面照常能看到全部。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 8px" }}>💡 摘要在后台生成，不占聊天额度。原始消息不会被删，聊天界面照常能看到全部。</div>
                 </>}
               </>;
             })()}
