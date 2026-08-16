@@ -14,7 +14,6 @@ const API = import.meta.env.VITE_API_BASE || "/api";
 
 // 多主题系统：claude（Claude官方米白）/ dark（夜间）/ rose（玫瑰）
 const NAV_H = 50; // 底部导航栏高度（不含安全区），浮层页要留出这么多底部空间
-function EditIcon() { return <Icon size={12}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></Icon>; }
 
 
 export default function PlutocaelChat() {
@@ -1668,25 +1667,27 @@ export default function PlutocaelChat() {
                 {settingsSection === "api" && (() => {
                   const chanInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 14.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
                   return <>
-                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 10px", lineHeight: 1.7 }}>💡 这里只管添加预设模型，右上角 + 新增。加好之后去「默认模型」挑哪个任务用哪个。<br />同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
+                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 10px", lineHeight: 1.7 }}>💡 这里只管添加预设模型，右上角 + 新增，左滑改/删。加好之后去「默认模型」挑哪个任务用哪个。<br />同一家 API 换模型，「地址」和「Key」留空即可（自动沿用服务器默认）；只有换别家 API 才需要填。</div>
                 <div style={listCard}>
                   {channels.length === 0 && !chanForm && <div style={{ padding: "14px", fontSize: 14, color: COLORS.placeholder, textAlign: "center" }}>还没有模型，点右上角 + 添加</div>}
                   {channels.map((ch, i) => {
                     const t = chTest && chTest.id === ch.id ? chTest : null;
-                    return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 14, color: COLORS.text, fontFamily: "ui-monospace, monospace", overflowWrap: "anywhere", lineHeight: 1.45 }}>{ch.model || "（服务器默认模型）"}</div>
-                        {t && !t.loading && <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.6, overflowWrap: "anywhere", color: t.ok ? "#2E8B57" : "#C0392B" }}>
-                          {t.ok ? "✓ 连接正常" : <>✗ {t.status ? `HTTP ${t.status} · ` : ""}{t.error || "连不上"}</>}
-                          {(t.warnings || []).map((w, wi) => <div key={wi} style={{ color: "#B8860B", marginTop: 2 }}>⚠ {w}</div>)}
-                        </div>}
+                    // 编辑/删除藏在左滑里（跟 Skill、MCP 那两个列表一个手感）
+                    return <SwipeRow key={ch.id} radius={0} actions={[
+                      { label: "编辑", bg: COLORS.textSecondary, onClick: () => setChanForm({ id: ch.id, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" }) },
+                      { label: "删除", bg: "#D9534F", onClick: () => delChannel(ch.id) },
+                    ]}>
+                      <div style={{ ...(i < channels.length - 1 || chanForm ? row : rowLast), background: COLORS.bg }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: 14, color: COLORS.text, fontFamily: "ui-monospace, monospace", overflowWrap: "anywhere", lineHeight: 1.45 }}>{ch.model || "（服务器默认模型）"}</div>
+                          {t && !t.loading && <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.6, overflowWrap: "anywhere", color: t.ok ? "#2E8B57" : "#C0392B" }}>
+                            {t.ok ? "✓ 连接正常" : <>✗ {t.status ? `HTTP ${t.status} · ` : ""}{t.error || "连不上"}</>}
+                            {(t.warnings || []).map((w, wi) => <div key={wi} style={{ color: "#B8860B", marginTop: 2 }}>⚠ {w}</div>)}
+                          </div>}
+                        </div>
+                        <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ flexShrink: 0, padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
                       </div>
-                      <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
-                        <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
-                        <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
-                        <button className="flat ghost" onClick={() => delChannel(ch.id)} title="删除" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
-                      </div>
-                    </div>;
+                    </SwipeRow>;
                   })}
                   {chanForm && <div style={{ ...rowCol, borderBottom: "none" }}>
                     <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（填到域名就行，别带 /v1）" style={chanInput} />
