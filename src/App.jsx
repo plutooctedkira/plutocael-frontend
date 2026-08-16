@@ -1676,7 +1676,10 @@ export default function PlutocaelChat() {
                     return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontSize: 14, color: COLORS.text, fontFamily: "ui-monospace, monospace", overflowWrap: "anywhere", lineHeight: 1.45 }}>{ch.model || "（服务器默认模型）"}</div>
-                        {t && !t.loading && <div style={{ fontSize: 12, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
+                        {t && !t.loading && <div style={{ fontSize: 12, marginTop: 4, lineHeight: 1.6, overflowWrap: "anywhere", color: t.ok ? "#2E8B57" : "#C0392B" }}>
+                          {t.ok ? "✓ 连接正常" : <>✗ {t.status ? `HTTP ${t.status} · ` : ""}{t.error || "连不上"}</>}
+                          {(t.warnings || []).map((w, wi) => <div key={wi} style={{ color: "#B8860B", marginTop: 2 }}>⚠ {w}</div>)}
+                        </div>}
                       </div>
                       <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
                         <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
@@ -1686,7 +1689,7 @@ export default function PlutocaelChat() {
                     </div>;
                   })}
                   {chanForm && <div style={{ ...rowCol, borderBottom: "none" }}>
-                    <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（留空=服务器默认）" style={chanInput} />
+                    <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（填到域名就行，别带 /v1）" style={chanInput} />
                     <input value={chanForm.api_key} onChange={e => setChanForm({ ...chanForm, api_key: e.target.value })} placeholder="API Key（sk- 开头，留空=沿用当前）" style={chanInput} />
                     <input value={chanForm.model} onChange={e => setChanForm({ ...chanForm, model: e.target.value })} placeholder="模型名（如 [可颂-反重力-0.4]claude-opus-4-6-thinking）" style={{ ...chanInput, marginBottom: 10 }} />
                     <div style={{ display: "flex", gap: 8 }}>
