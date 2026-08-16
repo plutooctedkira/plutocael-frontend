@@ -55,6 +55,8 @@ export default function PlutocaelChat() {
   const [gatewayPeriod, setGatewayPeriod] = useState("today");
   const [gatewayLogs, setGatewayLogs] = useState([]);
   const [promptSaved, setPromptSaved] = useState(false); // 人设保存的瞬时反馈
+  const [userPromptSaved, setUserPromptSaved] = useState(false);
+  const [showCaelProfile, setShowCaelProfile] = useState(false); // 点聊天里 Cael 的头像打开
   // Skill：额外指令块
   const [skills, setSkills] = useState([]);
   const [skillForm, setSkillForm] = useState(null); // null | {id?, name, content, grp}
@@ -574,8 +576,9 @@ export default function PlutocaelChat() {
   // 右滑：其它页面/浮层=返回上一级；主界面没有上一级，不响应
   const navRef = useRef({ isChatRoot: () => true, goBack: () => {} });
   navRef.current = {
-    isChatRoot: () => currentPage === "chat" && !showSettings && !showDiary && !showAgent && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
+    isChatRoot: () => currentPage === "chat" && !showCaelProfile && !showSettings && !showDiary && !showAgent && !showChatSearch && !showChatMenu && !showStaging && !showMoveDate && !showDelCalendar && !showSkillPicker && thinkingSheet == null,
     goBack: () => {
+      if (showCaelProfile) return setShowCaelProfile(false);
       if (showChatMenu) return closeChatMenu();
       if (thinkingSheet != null) return setThinkingSheet(null);
       if (showSkillPicker) return setShowSkillPicker(false);
@@ -1024,7 +1027,9 @@ export default function PlutocaelChat() {
                       return <button className="flat ghost" onClick={() => openThinkingSheet(msg.id)} style={{ margin: "0 4px 7px 48px", padding: "5px 4px", borderRadius: 14, border: "none", background: "transparent", color: COLORS.textSecondary, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" }}>{label}<span style={{ marginLeft: "8ch", display: "flex", alignItems: "center" }}><Icon size={13}><polyline points="9 18 15 12 9 6" /></Icon></span></button>;
                     })()}
                     <div style={{ display: "flex", flexDirection: isUser ? "row-reverse" : "row", gap: 8, alignItems: "flex-start" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)" }}>
+                    {/* Cael 的头像点开 = 他的主页（人设/参数都在里面）；我的头像不响应 */}
+                    <div onClick={isUser ? undefined : () => setShowCaelProfile(true)}
+                      style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.10)", cursor: isUser ? "default" : "pointer" }}>
                       {(isUser ? avatarUser : avatarAi)
                         ? <img src={isUser ? avatarUser : avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                         : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 19, color: COLORS.accent }}>{isUser ? "J" : "C"}</span>}
@@ -1377,6 +1382,73 @@ export default function PlutocaelChat() {
           </div>
         </div>
       </div>}
+      {/* Cael 主页：聊天里点他头像进。人设/我的人设/模型参数/他的头像全在这儿 */}
+      {showCaelProfile && settingsData && (() => {
+        const card = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 18, ...skCard };
+        const sec = (t) => <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>{t}</div>;
+        const tip = (t) => <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 18px", marginTop: -12, lineHeight: 1.7 }}>{t}</div>;
+        const slider = (label, val, min, max, step, key, fmt, last) => (
+          <div style={{ padding: "12px 14px", borderBottom: last ? "none" : `1px solid ${COLORS.divider}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 15, color: COLORS.text }}>{label}</span>
+              <span style={{ fontSize: 15, color: COLORS.accent }}>{fmt ? fmt(val) : val}</span>
+            </div>
+            <input type="range" min={min} max={max} step={step} value={val}
+              onChange={e => setSettingsData({ ...settingsData, [key]: step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value) })}
+              onMouseUp={e => saveSetting({ [key]: step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value) })}
+              onTouchEnd={e => saveSetting({ [key]: step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value) })}
+              style={{ width: "100%", accentColor: COLORS.accent }} />
+          </div>
+        );
+        const area = (val, key, rows, ph) => <div style={{ ...card, padding: "6px 10px", marginBottom: 10 }}>
+          <textarea value={val} onChange={e => setSettingsData({ ...settingsData, [key]: e.target.value })} rows={rows} placeholder={ph}
+            style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 15, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: rows * 26 }} />
+        </div>;
+        const saveBtn = (done, onClick) => <button className="ghost" onClick={onClick} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: done ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{done ? "✓ 已保存，下一条消息生效" : "保存"}</button>;
+        return <div style={{ position: "fixed", inset: 0, zIndex: 520, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
+          <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, minHeight: 38 }}>
+              <button className="flat ghost" onClick={() => setShowCaelProfile(false)} title="返回" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={20}><polyline points="15 18 9 12 15 6" /></Icon></button>
+              <span style={{ flex: 1 }} />
+            </div>
+            <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "4px 20px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
+              {/* 头像 + 名字，点头像直接换 */}
+              <input ref={avatarAiInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("ai")} />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "6px 0 22px" }}>
+                <div onClick={() => avatarAiInputRef.current && avatarAiInputRef.current.click()}
+                  style={{ width: 88, height: 88, borderRadius: 24, overflow: "hidden", background: COLORS.accentLight, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+                  {avatarAi ? <img src={avatarAi} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    : <span style={{ fontFamily: "'Snell Roundhand', 'Brush Script MT', cursive", fontStyle: "italic", fontSize: 44, color: COLORS.accent }}>C</span>}
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, marginTop: 12 }}>Cael</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button className="ghost" onClick={() => avatarAiInputRef.current && avatarAiInputRef.current.click()} style={{ padding: "6px 14px", borderRadius: 16, border: "none", background: COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>{avatarAi ? "更换头像" : "上传头像"}</button>
+                  {avatarAi && <button className="ghost" onClick={() => removeAvatar("ai")} style={{ padding: "6px 12px", borderRadius: 16, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.danger, cursor: "pointer", fontSize: 14, fontFamily: "inherit" }}>移除</button>}
+                </div>
+              </div>
+
+              {sec("他是谁（System Prompt）")}
+              {area(settingsData.system_prompt || "", "system_prompt", 9, "写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」")}
+              {saveBtn(promptSaved, () => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); })}
+              {tip("💡 这段话每次对话都会垫在 Cael 的脑海最底层。")}
+
+              {sec("我是谁（我的人设）")}
+              {area(settingsData.user_prompt || "", "user_prompt", 6, "写下你希望 Cael 知道的你——名字、性格、在做什么、喜好、说话方式……\n留空则不注入。")}
+              {saveBtn(userPromptSaved, () => { saveSetting({ user_prompt: settingsData.user_prompt || "" }); setUserPromptSaved(true); setTimeout(() => setUserPromptSaved(false), 2000); })}
+              {tip("💡 跟着人设一起垫进上下文，让他知道在跟谁说话。")}
+
+              {sec("模型参数")}
+              <div style={card}>
+                {slider("模型温度", settingsData.temperature, 0, 2, 0.1, "temperature")}
+                {slider("上下文轮数", settingsData.max_context_rounds || 10, 1, 50, 1, "max_context_rounds", v => v + " 轮")}
+                {slider("最大回复 tokens", settingsData.max_reply_tokens || 2000, 256, 8192, 128, "max_reply_tokens", null, true)}
+              </div>
+              {tip("💡 温度越高回答越发散；轮数是每次带多少条历史；tokens 是单条回复的长度上限。")}
+            </div>
+          </div>
+        </div>;
+      })()}
+
       {showSettings && settingsData && <div style={{ position: "fixed", inset: 0, zIndex: 500, display: "flex", flexDirection: "column", background: theme === "custom" ? COLORS._solidBg : COLORS.bg, paddingBottom: `calc(${NAV_H}px + env(safe-area-inset-bottom, 0px))`, boxShadow: "-8px 0 24px rgba(0,0,0,0.12)" }}>
         <div style={{ width: "100%", maxWidth: 680, margin: "0 auto", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "calc(8px + env(safe-area-inset-top, 0px)) 14px 2px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, minHeight: 38, position: "relative", zIndex: 5, background: theme === "custom" ? COLORS._solidBg : COLORS.bg }}>
@@ -1458,7 +1530,7 @@ export default function PlutocaelChat() {
                 </div>}
               </>) : <div style={{ textAlign:"center", color:COLORS.placeholder, fontSize:13, padding:"40px 0" }}>加载中...</div>}
             </>}
-            {["", "appearance", "personal", "api", "taskmodels", "behavior", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
+            {["", "appearance", "personal", "api", "taskmodels", "skill", "chatmgmt", "memoryopts"].includes(settingsSection) && (() => {
               const secTitle = { fontSize: 13, fontWeight: 600, color: COLORS.placeholder, letterSpacing: "0.05em", padding: "4px 4px 8px", textTransform: "uppercase", display: "none" };
               const listCard = { background: COLORS.bg, borderRadius: 14, overflow: "hidden", marginBottom: 20, ...skCard };
               const row = { padding: "12px 14px", borderBottom: `1px solid ${COLORS.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 };
@@ -1478,7 +1550,6 @@ export default function PlutocaelChat() {
                     { group: "通用", items: [
                       { key: "personal", label: "个人设置", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
                       { key: "appearance", label: "外观", icon: <><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996C18.956 15.398 22 12.35 22 8.5 22 4.5 17.5 2 12 2z" /></> },
-                      { key: "behavior", label: "profile", icon: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
                       { key: "memoryopts", label: "记忆", icon: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></> },
                     ]},
                     { group: "功能", items: [
@@ -1577,13 +1648,7 @@ export default function PlutocaelChat() {
                     <input ref={avatarAiInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("ai")} />
                     <input ref={avatarUserInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePickAvatar("user")} />
                     <div style={listCard}>
-                      <div style={row}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                          {preview(avatarAi, "C")}
-                          <div><div style={lbl}>Cael 的头像</div><div style={hint}>显示在他的气泡左边</div></div>
-                        </div>
-                        {btns(avatarAi, "ai", avatarAiInputRef)}
-                      </div>
+                      {/* Cael 的头像搬去他自己的主页了（聊天里点他头像进） */}
                       <div style={rowLast}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                           {preview(avatarUser, "J")}
@@ -1701,29 +1766,6 @@ export default function PlutocaelChat() {
                 </div>
                 <div style={{ height: 16 }} /></>;
                 })()}
-
-                {settingsSection === "behavior" && <>
-                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>模型参数</div>
-                <div style={listCard}>
-                  <div style={rowCol}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>模型温度</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.temperature}</span></div>
-                    <input type="range" min="0" max="2" step="0.1" value={settingsData.temperature} onChange={e => setSettingsData({ ...settingsData, temperature: parseFloat(e.target.value) })} onMouseUp={e => saveSetting({ temperature: parseFloat(e.target.value) })} onTouchEnd={e => saveSetting({ temperature: parseFloat(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
-                  </div>
-                  <div style={rowCol}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>上下文轮数</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.max_context_rounds || 10} 轮</span></div>
-                    <input type="range" min="1" max="50" step="1" value={settingsData.max_context_rounds || 10} onChange={e => setSettingsData({ ...settingsData, max_context_rounds: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ max_context_rounds: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ max_context_rounds: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
-                  </div>
-                  <div style={{ ...rowCol, borderBottom: "none" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}><span style={lbl}>最大回复 tokens</span><span style={{ ...lbl, color: COLORS.accent }}>{settingsData.max_reply_tokens || 2000}</span></div>
-                    <input type="range" min="256" max="8192" step="128" value={settingsData.max_reply_tokens || 2000} onChange={e => setSettingsData({ ...settingsData, max_reply_tokens: parseInt(e.target.value) })} onMouseUp={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} onTouchEnd={e => saveSetting({ max_reply_tokens: parseInt(e.target.value) })} style={{ width: "100%", accentColor: COLORS.accent }} />
-                  </div>
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.text, padding: "0 4px 8px" }}>System Prompt</div>
-                <div style={{ ...listCard, padding: "6px 10px", marginBottom: 10 }}>
-                  <textarea value={settingsData.system_prompt || ""} onChange={e => setSettingsData({ ...settingsData, system_prompt: e.target.value })} rows={9} placeholder={"写下 Cael 是谁、说话风格、你们的关系、他该记得的事……\n留空则用默认的「你是Cael。」"} style={{ width: "100%", border: "none", outline: "none", resize: "vertical", fontSize: 15, lineHeight: 1.7, background: "transparent", color: COLORS.text, fontFamily: "inherit", boxSizing: "border-box", minHeight: 150 }} />
-                </div>
-                <button className="ghost" onClick={() => { saveSetting({ system_prompt: settingsData.system_prompt || "" }); setPromptSaved(true); setTimeout(() => setPromptSaved(false), 2000); }} style={{ width: "100%", padding: "11px", border: "none", borderRadius: 14, background: promptSaved ? "#3AAF6B" : COLORS.accent, color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600, marginBottom: 8, fontFamily: "inherit", ...skRaised }}>{promptSaved ? "✓ 已保存，下一条消息生效" : "保存"}</button>
-                <div style={{ fontSize: 13, color: COLORS.placeholder, padding: "0 4px 14px" }}>💡 这段话每次对话都会垫在 Cael 的脑海最底层，改完点保存，下一条消息立刻生效。</div></>}
 
                 {settingsSection === "skill" && (() => {
                   const skInput = { width: "100%", boxSizing: "border-box", border: `1px solid ${COLORS.divider}`, borderRadius: 10, padding: "9px 12px", fontSize: 14.5, outline: "none", background: COLORS.input, color: COLORS.text, fontFamily: "inherit", marginBottom: 8 };
