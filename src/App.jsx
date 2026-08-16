@@ -148,7 +148,7 @@ export default function PlutocaelChat() {
   // 常见的填错：把模型名贴进 Key 框
   const chanFormError = (f) => {
     const bad = (v) => v && /[^\x21-\x7E]/.test(v.trim());
-    if (!f.name.trim()) return "给这个模型起个名字吧";
+    if (!f.model.trim()) return "填一下模型名吧";
     if (bad(f.api_key)) return "API Key 里有中文或空格——Key 应该是 sk- 开头的英文串，模型名请填在「模型」框";
     if (f.api_key && /claude|gpt|\[/i.test(f.api_key)) return "Key 看起来像模型名——模型名请填在「模型」框";
     if (bad(f.api_base_url)) return "API 地址里有非法字符";
@@ -159,10 +159,12 @@ export default function PlutocaelChat() {
     if (!f) return;
     const err = chanFormError(f);
     if (err) { alert(err); return; }
+    // 列表里不显示名字了，但后端 name 是 NOT NULL，拿模型名顶上
+    const body = JSON.stringify({ ...f, name: f.model.trim() });
     try {
       const r = f.id
-        ? await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(x => x.json())
-        : await fetch(API + "/settings/channels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(x => x.json());
+        ? await fetch(API + "/settings/channels/" + f.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body }).then(x => x.json())
+        : await fetch(API + "/settings/channels", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then(x => x.json());
       if (r && r.error) { alert("保存失败：" + r.error); return; }
       setChanForm(null); await loadChannels();
     } catch (e) { alert("保存失败：" + e.message); }
@@ -1363,17 +1365,14 @@ export default function PlutocaelChat() {
           <div style={{ width: 40, height: 5, borderRadius: 3, background: COLORS.divider, margin: "8px auto 4px", flexShrink: 0 }} />
           <div style={{ padding: "6px 18px 10px", flexShrink: 0, textAlign: "center", fontSize: 16.5, fontWeight: 600, color: COLORS.text }}>{taskPicker.label} 用哪个模型</div>
           <div className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 14px" }}>
-            {[{ id: null, name: "跟随默认", model: "" }, ...channels].map(c => {
+            {[{ id: null, model: "跟随默认" }, ...channels].map(c => {
               const on = (taskModels.assigned[taskPicker.key] || null) === c.id;
               return <button key={c.id ?? "default"} className="flat ghost" onClick={() => assignTask(taskPicker.key, c.id)}
                 style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, padding: "13px 14px", marginBottom: 7, borderRadius: 13, border: "none", background: on ? COLORS.accentLight : (barDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.035)"), cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                 <span style={{ width: 18, height: 18, borderRadius: "50%", flexShrink: 0, border: `2px solid ${on ? COLORS.accent : COLORS.divider}`, background: on ? COLORS.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {on && <Icon size={11}><polyline points="20 6 9 17 4 12" /></Icon>}
                 </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 15.5, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
-                  {c.model && <span style={{ display: "block", fontSize: 12.5, color: COLORS.placeholder, marginTop: 2, fontFamily: "ui-monospace, monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.model}</span>}
-                </span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, color: COLORS.text, fontFamily: c.id ? "ui-monospace, monospace" : "inherit", overflowWrap: "anywhere" }}>{c.model}</span>
               </button>;
             })}
           </div>
@@ -1387,7 +1386,7 @@ export default function PlutocaelChat() {
             <span style={{ flex: 1 }} />
             {settingsSection === "mcp" && <button className="flat ghost" onClick={() => setMcpAddSignal(n => n + 1)} title="添加 MCP" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
             {settingsSection === "skill" && <button className="flat ghost" onClick={() => setSkillForm({ name: "", content: "", grp: "" })} title="添加 Skill" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
-            {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ name: "", api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} title="添加模型" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
+            {settingsSection === "api" && <button className="flat ghost" onClick={() => setChanForm({ api_base_url: settingsData.api_base_url || "", api_key: "", model: "" })} title="添加模型" style={{ width: 38, height: 38, borderRadius: "50%", border: "none", background: "transparent", color: COLORS.text, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon size={22}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></Icon></button>}
           </div>
           <div key={sectionAnimKey} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "pageTurnIn 0.28s cubic-bezier(0.32, 0.72, 0, 1)" }}>
           {settingsSection === "mcp" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}><McpManager colors={COLORS} dark={theme === "dark" || (theme === "custom" && customTheme.dark)} addSignal={mcpAddSignal} /></div> : <PullRefresh disabled={settingsSection !== "usage"} onRefresh={refreshSettings} color={COLORS.accent} className="panel-scroll" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", overscrollBehaviorY: "contain", touchAction: "pan-y" }}>
@@ -1651,7 +1650,7 @@ export default function PlutocaelChat() {
                           <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 7, padding: "8px 11px", borderRadius: 10, background: barDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)" }}>
                             <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, background: c ? COLORS.accent : COLORS.divider, color: c ? "#fff" : COLORS.textSecondary }}>{c ? "指" : "默"}</span>
                             <span style={{ fontSize: 14.5, color: c ? COLORS.text : COLORS.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {c ? `${c.name}${c.model ? " · " + c.model : ""}` : "跟随默认"}
+                              {c ? (c.model || c.name) : "跟随默认"}
                             </span>
                           </div>
                         </button>
@@ -1676,19 +1675,17 @@ export default function PlutocaelChat() {
                     const t = chTest && chTest.id === ch.id ? chTest : null;
                     return <div key={ch.id} style={i < channels.length - 1 || chanForm ? row : rowLast}>
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 15, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</div>
-                        <div style={{ fontSize: 12, color: COLORS.placeholder, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{ch.model || "（默认模型）"}</div>
+                        <div style={{ fontSize: 14, color: COLORS.text, fontFamily: "ui-monospace, monospace", overflowWrap: "anywhere", lineHeight: 1.45 }}>{ch.model || "（服务器默认模型）"}</div>
                         {t && !t.loading && <div style={{ fontSize: 12, marginTop: 3, color: t.ok ? "#2E8B57" : "#C0392B" }}>{t.ok ? "✓ 连接正常" : "✗ " + (t.error || "").slice(0, 40)}</div>}
                       </div>
                       <div style={{ display: "flex", gap: 5, flexShrink: 0, alignItems: "center" }}>
                         <button className="flat ghost" onClick={() => testChannel(ch)} title="测试" style={{ padding: "5px 9px", borderRadius: 12, border: `1px solid ${COLORS.divider}`, background: "transparent", color: COLORS.textSecondary, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>{t && t.loading ? "…" : "测试"}</button>
-                        <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, name: ch.name, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
+                        <button className="flat ghost" onClick={() => setChanForm({ id: ch.id, api_base_url: ch.api_base_url || "", api_key: ch.api_key || "", model: ch.model || "" })} title="编辑" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><EditIcon /></button>
                         <button className="flat ghost" onClick={() => delChannel(ch.id)} title="删除" style={{ width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: COLORS.danger, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}><Icon size={14}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></Icon></button>
                       </div>
                     </div>;
                   })}
                   {chanForm && <div style={{ ...rowCol, borderBottom: "none" }}>
-                    <input value={chanForm.name} onChange={e => setChanForm({ ...chanForm, name: e.target.value })} placeholder="名字（如：酒酿opus）" style={chanInput} />
                     <input value={chanForm.api_base_url} onChange={e => setChanForm({ ...chanForm, api_base_url: e.target.value })} placeholder="API 地址（留空=服务器默认）" style={chanInput} />
                     <input value={chanForm.api_key} onChange={e => setChanForm({ ...chanForm, api_key: e.target.value })} placeholder="API Key（sk- 开头，留空=沿用当前）" style={chanInput} />
                     <input value={chanForm.model} onChange={e => setChanForm({ ...chanForm, model: e.target.value })} placeholder="模型名（如 [可颂-反重力-0.4]claude-opus-4-6-thinking）" style={{ ...chanInput, marginBottom: 10 }} />
