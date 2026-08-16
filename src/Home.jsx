@@ -5,8 +5,6 @@ import Icon from "./Icon";
 // 2026-07-24 → 2026-7-24
 const fmtDate = (d) => { if (!d) return ""; const p = String(d).split("-"); return p.length === 3 ? `${p[0]}-${Number(p[1])}-${Number(p[2])}` : d; };
 const firstLine = (c) => String(c || "").split("\n").map(s => s.trim()).find(Boolean) || "无更多文本";
-// 8月15日 星期六（zh-CN 的 long 格式会挤成"8月15日星期六"，自己拼一下）
-const today = () => { const t = new Date(); return `${t.getMonth() + 1}月${t.getDate()}日 星期${"日一二三四五六"[t.getDay()]}`; };
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const fmtK = (n) => n >= 1000 ? `${Math.round(n / 100) / 10}K`.replace(".0K", "K") : String(n);
 
@@ -222,10 +220,7 @@ export default function Home({ api, colors: C, dark, readerRef }) {
   return (
     <>
       <PullRefresh onRefresh={load} color={C.accent} className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehaviorY: "contain", touchAction: "pan-y", padding: "0 16px calc(24px + env(safe-area-inset-bottom, 0px))" }}>
-        <div style={{ maxWidth: 620, margin: "0 auto" }}>
-          <div style={{ fontSize: 32, lineHeight: 1.25, fontWeight: 800, color: C.text, padding: "6px 4px 2px", letterSpacing: "0.5px" }}>首页</div>
-          <div style={{ fontSize: 14, color: C.placeholder, padding: "0 4px 14px" }}>{today()}</div>
-
+        <div style={{ maxWidth: 620, margin: "0 auto", paddingTop: 10 }}>
           {calendar}
 
           {/* 三个桌面图标：点开各自的面板 */}
